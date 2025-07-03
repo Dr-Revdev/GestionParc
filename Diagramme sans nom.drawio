@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" version="27.2.0">
   <diagram name="Page-1" id="8LKJEuyPxNBGUrqoEQUZ">
-    <mxGraphModel dx="4997" dy="3369" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="4401" dy="3055" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -886,7 +886,7 @@
         <mxCell id="sck4vuj4WWujbihpHHY0-383" value="&lt;span style=&quot;font-size: 18px;&quot;&gt;Page de création d&#39;une entrer équipement avec les paramètres associés. S&#39;ouvre dans une nouvelle fenêtre.&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
           <mxGeometry x="1010" y="-900" width="530" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="sck4vuj4WWujbihpHHY0-384" value="&lt;span style=&quot;font-size: 18px;&quot;&gt;Page de création d&#39;une entrer agent avec les paramètres associés.&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;S&#39;ouvre dans une nouvelle fenêtre.&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+        <mxCell id="sck4vuj4WWujbihpHHY0-384" value="&lt;span style=&quot;font-size: 18px;&quot;&gt;Page de création d&#39;une entrée agent avec les paramètres associés.&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-size: 18px;&quot;&gt;S&#39;ouvre dans une nouvelle fenêtre.&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
           <mxGeometry x="1736" y="-900" width="530" height="70" as="geometry" />
         </mxCell>
         <mxCell id="sck4vuj4WWujbihpHHY0-385" value="&lt;span style=&quot;font-size: 18px;&quot;&gt;Page de sommaire pour la création et modification des bases de données.&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
