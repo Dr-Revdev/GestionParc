@@ -59,14 +59,14 @@ public class EquipmentCreateView : UserControl
         Controls.AddRange([cbType, tbName, tbCodeParc, tbSerial, tbBrand, tbComment, btnCreate]);
 
         // Labels
-        var lblType     = new Label { Text = "Type",             Left = 160,  Top = 132,  Width = 420, Height = 20, Font = labelFont };
-        var lblName     = new Label { Text = "Nom",              Left = 720,  Top = 132,  Width = 420, Height = 20, Font = labelFont };
-        var lblCodeParc = new Label { Text = "Code parc",        Left = 1280, Top = 132,  Width = 420, Height = 20, Font = labelFont };
+        var lblType = new Label { Text = "Type", Left = 160, Top = 132, Width = 420, Height = 20, Font = labelFont };
+        var lblName = new Label { Text = "Nom", Left = 720, Top = 132, Width = 420, Height = 20, Font = labelFont };
+        var lblCodeParc = new Label { Text = "Code parc", Left = 1280, Top = 132, Width = 420, Height = 20, Font = labelFont };
 
-        var lblSerial   = new Label { Text = "Numéro de série",  Left = 160,  Top = 212,  Width = 420, Height = 20, Font = labelFont };
-        var lblBrand    = new Label { Text = "Marque",           Left = 720,  Top = 212,  Width = 420, Height = 20, Font = labelFont };
+        var lblSerial = new Label { Text = "Numéro de série", Left = 160, Top = 212, Width = 420, Height = 20, Font = labelFont };
+        var lblBrand = new Label { Text = "Marque", Left = 720, Top = 212, Width = 420, Height = 20, Font = labelFont };
 
-        var lblComment  = new Label { Text = "Commentaire",      Left = 160,  Top = 296,  Width = 420, Height = 20, Font = labelFont };
+        var lblComment = new Label { Text = "Commentaire", Left = 160, Top = 296, Width = 420, Height = 20, Font = labelFont };
 
         Controls.AddRange([lblType, lblName, lblCodeParc, lblSerial, lblBrand, lblComment]);
 
