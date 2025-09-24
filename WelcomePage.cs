@@ -31,6 +31,7 @@ public class WelcomePage : Form
         title = new Label { Text = "Gestion de Parc", Font = new Font("Segoe UI", 35f, FontStyle.Bold), Left = 0, Top = 230, Width = 1920, Height = 80, TextAlign = ContentAlignment.MiddleCenter };
         Controls.Add(title);
 
+        btnNewMod.Click += (_, __) => ShowAdminMenu();
 
         ShowHome();
 
@@ -42,14 +43,13 @@ public class WelcomePage : Form
 
         content.Controls.AddRange(new Control[] { btnSetEquipment, btnFreeEquipment, btnNewMod });
 
-        btnNewMod.Click += (_, __) => ShowAdminMenu();
     }
 
     private void ShowAdminMenu()
     {
         content.Controls.Clear();
 
-        var admin = new AdminMenuView(onBack: ShowHome, onCreateEquipment: ShowEquipmentCreate);
+        var admin = new AdminMenuView(onBack: ShowHome, onCreateEquipment: ShowEquipmentCreate, onCreateAgent: ShowAgentCreate);
         admin.Dock = DockStyle.Fill;
         content.Controls.Add(admin);
     }
@@ -57,5 +57,11 @@ public class WelcomePage : Form
     {
         content.Controls.Clear();
         content.Controls.Add(new EquipmentCreateView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
+    }
+
+    private void ShowAgentCreate()
+    {
+        content.Controls.Clear();
+        content.Controls.Add(new AgentCreateView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
 }

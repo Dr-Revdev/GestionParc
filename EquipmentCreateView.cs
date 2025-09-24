@@ -14,61 +14,52 @@ public class EquipmentCreateView : UserControl
     private TextBox tbBrand;
     private TextBox tbComment;
     private Button btnCreate;
-    private Button btnBack;
 
     public EquipmentCreateView(Action onBack)
     {
         _onBack = onBack;
-
-        cbType = new ComboBox();
-        tbName = new TextBox();
-        tbCodeParc = new TextBox();
-        tbSerial = new TextBox();
-        tbBrand = new TextBox();
-        tbComment = new TextBox();
-        btnCreate = new Button();
-        btnBack = new Button();
-
-        BuildUi();
+        BuildUiEquipmentCreateView();
     }
 
-    private void BuildUi()
+    private void BuildUiEquipmentCreateView()
     {
-        this.Dock = DockStyle.Fill;
 
-        btnBack = new Button { Text = "←", Left = 16, Top = 16, Width = 40, Height = 36 };
+        Dock = DockStyle.Fill;
+
+        var btnBack = new Button { Text = "← Retour", Left = 24, Top = 24, Width = 120, Height = 36 };
         btnBack.Click += (_, __) => _onBack?.Invoke();
         Controls.Add(btnBack);
 
-        var f = new Font("Segoe UI", 11f, FontStyle.Regular);
-        var labelFont = new Font("Segoe UI", 10f, FontStyle.Regular);
+        Font = new Font("Segoe UI", 11f, FontStyle.Regular);
 
 
         // Button
-        cbType = new ComboBox { Left = 160, Top = 160, Width = 420, Height = 36, DropDownStyle = ComboBoxStyle.DropDownList, Font = f };
-        tbName = new TextBox { Left = 720, Top = 160, Width = 420, Height = 36, Font = f };
-        tbCodeParc = new TextBox { Left = 1280, Top = 160, Width = 420, Height = 36, Font = f };
+        cbType = new ComboBox { Left = 160, Top = 160, Width = 420, Height = 36, DropDownStyle = ComboBoxStyle.DropDownList };
+        tbName = new TextBox { Left = 720, Top = 160, Width = 420, Height = 36 };
+        tbCodeParc = new TextBox { Left = 1280, Top = 160, Width = 420, Height = 36 };
 
-        tbSerial = new TextBox { Left = 160, Top = 240, Width = 420, Height = 36, Font = f };
-        tbBrand = new TextBox { Left = 720, Top = 240, Width = 420, Height = 36, Font = f };
+        tbSerial = new TextBox { Left = 160, Top = 240, Width = 420, Height = 36 };
+        tbBrand = new TextBox { Left = 720, Top = 240, Width = 420, Height = 36 };
 
-        tbComment = new TextBox { Left = 160, Top = 320, Width = 420, Height = 160, Multiline = true, Font = f };
+        tbComment = new TextBox { Left = 160, Top = 320, Width = 420, Height = 160, Multiline = true };
 
         btnCreate = new Button { Text = "Créer", Left = 1630, Top = 600, Width = 180, Height = 52, Font = new Font("Segoe UI", 12f, FontStyle.Bold) };
 
         Controls.AddRange([cbType, tbName, tbCodeParc, tbSerial, tbBrand, tbComment, btnCreate]);
 
         // Labels
-        var lblType = new Label { Text = "Type", Left = 160, Top = 132, Width = 420, Height = 20, Font = labelFont };
-        var lblName = new Label { Text = "Nom", Left = 720, Top = 132, Width = 420, Height = 20, Font = labelFont };
-        var lblCodeParc = new Label { Text = "Code parc", Left = 1280, Top = 132, Width = 420, Height = 20, Font = labelFont };
+        var lblType = new Label { Text = "Type", Left = 160, Top = 132, Width = 420, Height = 20 };
+        var lblName = new Label { Text = "Nom", Left = 720, Top = 132, Width = 420, Height = 20 };
+        var lblCodeParc = new Label { Text = "Code parc", Left = 1280, Top = 132, Width = 420, Height = 20 };
 
-        var lblSerial = new Label { Text = "Numéro de série", Left = 160, Top = 212, Width = 420, Height = 20, Font = labelFont };
-        var lblBrand = new Label { Text = "Marque", Left = 720, Top = 212, Width = 420, Height = 20, Font = labelFont };
+        var lblSerial = new Label { Text = "Numéro de série", Left = 160, Top = 212, Width = 420, Height = 20 };
+        var lblBrand = new Label { Text = "Marque", Left = 720, Top = 212, Width = 420, Height = 20 };
 
-        var lblComment = new Label { Text = "Commentaire", Left = 160, Top = 296, Width = 420, Height = 20, Font = labelFont };
+        var lblComment = new Label { Text = "Commentaire", Left = 160, Top = 296, Width = 420, Height = 20 };
 
         Controls.AddRange([lblType, lblName, lblCodeParc, lblSerial, lblBrand, lblComment]);
+
+        cbType.TabIndex = 0; tbName.TabIndex = 1; tbCodeParc.TabIndex = 2; tbSerial.TabIndex = 3; tbBrand.TabIndex = 4; tbComment.TabIndex = 5; btnCreate.TabIndex = 6;
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///Tempo pour test///

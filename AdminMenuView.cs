@@ -8,19 +8,20 @@ namespace ProjetParc.Views
     {
         private readonly Action _onBack;
         private readonly Action _onCreateEquipment;
+        private readonly Action _onCreateAgent;
         private Button btnCreateEquipment;
         private Button btnCreateAgent;
         private Button btnModificationEquipment;
         private Button btnModificationAgent;
         private Button btnExange;
 
-        public AdminMenuView(Action onBack, Action onCreateEquipment)
+        public AdminMenuView(Action onBack, Action onCreateEquipment, Action onCreateAgent)
         {
             var tileFont = new Font("Segoe UI", 16f, FontStyle.Bold);
 
             // Button Back and title label
             _onBack = onBack;
-            
+
 
             var btnBack = new Button { Text = "← Retour", Left = 24, Top = 24, Width = 120, Height = 36 };
             btnBack.Click += (_, __) => _onBack?.Invoke();
@@ -39,10 +40,12 @@ namespace ProjetParc.Views
 
             btnExange = new Button { Text = "Echange", Left = 780, Top = 684, Width = 360, Height = 100, Font = tileFont };
 
-            Controls.AddRange(new Control[] { btnCreateEquipment, btnCreateAgent, btnModificationEquipment, btnModificationAgent, btnExange });
+            Controls.AddRange([btnCreateEquipment, btnCreateAgent, btnModificationEquipment, btnModificationAgent, btnExange]);
 
             _onCreateEquipment = onCreateEquipment;
+            _onCreateAgent = onCreateAgent;
             btnCreateEquipment.Click += (_, __) => _onCreateEquipment();
+            btnCreateAgent.Click += (_, __) => _onCreateAgent();
 
         }
     }
