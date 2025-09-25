@@ -9,13 +9,15 @@ namespace ProjetParc.Views
         private readonly Action _onBack;
         private readonly Action _onCreateEquipment;
         private readonly Action _onCreateAgent;
+        private readonly Action _onEditAgent;
+        private readonly Action _onEditEquipment;
         private Button btnCreateEquipment;
         private Button btnCreateAgent;
         private Button btnModificationEquipment;
         private Button btnModificationAgent;
         private Button btnExange;
 
-        public AdminMenuView(Action onBack, Action onCreateEquipment, Action onCreateAgent)
+        public AdminMenuView(Action onBack, Action onCreateEquipment, Action onCreateAgent, Action onEditAgent, Action onEditEquipment)
         {
             var tileFont = new Font("Segoe UI", 16f, FontStyle.Bold);
 
@@ -44,8 +46,13 @@ namespace ProjetParc.Views
 
             _onCreateEquipment = onCreateEquipment;
             _onCreateAgent = onCreateAgent;
+            _onEditAgent = onEditAgent;
+            _onEditEquipment = onEditEquipment;
+
             btnCreateEquipment.Click += (_, __) => _onCreateEquipment();
             btnCreateAgent.Click += (_, __) => _onCreateAgent();
+            btnModificationAgent.Click += (_, __) => _onEditAgent();
+            btnModificationEquipment.Click += (_, __) => _onEditEquipment();
 
         }
     }

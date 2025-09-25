@@ -41,7 +41,7 @@ public class WelcomePage : Form
     {
         content.Controls.Clear();
 
-        content.Controls.AddRange(new Control[] { btnSetEquipment, btnFreeEquipment, btnNewMod });
+        content.Controls.AddRange([btnSetEquipment, btnFreeEquipment, btnNewMod]);
 
     }
 
@@ -49,7 +49,7 @@ public class WelcomePage : Form
     {
         content.Controls.Clear();
 
-        var admin = new AdminMenuView(onBack: ShowHome, onCreateEquipment: ShowEquipmentCreate, onCreateAgent: ShowAgentCreate);
+        var admin = new AdminMenuView(onBack: ShowHome, onCreateEquipment: ShowEquipmentCreate, onCreateAgent: ShowAgentCreate, onEditAgent: ShowAgentEdit, onEditEquipment: ShowEquipmentEdit);
         admin.Dock = DockStyle.Fill;
         content.Controls.Add(admin);
     }
@@ -63,5 +63,15 @@ public class WelcomePage : Form
     {
         content.Controls.Clear();
         content.Controls.Add(new AgentCreateView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
+    }
+    private void ShowAgentEdit()
+    {
+        content.Controls.Clear();
+        content.Controls.Add(new AgentEditView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
+    }
+    private void ShowEquipmentEdit()
+    {
+        content.Controls.Clear();
+        content.Controls.Add(new EquipementEditView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
 }
