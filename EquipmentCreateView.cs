@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows.Forms;
+using Microsoft.Data.Sqlite;
 
 namespace ProjetParc.Views;
 
@@ -18,10 +19,11 @@ public class EquipmentCreateView : UserControl
     public EquipmentCreateView(Action onBack)
     {
         _onBack = onBack;
-        BuildUiEquipmentCreateView();
+        BuildUi();
+        LoadEquipmentTypes();
     }
 
-    private void BuildUiEquipmentCreateView()
+    private void BuildUi()
     {
 
         Dock = DockStyle.Fill;
@@ -61,15 +63,108 @@ public class EquipmentCreateView : UserControl
 
         cbType.TabIndex = 0; tbName.TabIndex = 1; tbCodeParc.TabIndex = 2; tbSerial.TabIndex = 3; tbBrand.TabIndex = 4; tbComment.TabIndex = 5; btnCreate.TabIndex = 6;
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///Tempo pour test///
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        btnCreate.Click += btnCreate_Click;
+    }
 
-        cbType.Items.AddRange(["PC", "Ecran", "Imprimante", "Dock", "Autre"]);
-        if (cbType.Items.Count > 0) cbType.SelectedIndex = 0; 
+    private sealed class EquipmentTypeItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public override string ToString() => Name;
+    }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                    ///Tempo pour test///
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    private void LoadEquipmentTypes()
+    {
+        using var connection = Database.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
+
+        using var reader = command.ExecuteReader();
+        var equipmentTypeItems = new List<EquipmentTypeItem>();
+        while (reader.Read())
+        {
+            var typeItem = new EquipmentTypeItem
+            {
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1)
+            };
+            equipmentTypeItems.Add(typeItem);
+        }
+
+        cbType.DataSource = equipmentTypeItems;
+        cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
+        cbType.ValueMember = nameof(EquipmentTypeItem.Id);
+    }
+
+    private bool ValidateEquipmentForm(out string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(tbName.Text))
+        {
+            errorMessage = "Le nom est obligatoire.";
+            return false;
+        }
+        if (cbType.SelectedItem is not EquipmentTypeItem)
+        {
+            errorMessage = "Sélectionner un type d'équipement.";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(tbCodeParc.Text))
+        {
+            errorMessage = "Le code parc est obligatoire.";
+            return false;
+        }
+
+        errorMessage = "";
+        return true;
+    }
+    private static object ToDbNullable(string s) => string.IsNullOrWhiteSpace(s) ? DBNull.Value : s.Trim();
+
+    private static string GenerateEquipmentId() => Guid.NewGuid().ToString("N");
+
+    private void InsertEquipment()
+    {
+        if (!ValidateEquipmentForm(out var errorMessage))
+        {
+            MessageBox.Show(errorMessage);
+            return;
+        }
+
+        var SelectedType = (EquipmentTypeItem)cbType.SelectedItem;
+        var newId = GenerateEquipmentId();
+
+        using var connection = Database.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"INSERT INTO ""Equipements"" (id_equipement, type_id, nom, code_parc, numero_serie, marque, commentaire) VALUES ($id, $typeId, $name, $codeParc, $serial, $brand, $comment);";
+
+        command.Parameters.AddWithValue("$id", newId);
+        command.Parameters.AddWithValue("$typeId", SelectedType.Id);
+        command.Parameters.AddWithValue("$name", tbName.Text.Trim());
+        command.Parameters.AddWithValue("$codeParc", tbCodeParc.Text.Trim());
+
+        command.Parameters.AddWithValue("$serial",   ToDbNullable(tbSerial.Text));
+        command.Parameters.AddWithValue("$brand",    ToDbNullable(tbBrand.Text));
+        command.Parameters.AddWithValue("$comment",  ToDbNullable(tbComment.Text));
+
+        try
+        {
+            command.ExecuteNonQuery();
+            MessageBox.Show("Équipement créé.");
+
+            tbSerial.Clear();
+            tbName.Clear();
+            tbBrand.Clear();
+            tbCodeParc.Clear();
+            tbComment.Clear();
+            if (cbType.Items.Count > 0) cbType.SelectedIndex = 0;
+        }
+        catch (SqliteException ex)
+        {
+            MessageBox.Show("Erreur SQL : " + ex.Message);
+        }
+    }
+
+    private void btnCreate_Click(object sender, EventArgs e)
+    {
+        InsertEquipment();
     }
 }

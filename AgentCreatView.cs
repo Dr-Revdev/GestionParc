@@ -20,10 +20,12 @@ public class AgentCreateView : UserControl
     public AgentCreateView(Action onBack)
     {
         _onBack = onBack;
-        BuildUiAgentCreateView();
+        BuildUi();
+        LoadAgentSite();
+        LoadAgentTeam();
     }
 
-    private void BuildUiAgentCreateView()
+    private void BuildUi()
     {
         Dock = DockStyle.Fill;
 
@@ -65,19 +67,109 @@ public class AgentCreateView : UserControl
         tbIDRH.TabIndex = 0; tbAgentName.TabIndex = 1; tbFirstName.TabIndex = 2; tbEmail.TabIndex = 3;
         cbTeam.TabIndex = 4; cbxHeberge.TabIndex = 5; tbComment.TabIndex = 6; cbSite.TabIndex = 7; btnCreate.TabIndex = 8;
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///Tempo pour test///
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
 
-        cbTeam.Items.AddRange(["Infra", "Support", "Dev", "Réseau"]);
-        if (cbTeam.Items.Count > 0) cbTeam.SelectedIndex = 0;
+    private sealed class AgentSiteItem
+    {
+        public string siteName { get; set; }
+        public override string ToString() => siteName;
+    }
 
-        cbSite.Items.AddRange(["Siège", "Agence A", "Agence B"]);
-        if (cbSite.Items.Count > 0) cbSite.SelectedIndex = 0;
-        
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ///Tempo pour test///
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    private sealed class AgentTeamItem
+    {
+        public string teamName { get; set; }
+        public override string ToString() => teamName;
+    }
+
+    private void LoadAgentSite()
+    {
+        using var connection = Database.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT nom_site FROM Sites;";
+
+        using var reader = command.ExecuteReader();
+        var agentSiteItems = new List<AgentSiteItem>();
+        while (reader.Read())
+        {
+            var siteItem = new AgentSiteItem
+            {
+                siteName = reader.GetString(0)
+            };
+            agentSiteItems.Add(siteItem);
+        }
+
+        cbSite.DataSource = agentSiteItems;
+        cbSite.DisplayMember = nameof(AgentSiteItem.siteName);
+        cbSite.ValueMember = nameof(AgentSiteItem.siteName);
+    }
+
+    private void LoadAgentTeam()
+    {
+        using var connection = Database.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT nom_equipe FROM Equipes;";
+
+        using var reader = command.ExecuteReader();
+        var agentTeamItems = new List<AgentTeamItem>();
+        while (reader.Read())
+        {
+            var teamItem = new AgentTeamItem
+            {
+                teamName = reader.GetString(0)
+            };
+            agentTeamItems.Add(teamItem);
+        }
+
+        cbTeam.DataSource = agentTeamItems;
+        cbTeam.DisplayMember = nameof(AgentTeamItem.teamName);
+        cbTeam.ValueMember = nameof(AgentTeamItem.teamName);
+    }
+
+    private bool ValidateTeamForm(out string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(tbAgentName.Text))
+        {
+            errorMessage = "Le nom de l'agent est obligatoire.";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(tbFirstName.Text))
+        {
+            errorMessage = "Le prénom de l'agent est obligatoire.";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(tbIDRH.Text))
+        {
+            errorMessage = "L'IDRH de l'agent est obligatoire.";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(tbEmail.Text))
+        {
+            errorMessage = "L'Email de l'agent est obligatoire.";
+            return false;
+        }
+        if (cbSite.SelectedItem is not AgentSiteItem)
+        {
+            errorMessage = "Sélectionner un site.";
+            return false;
+        }
+        if (cbTeam.SelectedItem is not AgentTeamItem)
+        {
+            errorMessage = "Sélectionner une équipe.";
+            return false;
+        }
+
+        errorMessage = "";
+        return true;
+    }
+    private static object ToDbNullable(string s) => string.IsNullOrWhiteSpace(s) ? DBNull.Value : s.Trim();
+
+    private void InsertAgent()
+    {
+        if (!ValidateTeamForm(out var errorMessage))
+        {
+            MessageBox.Show(errorMessage);
+            return;
+        }
     }
 
 }
