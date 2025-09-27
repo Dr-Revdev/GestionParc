@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using Microsoft.Data.Sqlite;
 
 namespace ProjetParc.Views;
 
@@ -67,7 +68,9 @@ public class AgentCreateView : UserControl
         tbIDRH.TabIndex = 0; tbAgentName.TabIndex = 1; tbFirstName.TabIndex = 2; tbEmail.TabIndex = 3;
         cbTeam.TabIndex = 4; cbxHeberge.TabIndex = 5; tbComment.TabIndex = 6; cbSite.TabIndex = 7; btnCreate.TabIndex = 8;
 
+        btnCreate.Click += btnCreate_Click;
     }
+    private static int ToBit(bool b) => b ? 1 : 0;
 
     private sealed class AgentSiteItem
     {
@@ -170,6 +173,72 @@ public class AgentCreateView : UserControl
             MessageBox.Show(errorMessage);
             return;
         }
+
+        var teamName = (string)cbTeam.SelectedValue;
+        var siteName = (string)cbSite.SelectedValue;
+        var hebergeValue = ToBit(cbxHeberge.Checked);
+
+        using var connection = Database.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"INSERT INTO ""Agents"" (idrh, nom, prenom, email, equipe, heberge, commentaire, site) VALUES ($idrh, $nom, $prenom, $email, $equipe, $heberge, $comment, $site);";
+
+        command.Parameters.AddWithValue("$idrh",   tbIDRH.Text.Trim());
+        command.Parameters.AddWithValue("$nom",    tbAgentName.Text.Trim());
+        command.Parameters.AddWithValue("$prenom", tbFirstName.Text.Trim());
+        command.Parameters.AddWithValue("$email",  tbEmail.Text.Trim());
+        command.Parameters.AddWithValue("$equipe", teamName);
+        command.Parameters.AddWithValue("$site", siteName);
+
+        command.Parameters.AddWithValue("$heberge", hebergeValue);
+        command.Parameters.AddWithValue("$comment", ToDbNullable(tbComment.Text));
+
+        try
+        {
+            command.ExecuteNonQuery();
+            MessageBox.Show("Agent créé");
+            var idrhValue = tbIDRH.Text.Trim();
+            siteName  = (string)cbSite.SelectedValue;
+
+            using (var tx = connection.BeginTransaction())
+            {
+                using (var deleteCmd = connection.CreateCommand())
+                {
+                    deleteCmd.Transaction = tx;
+                    deleteCmd.CommandText = @"DELETE FROM ""Travail"" WHERE idrh = $idrh;";
+                    deleteCmd.Parameters.AddWithValue("$idrh", idrhValue);
+                    deleteCmd.ExecuteNonQuery();
+                }
+
+                using (var insertCmd = connection.CreateCommand())
+                {
+                    insertCmd.Transaction = tx;
+                    insertCmd.CommandText = @"
+                        INSERT INTO ""Travail"" (idrh, nom_site)
+                        VALUES ($idrh, $nom_site);";
+                    insertCmd.Parameters.AddWithValue("$idrh", idrhValue);
+                    insertCmd.Parameters.AddWithValue("$nom_site", siteName);
+                    insertCmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+            }
+            tbIDRH.Clear();
+            tbFirstName.Clear();
+            tbAgentName.Clear();
+            tbEmail.Clear();
+            tbComment.Clear();
+            if (cbSite.Items.Count > 0) cbSite.SelectedIndex = 0;
+            if (cbTeam.Items.Count > 0) cbTeam.SelectedIndex = 0;
+        }
+        catch (SqliteException ex)
+        {
+            MessageBox.Show("Erreur SQL : " + ex.Message);
+        }
+    }
+
+        private void btnCreate_Click(object sender, EventArgs e)
+    {
+        InsertAgent();
     }
 
 }
