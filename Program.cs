@@ -1,5 +1,7 @@
 using System;
 using System.Windows.Forms;
+using ProjetParc.Data;
+using ProjetParc.Views;
 
 namespace ProjetParc;
 
