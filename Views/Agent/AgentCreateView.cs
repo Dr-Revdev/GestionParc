@@ -71,11 +71,21 @@ public class AgentCreateView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 8,
-            Padding = new Padding(10),
+            Padding = new Padding(20),
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f)
+            },
+            RowStyles = {
+                new RowStyle(SizeType.Absolute, 30),  // Label ligne 1
+                new RowStyle(SizeType.Absolute, 45),  // Input ligne 1
+                new RowStyle(SizeType.Absolute, 30),  // Label ligne 2
+                new RowStyle(SizeType.Absolute, 45),  // Input ligne 2
+                new RowStyle(SizeType.Absolute, 30),  // Label ligne 3
+                new RowStyle(SizeType.Absolute, 150), // Input ligne 3 (commentaire - hauteur fixe)
+                new RowStyle(SizeType.Percent, 100),  // Espacement flexible
+                new RowStyle(SizeType.Absolute, 10)   // Espacement
             }
         };
         mainLayout.Controls.Add(formLayout, 0, 1);
@@ -97,7 +107,7 @@ public class AgentCreateView : UserControl
         formLayout.SetRowSpan(hebergePanel, 2);
 
         // Troisième ligne : Commentaire (2 colonnes), Site
-        AddFormRow(formLayout, 4, "Commentaire", tbComment = new TextBox { Height = 160, Multiline = true }, 0, 2);
+        AddFormRow(formLayout, 4, "Commentaire", tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical }, 0, 2);
         AddFormRow(formLayout, 4, "Site", cbSite = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList }, 2);
 
         // Bouton créer (en bas)
@@ -255,12 +265,13 @@ public class AgentCreateView : UserControl
         { 
             Text = labelText, 
             Dock = DockStyle.Fill,
-            Padding = new Padding(0, 0, 0, 5)
+            Padding = new Padding(5, 0, 0, 5),
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold)
         };
         panel.Controls.Add(label, col, row);
 
         control.Dock = DockStyle.Fill;
-        control.Margin = new Padding(0, 0, 10, 10);
+        control.Margin = new Padding(5, 0, 15, 15);
         panel.Controls.Add(control, col, row + 1);
         if (colSpan > 1)
         {

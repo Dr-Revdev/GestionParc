@@ -64,27 +64,36 @@ public class EquipmentCreateView : UserControl
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
-            RowCount = 5,
-            Padding = new Padding(10),
+            RowCount = 7,
+            Padding = new Padding(20),
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f)
+            },
+            RowStyles = {
+                new RowStyle(SizeType.Absolute, 30),   // Labels ligne 1
+                new RowStyle(SizeType.Absolute, 45),   // Inputs ligne 1
+                new RowStyle(SizeType.Absolute, 30),   // Labels ligne 2
+                new RowStyle(SizeType.Absolute, 45),   // Inputs ligne 2
+                new RowStyle(SizeType.Absolute, 30),   // Label commentaire
+                new RowStyle(SizeType.Absolute, 150),  // Commentaire multiline - hauteur fixe
+                new RowStyle(SizeType.Percent, 100)    // Espacement flexible
             }
         };
         mainLayout.Controls.Add(formLayout, 0, 1);
 
         // Première ligne : Type, Nom, Code parc
-        AddFormRow(formLayout, 0, "Type", cbType = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList });
-        AddFormRow(formLayout, 0, "Nom", tbName = new TextBox { Height = 36 }, 1);
-        AddFormRow(formLayout, 0, "Code parc", tbCodeParc = new TextBox { Height = 36 }, 2);
+        AddFormRow(formLayout, 0, "Type", cbType = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
+        AddFormRow(formLayout, 0, "Nom", tbName = new TextBox(), 1);
+        AddFormRow(formLayout, 0, "Code parc", tbCodeParc = new TextBox(), 2);
 
         // Deuxième ligne : Numéro de série, Marque
-        AddFormRow(formLayout, 2, "Numéro de série", tbSerial = new TextBox { Height = 36 });
-        AddFormRow(formLayout, 2, "Marque", tbBrand = new TextBox { Height = 36 }, 1);
+        AddFormRow(formLayout, 2, "Numéro de série", tbSerial = new TextBox());
+        AddFormRow(formLayout, 2, "Marque", tbBrand = new TextBox(), 1);
 
         // Troisième ligne : Commentaire (sur toute la largeur)
-        AddFormRow(formLayout, 4, "Commentaire", tbComment = new TextBox { Height = 160, Multiline = true }, 0, 3);
+        AddFormRow(formLayout, 4, "Commentaire", tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical }, 0, 3);
 
         // Bouton créer (en bas)
         btnCreate = new Button
@@ -246,16 +255,22 @@ public class EquipmentCreateView : UserControl
         { 
             Text = labelText, 
             Dock = DockStyle.Fill,
-            Padding = new Padding(0, 0, 0, 5)
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+            Padding = new Padding(5, 0, 0, 5),
+            Margin = new Padding(5, 0, 15, 0)
         };
         panel.Controls.Add(label, col, row);
 
         control.Dock = DockStyle.Fill;
-        control.Margin = new Padding(0, 0, 10, 10);
+        control.Margin = new Padding(5, 0, 15, 15);
         panel.Controls.Add(control, col, row + 1);
         if (colSpan > 1)
         {
             panel.SetColumnSpan(control, colSpan);
+            if (colSpan > 1 && row == 4) // Label commentaire
+            {
+                panel.SetColumnSpan(label, colSpan);
+            }
         }
     }
 }

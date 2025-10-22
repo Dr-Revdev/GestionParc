@@ -83,26 +83,32 @@ public class WelcomePage : Form
         }
 
         // Configuration des boutons
-        var tileFont = new Font("Segoe UI", 16f, FontStyle.Bold);
+        var tileFont = new Font("Segoe UI", 14f, FontStyle.Bold);
         btnSetEquipment = new Button
         {
             Text = "Equipements en place",
             Font = tileFont,
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.None,
+            Size = new Size(400, 250), // largeur moitié, hauteur 1/3
+            Anchor = AnchorStyles.None,
             Margin = new Padding(10)
         };
         btnFreeEquipment = new Button
         {
             Text = "Equipements disponibles",
             Font = tileFont,
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.None,
+            Size = new Size(400, 250),
+            Anchor = AnchorStyles.None,
             Margin = new Padding(10)
         };
         btnNewMod = new Button
         {
             Text = "Modification / Création",
             Font = tileFont,
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.None,
+            Size = new Size(400, 250),
+            Anchor = AnchorStyles.None,
             Margin = new Padding(10)
         };
 
@@ -140,7 +146,7 @@ public class WelcomePage : Form
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
-            Padding = new Padding(50)
+            Padding = new Padding(40, 20, 40, 20) // padding réduit
         };
 
         // Configuration des colonnes pour les boutons (répartition égale)
@@ -149,9 +155,9 @@ public class WelcomePage : Form
             buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
         }
 
-        buttonLayout.Controls.Add(btnSetEquipment, 0, 0);
-        buttonLayout.Controls.Add(btnFreeEquipment, 1, 0);
-        buttonLayout.Controls.Add(btnNewMod, 2, 0);
+    buttonLayout.Controls.Add(btnSetEquipment, 0, 0);
+    buttonLayout.Controls.Add(btnFreeEquipment, 1, 0);
+    buttonLayout.Controls.Add(btnNewMod, 2, 0);
 
         content.Controls.Add(buttonLayout);
     }

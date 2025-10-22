@@ -38,7 +38,7 @@ namespace ProjetParc.Views.Admin;
 
             // Configuration de base
             Dock = DockStyle.Fill;
-            Padding = new Padding(20);
+            Padding = new Padding(0, 20, 20, 20); // Pas de padding à gauche
 
             // Layout principal
             var mainLayout = new TableLayoutPanel
@@ -49,7 +49,7 @@ namespace ProjetParc.Views.Admin;
             };
 
             // Configuration des lignes du layout principal
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // En-tête
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // En-tête (augmenté pour le bouton)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 70)); // Zone des boutons principaux
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 30)); // Zone du bouton échange
 
@@ -69,17 +69,18 @@ namespace ProjetParc.Views.Admin;
                 Text = "← Retour",
                 Height = 36,
                 Width = 120,
-                Dock = DockStyle.Left
+                Dock = DockStyle.Left,
+                Margin = new Padding(20, 0, 0, 0)
             };
             btnBack.Click += (_, __) => _onBack?.Invoke();
 
             var title = new Label 
             { 
-                Text = "Menu modification / création",
+                Text = "Menu Admin",
                 Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(10, 0, 0, 0)
+                Padding = new Padding(20, 0, 0, 0)
             };
 
             headerPanel.Controls.Add(btnBack, 0, 0);
@@ -101,7 +102,7 @@ namespace ProjetParc.Views.Admin;
                 buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             }
 
-            var tileFont = new Font("Segoe UI", 14f, FontStyle.Bold);
+            var tileFont = new Font("Segoe UI", 15f, FontStyle.Bold);
 
             // Création des boutons principaux
             btnCreateEquipment = CreateMenuButton("Création Equipement", tileFont);
@@ -120,8 +121,8 @@ namespace ProjetParc.Views.Admin;
             var exchangePanel = new Panel { Dock = DockStyle.Fill };
             btnExange.Dock = DockStyle.None;
             btnExange.Anchor = AnchorStyles.None;
-            btnExange.Width = 280;
-            btnExange.Height = 80;
+            btnExange.Width = 200;
+            btnExange.Height = 60;
             exchangePanel.Controls.Add(btnExange);
             
             // Centrer le bouton échange
@@ -161,7 +162,7 @@ namespace ProjetParc.Views.Admin;
                 Text = text,
                 Font = font,
                 Dock = DockStyle.Fill,
-                Margin = new Padding(20),
+                Margin = new Padding(50, 40, 50, 40),
                 AutoSize = false
             };
 

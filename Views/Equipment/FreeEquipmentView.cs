@@ -200,42 +200,60 @@ public class FreeEquipmentView : UserControl
         btnSearchReturned = new Button { Text = "🔍", Dock = DockStyle.Fill };
         searchPanel2.Controls.Add(tbSearchReturned, 0, 0);
         searchPanel2.Controls.Add(btnSearchReturned, 1, 0);
-        contentLayout.Controls.Add(middlePanel, 1, 0);
+        middlePanel.Controls.Add(searchPanel2, 0, 1);
 
         // Liste milieu
         lbReturned = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
         middlePanel.Controls.Add(lbReturned, 0, 2);
+        
+        contentLayout.Controls.Add(middlePanel, 1, 0);
 
         // Panneau droit (Détails)
         TableLayoutPanel rightPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            RowCount = 14,
+            RowCount = 13,
             ColumnCount = 1,
-            Padding = new Padding(10),
-            AutoScroll = true
+            Padding = new Padding(10)
         };
+        
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Type
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Type
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Nom
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Nom
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Code parc
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Code parc
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Numéro de série
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Numéro de série
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Marque
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Marque
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));  // Checkbox DSEM
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Commentaire
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Commentaire multiline
+        
         contentLayout.Controls.Add(rightPanel, 2, 0);
 
-
-
         // Labels et TextBox pour les détails
-        AddDetailRow(rightPanel, 1, "Type", tbType = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 3, "Nom", tbName = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 5, "Code parc", tbCodeParc = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 7, "Numéro de série", tbSerial = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 9, "Marque", tbBrand = new TextBox { ReadOnly = true });
+        AddDetailRow(rightPanel, 0, "Type", tbType = new TextBox { ReadOnly = true });
+        AddDetailRow(rightPanel, 2, "Nom", tbName = new TextBox { ReadOnly = true });
+        AddDetailRow(rightPanel, 4, "Code parc", tbCodeParc = new TextBox { ReadOnly = true });
+        AddDetailRow(rightPanel, 6, "Numéro de série", tbSerial = new TextBox { ReadOnly = true });
+        AddDetailRow(rightPanel, 8, "Marque", tbBrand = new TextBox { ReadOnly = true });
         
         // Case à cocher DSEM
-        var dsemPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
-        dsemPanel.Controls.Add(new Label { Text = "Rendre DSEM", AutoSize = true });
-        cbxRenduDsem = new CheckBox { AutoSize = true };
+        var dsemPanel = new FlowLayoutPanel 
+        { 
+            Dock = DockStyle.Fill, 
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Padding(5, 5, 5, 10)
+        };
+        dsemPanel.Controls.Add(new Label { Text = "Rendre DSEM", AutoSize = true, Font = new Font("Segoe UI", 10f, FontStyle.Bold) });
+        cbxRenduDsem = new CheckBox { AutoSize = true, Margin = new Padding(10, 3, 0, 0) };
         dsemPanel.Controls.Add(cbxRenduDsem);
-        rightPanel.Controls.Add(dsemPanel);
-        rightPanel.SetRow(dsemPanel, 11);
+        rightPanel.Controls.Add(dsemPanel, 0, 10);
 
         // Commentaire
-        AddDetailRow(rightPanel, 13, "Commentaire", tbComment = new TextBox { ReadOnly = true, Multiline = true, Height = 160, ScrollBars = ScrollBars.Vertical });
+        AddDetailRow(rightPanel, 11, "Commentaire", tbComment = new TextBox { ReadOnly = true, Multiline = true, ScrollBars = ScrollBars.Vertical });
 
         ResumeLayout(false);
     }
@@ -440,10 +458,17 @@ public class FreeEquipmentView : UserControl
     /// </summary>
     private void AddDetailRow(TableLayoutPanel panel, int row, string labelText, Control control)
     {
-        var label = new Label { Text = labelText, Dock = DockStyle.Fill };
+        var label = new Label 
+        { 
+            Text = labelText, 
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+            Padding = new Padding(5, 0, 0, 5)
+        };
         panel.Controls.Add(label, 0, row);
         
         control.Dock = DockStyle.Fill;
+        control.Margin = new Padding(5, 0, 5, 10);
         panel.Controls.Add(control, 0, row + 1);
     }
 }

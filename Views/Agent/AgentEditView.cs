@@ -69,15 +69,16 @@ public class AgentEditView : UserControl
         btnBack.Click += (_, __) => _onBack?.Invoke();
         mainLayout.Controls.Add(btnBack, 0, 0);
 
-        // Panel de contenu : liste à gauche, formulaire à droite
+        // Panel de contenu : liste à gauche, séparateur, formulaire à droite
         TableLayoutPanel contentLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 2,
+            ColumnCount = 3,
             RowCount = 1,
             Padding = new Padding(0),
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 30),  // Liste des agents
+                new ColumnStyle(SizeType.Absolute, 2),  // Séparateur
                 new ColumnStyle(SizeType.Percent, 70)   // Formulaire d'édition
             }
         };
@@ -105,8 +106,8 @@ public class AgentEditView : UserControl
             RowCount = 1,
             Margin = new Padding(0, 0, 0, 10),
             ColumnStyles = {
-                new ColumnStyle(SizeType.Percent, 90),
-                new ColumnStyle(SizeType.Percent, 10)
+                new ColumnStyle(SizeType.Percent, 85),
+                new ColumnStyle(SizeType.Absolute, 40)
             }
         };
         tbSearch = new TextBox { Dock = DockStyle.Fill };
@@ -119,20 +120,34 @@ public class AgentEditView : UserControl
         lbAgents = new ListBox { Dock = DockStyle.Fill };
         leftPanel.Controls.Add(lbAgents, 0, 1);
 
+        // Séparateur vertical
+        var separator = new Panel { Dock = DockStyle.Fill, BackColor = Color.Silver };
+        contentLayout.Controls.Add(separator, 1, 0);
+
         // Panel droit (formulaire d'édition)
         TableLayoutPanel formPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
-            RowCount = 6,
-            Padding = new Padding(20, 0, 0, 0),
+            RowCount = 8,
+            Padding = new Padding(20),
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f)
+            },
+            RowStyles = {
+                new RowStyle(SizeType.Absolute, 30),  // Label ligne 1
+                new RowStyle(SizeType.Absolute, 45),  // Input ligne 1
+                new RowStyle(SizeType.Absolute, 30),  // Label ligne 2
+                new RowStyle(SizeType.Absolute, 45),  // Input ligne 2
+                new RowStyle(SizeType.Absolute, 30),  // Label ligne 3
+                new RowStyle(SizeType.Absolute, 150), // Input ligne 3 (commentaire - hauteur fixe)
+                new RowStyle(SizeType.Percent, 100),  // Espacement flexible
+                new RowStyle(SizeType.Absolute, 60)   // Boutons
             }
         };
-        contentLayout.Controls.Add(formPanel, 1, 0);
+        contentLayout.Controls.Add(formPanel, 2, 0);
 
         // Première ligne : IDRH, Nom, Prénom
         AddFormRow(formPanel, 0, "IDRH", tbIDRH = new TextBox { Height = 36, ReadOnly = true });
@@ -151,18 +166,17 @@ public class AgentEditView : UserControl
         formPanel.SetRowSpan(hebergePanel, 2);
 
         // Troisième ligne : Commentaire (2 colonnes), Site
-        AddFormRow(formPanel, 4, "Commentaire", tbComment = new TextBox { Height = 160, Multiline = true }, 0, 2);
+        AddFormRow(formPanel, 4, "Commentaire", tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical }, 0, 2);
         AddFormRow(formPanel, 4, "Site", cbSite = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList }, 2);
 
         // Boutons Modifier/Supprimer
         FlowLayoutPanel buttonPanel = new FlowLayoutPanel
         {
-            Dock = DockStyle.Bottom,
+            Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            Height = 50,
             Margin = new Padding(0, 10, 0, 0)
         };
-        formPanel.Controls.Add(buttonPanel, 0, 5);
+        formPanel.Controls.Add(buttonPanel, 0, 7);
         formPanel.SetColumnSpan(buttonPanel, 3);
 
         btnDelete = new Button { Text = "Supprimer", Width = 120, Height = 40 };
@@ -427,12 +441,13 @@ public class AgentEditView : UserControl
         { 
             Text = labelText, 
             Dock = DockStyle.Fill,
-            Padding = new Padding(0, 0, 0, 5)
+            Padding = new Padding(5, 0, 0, 5),
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold)
         };
         panel.Controls.Add(label, col, row);
 
         control.Dock = DockStyle.Fill;
-        control.Margin = new Padding(0, 0, 10, 10);
+        control.Margin = new Padding(5, 0, 15, 15);
         panel.Controls.Add(control, col, row + 1);
         if (colSpan > 1)
         {

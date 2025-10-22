@@ -78,16 +78,21 @@ public class EquipementEditView : UserControl
         var btnBack = new Button { Text = "← Retour", Dock = DockStyle.Left, Height = 36, Width = 120 };
         btnBack.Click += (_, __) => _onBack?.Invoke();
 
-        var searchPanel = new FlowLayoutPanel
+        var searchPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false
+            ColumnCount = 2,
+            RowCount = 1,
+            ColumnStyles = {
+                new ColumnStyle(SizeType.Percent, 85),
+                new ColumnStyle(SizeType.Absolute, 40)
+            }
         };
 
-        tbSearch = new TextBox { Width = 520, Height = 32, Margin = new Padding(0, 0, 10, 0) };
-        btnSearch = new Button { Width = 36, Height = 32, Text = "🔍" };
-        searchPanel.Controls.AddRange([tbSearch, btnSearch]);
+        tbSearch = new TextBox { Dock = DockStyle.Fill };
+        btnSearch = new Button { Dock = DockStyle.Fill, Text = "🔍" };
+        searchPanel.Controls.Add(tbSearch, 0, 0);
+        searchPanel.Controls.Add(btnSearch, 1, 0);
 
         lbEquipment = new ListBox { Dock = DockStyle.Fill };
 
@@ -102,16 +107,19 @@ public class EquipementEditView : UserControl
         var rightPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            RowCount = 5,
+            RowCount = 8,
             ColumnCount = 3,
-            Padding = new Padding(20, 10, 10, 10)
+            Padding = new Padding(20)
         };
 
-        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Ligne 1 (vide pour alignement)
-        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 70)); // Ligne 2 (Type, Nom, Code)
-        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 70)); // Ligne 3 (Série, Marque)
-        rightPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Ligne 4 (Commentaire)
-        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Ligne 5 (Boutons)
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Label ligne 1
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // Input ligne 1
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Label ligne 2
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // Input ligne 2
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Label commentaire
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 150)); // Commentaire multiline - hauteur fixe
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Espacement flexible
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // Boutons
 
         rightPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
         rightPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
@@ -123,14 +131,22 @@ public class EquipementEditView : UserControl
         tbCodeParc = new TextBox { Dock = DockStyle.Fill };
         tbSerialNumber = new TextBox { Dock = DockStyle.Fill };
         tbBrand = new TextBox { Dock = DockStyle.Fill };
-        tbComment = new TextBox { Dock = DockStyle.Fill, Multiline = true };
+        tbComment = new TextBox { Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Vertical };
 
         // Ajout des labels et contrôles au panneau droit
-        void AddFormRow(string label, Control control, int col, int row)
+        void AddFormRow(string label, Control control, int col, int labelRow)
         {
-            var labelControl = new Label { Text = label, Dock = DockStyle.Fill };
-            rightPanel.Controls.Add(labelControl, col, row);
-            rightPanel.Controls.Add(control, col, row + 1);
+            var labelControl = new Label 
+            { 
+                Text = label, 
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                Padding = new Padding(5, 0, 0, 5),
+                Margin = new Padding(5, 0, 15, 0)
+            };
+            control.Margin = new Padding(5, 0, 15, 15);
+            rightPanel.Controls.Add(labelControl, col, labelRow);
+            rightPanel.Controls.Add(control, col, labelRow + 1);
         }
 
         AddFormRow("Type", cbType, 0, 0);
@@ -139,8 +155,17 @@ public class EquipementEditView : UserControl
         AddFormRow("Numéro de série", tbSerialNumber, 0, 2);
         AddFormRow("Marque", tbBrand, 1, 2);
 
-        var commentLabel = new Label { Text = "Commentaire", Dock = DockStyle.Fill };
+        var commentLabel = new Label 
+        { 
+            Text = "Commentaire", 
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+            Padding = new Padding(5, 0, 0, 5),
+            Margin = new Padding(5, 0, 0, 0)
+        };
+        tbComment.Margin = new Padding(5, 0, 15, 15);
         rightPanel.Controls.Add(commentLabel, 0, 4);
+        rightPanel.SetColumnSpan(commentLabel, 3);
         rightPanel.Controls.Add(tbComment, 0, 5);
         rightPanel.SetColumnSpan(tbComment, 3);
 
@@ -156,7 +181,7 @@ public class EquipementEditView : UserControl
         btnDelete = new Button { Text = "Supprimer", Width = 120, Height = 40, Margin = new Padding(10, 0, 0, 0) };
         buttonsPanel.Controls.AddRange([btnUpdate, btnDelete]);
 
-        rightPanel.Controls.Add(buttonsPanel, 0, 4);
+        rightPanel.Controls.Add(buttonsPanel, 0, 7);
         rightPanel.SetColumnSpan(buttonsPanel, 3);
 
         // Assemblage final
