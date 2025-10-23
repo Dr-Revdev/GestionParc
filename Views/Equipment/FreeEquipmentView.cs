@@ -330,53 +330,61 @@ public class FreeEquipmentView : UserControl
     /// </summary>
     private void LoadReturned(string filter = null)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
 
-        if (string.IsNullOrWhiteSpace(filter))
+            if (string.IsNullOrWhiteSpace(filter))
+                {
+                    command.CommandText = @"
+                    SELECT e.id_equipement,
+                            COALESCE(TRIM(e.nom),'(sans nom)') AS n,
+                            TRIM(COALESCE(e.code_parc,''))     AS c,
+                            t.name                              AS type
+                    FROM ""Equipements"" e
+                    JOIN equipment_type t ON t.id = e.type_id
+                    WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
+                    ORDER BY n, c;";
+            }
+            else
             {
                 command.CommandText = @"
-                SELECT e.id_equipement,
-                        COALESCE(TRIM(e.nom),'(sans nom)') AS n,
-                        TRIM(COALESCE(e.code_parc,''))     AS c,
-                        t.name                              AS type
-                FROM ""Equipements"" e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
-                ORDER BY n, c;";
-        }
-        else
-        {
-            command.CommandText = @"
-                SELECT e.id_equipement,
-                        COALESCE(TRIM(e.nom),'(sans nom)') AS n,
-                        TRIM(COALESCE(e.code_parc,''))     AS c,
-                        t.name                              AS type
-                FROM ""Equipements"" e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
-                    AND (e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p)
-                ORDER BY n, c;";
-            command.Parameters.AddWithValue("$p", $"%{filter.Trim()}%");
-        }
+                    SELECT e.id_equipement,
+                            COALESCE(TRIM(e.nom),'(sans nom)') AS n,
+                            TRIM(COALESCE(e.code_parc,''))     AS c,
+                            t.name                              AS type
+                    FROM ""Equipements"" e
+                    JOIN equipment_type t ON t.id = e.type_id
+                    WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
+                        AND (e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p)
+                    ORDER BY n, c;";
+                command.Parameters.AddWithValue("$p", $"%{filter.Trim()}%");
+            }
 
-        using var r = command.ExecuteReader();
-        var items = new List<EquipmentListItem>();
-        while (r.Read())
-        {
-            var id = r.GetString(0);
-            var n = r.GetString(1);
-            var c = r.GetString(2);
-            var ty = r.GetString(3);
-            var label = string.IsNullOrEmpty(c) ? $"{n} | {ty}" : $"{n} | {c} | {ty}";
-            items.Add(new EquipmentListItem { Id = id, Label = label });
+            using var r = command.ExecuteReader();
+            var items = new List<EquipmentListItem>();
+            while (r.Read())
+            {
+                var id = r.GetString(0);
+                var n = r.GetString(1);
+                var c = r.GetString(2);
+                var ty = r.GetString(3);
+                var label = string.IsNullOrEmpty(c) ? $"{n} | {ty}" : $"{n} | {c} | {ty}";
+                items.Add(new EquipmentListItem { Id = id, Label = label });
+            }
+            lbReturned.SelectedIndexChanged -= LbReturned_Selected;
+            lbReturned.BeginUpdate();
+            lbReturned.DataSource = items;
+            lbReturned.SelectedIndex = -1;
+            lbReturned.EndUpdate();
+            lbReturned.SelectedIndexChanged += LbReturned_Selected;
         }
-        lbReturned.SelectedIndexChanged -= LbReturned_Selected;
-        lbReturned.BeginUpdate();
-        lbReturned.DataSource = items;
-        lbReturned.SelectedIndex = -1;
-        lbReturned.EndUpdate();
-        lbReturned.SelectedIndexChanged += LbReturned_Selected;
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des équipements rendus : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>
@@ -386,29 +394,37 @@ public class FreeEquipmentView : UserControl
     /// <param name="equipmentId">Identifiant de l'équipement à afficher.</param>
     private void LoadDetails(string equipmentId)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"
-            SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.commentaire, COALESCE(e.etat_pret,0)
-            FROM ""Equipements"" e
-            JOIN equipment_type t ON t.id = e.type_id
-            WHERE e.id_equipement = $id;";
-        command.Parameters.AddWithValue("$id", equipmentId);
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = @"
+                SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.commentaire, COALESCE(e.etat_pret,0)
+                FROM ""Equipements"" e
+                JOIN equipment_type t ON t.id = e.type_id
+                WHERE e.id_equipement = $id;";
+            command.Parameters.AddWithValue("$id", equipmentId);
 
-        using var r = command.ExecuteReader();
-        if (!r.Read()) { MessageBox.Show("Équipement introuvable."); return; }
+            using var r = command.ExecuteReader();
+            if (!r.Read()) { MessageBox.Show("Équipement introuvable."); return; }
 
-        tbType.Text = r.IsDBNull(1) ? "" : r.GetString(1);
-        tbName.Text = r.IsDBNull(2) ? "" : r.GetString(2);
-        tbCodeParc.Text = r.IsDBNull(3) ? "" : r.GetString(3);
-        tbSerial.Text = r.IsDBNull(4) ? "" : r.GetString(4);
-        tbBrand.Text = r.IsDBNull(5) ? "" : r.GetString(5);
-        tbComment.Text = r.IsDBNull(6) ? "" : r.GetString(6);
-        cbxRenduDsem.Tag = equipmentId;
+            tbType.Text = r.IsDBNull(1) ? "" : r.GetString(1);
+            tbName.Text = r.IsDBNull(2) ? "" : r.GetString(2);
+            tbCodeParc.Text = r.IsDBNull(3) ? "" : r.GetString(3);
+            tbSerial.Text = r.IsDBNull(4) ? "" : r.GetString(4);
+            tbBrand.Text = r.IsDBNull(5) ? "" : r.GetString(5);
+            tbComment.Text = r.IsDBNull(6) ? "" : r.GetString(6);
+            cbxRenduDsem.Tag = equipmentId;
 
-        cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
-        cbxRenduDsem.Checked = r.GetInt32(7) != 0;
-        cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
+            cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
+            cbxRenduDsem.Checked = r.GetInt32(7) != 0;
+            cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des détails de l'équipement : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

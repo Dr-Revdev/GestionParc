@@ -201,134 +201,174 @@ public class AgentEditView : UserControl
     /// <summary>Charge la liste des sites depuis la table <c>Sites</c>.</summary>
     private void LoadAgentSite()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = "SELECT id, name FROM Sites ORDER BY name;";
-        using var r = command.ExecuteReader();
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = "SELECT id, name FROM Sites ORDER BY name;";
+            using var r = command.ExecuteReader();
 
-        var items = new List<AgentSiteItem>();
-        while (r.Read()) items.Add(new AgentSiteItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+            var items = new List<AgentSiteItem>();
+            while (r.Read()) items.Add(new AgentSiteItem { Id = r.GetInt32(0), Name = r.GetString(1) });
 
-        cbSite.DataSource = items;
-        cbSite.DisplayMember = nameof(AgentSiteItem.Name);
-        cbSite.ValueMember = nameof(AgentSiteItem.Id);
+            cbSite.DataSource = items;
+            cbSite.DisplayMember = nameof(AgentSiteItem.Name);
+            cbSite.ValueMember = nameof(AgentSiteItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des sites : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Charge la liste des équipes depuis la table <c>Equipes</c>.</summary>
     private void LoadAgentTeam()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = "SELECT id, name FROM Equipes ORDER BY name;";
-        using var r = command.ExecuteReader();
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = "SELECT id, name FROM Equipes ORDER BY name;";
+            using var r = command.ExecuteReader();
 
-        var items = new List<AgentTeamItem>();
-        while (r.Read()) items.Add(new AgentTeamItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+            var items = new List<AgentTeamItem>();
+            while (r.Read()) items.Add(new AgentTeamItem { Id = r.GetInt32(0), Name = r.GetString(1) });
 
-        cbTeam.DataSource = items;
-        cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
-        cbTeam.ValueMember = nameof(AgentTeamItem.Id);
+            cbTeam.DataSource = items;
+            cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
+            cbTeam.ValueMember = nameof(AgentTeamItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des équipes : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Charge la liste complète des agents et l'affiche dans la ListBox.</summary>
     private void LoadAgentList()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')) AS n, TRIM(COALESCE(prenom,'')) AS p
-                                FROM ""Agents"" ORDER BY n, p, idrh;";
-        using var r = command.ExecuteReader();
-
-        var list = new List<AgentListItem>();
-        while (r.Read())
+        try
         {
-            var id = r.IsDBNull(0) ? "" : r.GetString(0);
-            var n = r.IsDBNull(1) ? "" : r.GetString(1);
-            var p = r.IsDBNull(2) ? "" : r.GetString(2);
-            var label = (n, p) switch { ("", "") => id, _ => $"{n} {p} [{id}]" };
-            list.Add(new AgentListItem { IdRh = id, Label = label });
-        }
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')) AS n, TRIM(COALESCE(prenom,'')) AS p
+                                    FROM ""Agents"" ORDER BY n, p, idrh;";
+            using var r = command.ExecuteReader();
 
-        lbAgents.DataSource = list;
-        lbAgents.DisplayMember = nameof(AgentListItem.Label);
-        lbAgents.ValueMember = nameof(AgentListItem.IdRh);
+            var list = new List<AgentListItem>();
+            while (r.Read())
+            {
+                var id = r.IsDBNull(0) ? "" : r.GetString(0);
+                var n = r.IsDBNull(1) ? "" : r.GetString(1);
+                var p = r.IsDBNull(2) ? "" : r.GetString(2);
+                var label = (n, p) switch { ("", "") => id, _ => $"{n} {p} [{id}]" };
+                list.Add(new AgentListItem { IdRh = id, Label = label });
+            }
+
+            lbAgents.DataSource = list;
+            lbAgents.DisplayMember = nameof(AgentListItem.Label);
+            lbAgents.ValueMember = nameof(AgentListItem.IdRh);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement de la liste d'agents : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Charge la liste des agents en appliquant un filtre optionnel.</summary>
     private void LoadAgentListFiltered(string query)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-
-        if (string.IsNullOrWhiteSpace(query))
+        try
         {
-            command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')), TRIM(COALESCE(prenom,'')) FROM ""Agents"" ORDER BY 2, 3, 1;";
-        }
-        else
-        {
-            command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')), TRIM(COALESCE(prenom,'')) 
-                                    FROM ""Agents""
-                                    WHERE idrh LIKE $p OR nom LIKE $p OR prenom LIKE $p OR email LIKE $p
-                                    ORDER BY 2, 3, 1;";
-            command.Parameters.AddWithValue("$p", $"%{query}%");
-        }
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
 
-        using var r = command.ExecuteReader();
-        var list = new List<AgentListItem>();
-        while (r.Read())
-        {
-            var id = r.IsDBNull(0) ? "" : r.GetString(0);
-            var n = r.IsDBNull(1) ? "" : r.GetString(1);
-            var p = r.IsDBNull(2) ? "" : r.GetString(2);
-            var label = (n, p) switch { ("", "") => id, _ => $"{n} {p} [{id}]" };
-            list.Add(new AgentListItem { IdRh = id, Label = label });
-        }
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')), TRIM(COALESCE(prenom,'')) FROM ""Agents"" ORDER BY 2, 3, 1;";
+            }
+            else
+            {
+                command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')), TRIM(COALESCE(prenom,'')) 
+                                        FROM ""Agents""
+                                        WHERE idrh LIKE $p OR nom LIKE $p OR prenom LIKE $p OR email LIKE $p
+                                        ORDER BY 2, 3, 1;";
+                command.Parameters.AddWithValue("$p", $"%{query}%");
+            }
 
-        lbAgents.DataSource = list;
-        lbAgents.DisplayMember = nameof(AgentListItem.Label);
-        lbAgents.ValueMember = nameof(AgentListItem.IdRh);
+            using var r = command.ExecuteReader();
+            var list = new List<AgentListItem>();
+            while (r.Read())
+            {
+                var id = r.IsDBNull(0) ? "" : r.GetString(0);
+                var n = r.IsDBNull(1) ? "" : r.GetString(1);
+                var p = r.IsDBNull(2) ? "" : r.GetString(2);
+                var label = (n, p) switch { ("", "") => id, _ => $"{n} {p} [{id}]" };
+                list.Add(new AgentListItem { IdRh = id, Label = label });
+            }
+
+            lbAgents.DataSource = list;
+            lbAgents.DisplayMember = nameof(AgentListItem.Label);
+            lbAgents.ValueMember = nameof(AgentListItem.IdRh);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la recherche d'agents : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Charge les détails d'un agent identifié par son IDRH et renseigne le formulaire.</summary>
     private void LoadAgentById(string agentIDRH)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"SELECT idrh, nom, prenom, email, equipe_id, heberge, commentaire, site_id
-                                FROM ""Agents"" WHERE idrh = $IDRH;";
-        command.Parameters.AddWithValue("$IDRH", agentIDRH);
-
-        using var r = command.ExecuteReader();
-        if (!r.Read()) { MessageBox.Show("Agent introuvable."); return; }
-
-        tbIDRH.Text = r.IsDBNull(0) ? "" : r.GetString(0);
-        tbAgentName.Text = r.IsDBNull(1) ? "" : r.GetString(1);
-        tbFirstName.Text = r.IsDBNull(2) ? "" : r.GetString(2);
-        tbEmail.Text = r.IsDBNull(3) ? "" : r.GetString(3);
-
-        int? teamId = r.IsDBNull(4) ? null : r.GetInt32(4);
-        bool heberge = !r.IsDBNull(5) && r.GetInt32(5) == 1;
-        string comment = r.IsDBNull(6) ? "" : r.GetString(6);
-        int? siteId = r.IsDBNull(7) ? null : r.GetInt32(7);
-
-        tbComment.Text = comment;
-        cbxHeberge.Checked = heberge;
-
-        // select site by ID
-        if (siteId.HasValue)
+        try
         {
-            for (int i = 0; i < cbSite.Items.Count; i++)
-                if (cbSite.Items[i] is AgentSiteItem s && s.Id == siteId.Value) { cbSite.SelectedIndex = i; break; }
-        }
-        else cbSite.SelectedIndex = -1;
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = @"SELECT idrh, nom, prenom, email, equipe_id, heberge, commentaire, site_id
+                                    FROM ""Agents"" WHERE idrh = $IDRH;";
+            command.Parameters.AddWithValue("$IDRH", agentIDRH);
 
-        // select team by ID
-        if (teamId.HasValue)
-        {
-            for (int i = 0; i < cbTeam.Items.Count; i++)
-                if (cbTeam.Items[i] is AgentTeamItem t && t.Id == teamId.Value) { cbTeam.SelectedIndex = i; break; }
+            using var r = command.ExecuteReader();
+            if (!r.Read()) { MessageBox.Show("Agent introuvable."); return; }
+
+            tbIDRH.Text = r.IsDBNull(0) ? "" : r.GetString(0);
+            tbAgentName.Text = r.IsDBNull(1) ? "" : r.GetString(1);
+            tbFirstName.Text = r.IsDBNull(2) ? "" : r.GetString(2);
+            tbEmail.Text = r.IsDBNull(3) ? "" : r.GetString(3);
+
+            int? teamId = r.IsDBNull(4) ? null : r.GetInt32(4);
+            bool heberge = !r.IsDBNull(5) && r.GetInt32(5) == 1;
+            string comment = r.IsDBNull(6) ? "" : r.GetString(6);
+            int? siteId = r.IsDBNull(7) ? null : r.GetInt32(7);
+
+            tbComment.Text = comment;
+            cbxHeberge.Checked = heberge;
+
+            // select site by ID
+            if (siteId.HasValue)
+            {
+                for (int i = 0; i < cbSite.Items.Count; i++)
+                    if (cbSite.Items[i] is AgentSiteItem s && s.Id == siteId.Value) { cbSite.SelectedIndex = i; break; }
+            }
+            else cbSite.SelectedIndex = -1;
+
+            // select team by ID
+            if (teamId.HasValue)
+            {
+                for (int i = 0; i < cbTeam.Items.Count; i++)
+                    if (cbTeam.Items[i] is AgentTeamItem t && t.Id == teamId.Value) { cbTeam.SelectedIndex = i; break; }
+            }
+            else cbTeam.SelectedIndex = -1;
         }
-        else cbTeam.SelectedIndex = -1;
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement de l'agent : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Gestionnaire du bouton recherche : filtre la liste des agents.</summary>

@@ -133,25 +133,33 @@ public class EquipmentCreateView : UserControl
     /// </summary>
     private void LoadEquipmentTypes()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
-
-        using var reader = command.ExecuteReader();
-        var equipmentTypeItems = new List<EquipmentTypeItem>();
-        while (reader.Read())
+        try
         {
-            var typeItem = new EquipmentTypeItem
-            {
-                Id = reader.GetInt32(0),
-                Name = reader.GetString(1)
-            };
-            equipmentTypeItems.Add(typeItem);
-        }
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
 
-        cbType.DataSource = equipmentTypeItems;
-        cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
-        cbType.ValueMember = nameof(EquipmentTypeItem.Id);
+            using var reader = command.ExecuteReader();
+            var equipmentTypeItems = new List<EquipmentTypeItem>();
+            while (reader.Read())
+            {
+                var typeItem = new EquipmentTypeItem
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1)
+                };
+                equipmentTypeItems.Add(typeItem);
+            }
+
+            cbType.DataSource = equipmentTypeItems;
+            cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
+            cbType.ValueMember = nameof(EquipmentTypeItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des types d'équipement : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

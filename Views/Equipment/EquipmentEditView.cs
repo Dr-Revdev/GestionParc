@@ -232,18 +232,26 @@ public class EquipementEditView : UserControl
     /// </summary>
     private void LoadEquipmentTypes()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
 
-        using var reader = command.ExecuteReader();
-        var items = new List<EquipmentTypeItem>();
-        while (reader.Read())
-            items.Add(new EquipmentTypeItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
+            using var reader = command.ExecuteReader();
+            var items = new List<EquipmentTypeItem>();
+            while (reader.Read())
+                items.Add(new EquipmentTypeItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
 
-        cbType.DataSource = items;
-        cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
-        cbType.ValueMember = nameof(EquipmentTypeItem.Id);
+            cbType.DataSource = items;
+            cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
+            cbType.ValueMember = nameof(EquipmentTypeItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des types d'équipement : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
     /// <summary>
     /// Charge la liste complète des équipements depuis la base et alimente la ListBox.
@@ -251,33 +259,41 @@ public class EquipementEditView : UserControl
     /// </summary>
     private void LoadEquipmentList()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"
-            SELECT e.id_equipement,
-                COALESCE(TRIM(e.nom), '(sans nom)') AS n,
-                TRIM(COALESCE(e.code_parc, ''))     AS c,
-                t.name AS typ
-            FROM Equipements e
-            JOIN equipment_type t ON t.id = e.type_id
-            ORDER BY n COLLATE NOCASE, typ COLLATE NOCASE, c COLLATE NOCASE;";
-
-        using var reader = command.ExecuteReader();
-        var list = new List<EquipmentListItem>();
-        while (reader.Read())
+        try
         {
-            list.Add(new EquipmentListItem
-            {
-                Id = reader.GetString(0),
-                Name = reader.GetString(1),
-                Code = reader.GetString(2),
-                Type = reader.GetString(3)
-            });
-        }
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = @"
+                SELECT e.id_equipement,
+                    COALESCE(TRIM(e.nom), '(sans nom)') AS n,
+                    TRIM(COALESCE(e.code_parc, ''))     AS c,
+                    t.name AS typ
+                FROM Equipements e
+                JOIN equipment_type t ON t.id = e.type_id
+                ORDER BY n COLLATE NOCASE, typ COLLATE NOCASE, c COLLATE NOCASE;";
 
-        lbEquipment.DataSource = list;
-        lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
-        lbEquipment.ValueMember = nameof(EquipmentListItem.Id);
+            using var reader = command.ExecuteReader();
+            var list = new List<EquipmentListItem>();
+            while (reader.Read())
+            {
+                list.Add(new EquipmentListItem
+                {
+                    Id = reader.GetString(0),
+                    Name = reader.GetString(1),
+                    Code = reader.GetString(2),
+                    Type = reader.GetString(3)
+                });
+            }
+
+            lbEquipment.DataSource = list;
+            lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
+            lbEquipment.ValueMember = nameof(EquipmentListItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement de la liste d'équipements : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
     /// <summary>
     /// Charge les détails d'un équipement identifié par <paramref name="equipmentId"/>
@@ -286,32 +302,40 @@ public class EquipementEditView : UserControl
     /// <param name="equipmentId">Identifiant (id_equipement) de l'équipement à charger.</param>
     private void LoadEquipmentById(string equipmentId)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"SELECT type_id, nom, code_parc, numero_serie, marque, commentaire FROM ""Equipements"" WHERE id_equipement = $id;";
-        command.Parameters.AddWithValue("$id", equipmentId);
-
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
+        try
         {
-            MessageBox.Show("Équipement introuvable.");
-            return;
-        }
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = @"SELECT type_id, nom, code_parc, numero_serie, marque, commentaire FROM ""Equipements"" WHERE id_equipement = $id;";
+            command.Parameters.AddWithValue("$id", equipmentId);
 
-        var typeId = reader.GetInt32(0);
-        tbName.Text = reader.IsDBNull(1) ? "" : reader.GetString(1);
-        tbCodeParc.Text = reader.IsDBNull(2) ? "" : reader.GetString(2);
-        tbSerialNumber.Text = reader.IsDBNull(3) ? "" : reader.GetString(3);
-        tbBrand.Text = reader.IsDBNull(4) ? "" : reader.GetString(4);
-        tbComment.Text = reader.IsDBNull(5) ? "" : reader.GetString(5);
-
-        for (int i = 0; i < cbType.Items.Count; i++)
-        {
-            if (cbType.Items[i] is EquipmentTypeItem t && t.Id == typeId)
+            using var reader = command.ExecuteReader();
+            if (!reader.Read())
             {
-                cbType.SelectedIndex = i;
-                break;
+                MessageBox.Show("Équipement introuvable.");
+                return;
             }
+
+            var typeId = reader.GetInt32(0);
+            tbName.Text = reader.IsDBNull(1) ? "" : reader.GetString(1);
+            tbCodeParc.Text = reader.IsDBNull(2) ? "" : reader.GetString(2);
+            tbSerialNumber.Text = reader.IsDBNull(3) ? "" : reader.GetString(3);
+            tbBrand.Text = reader.IsDBNull(4) ? "" : reader.GetString(4);
+            tbComment.Text = reader.IsDBNull(5) ? "" : reader.GetString(5);
+
+            for (int i = 0; i < cbType.Items.Count; i++)
+            {
+                if (cbType.Items[i] is EquipmentTypeItem t && t.Id == typeId)
+                {
+                    cbType.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement de l'équipement : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -432,50 +456,58 @@ public class EquipementEditView : UserControl
     /// <param name="query">Texte de recherche (peut être null ou vide).</param>
     private void LoadEquipmentListFiltered(string query)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
 
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            command.CommandText = @"
-                SELECT e.id_equipement,
-                    COALESCE(TRIM(e.nom), '(sans nom)'),
-                    TRIM(COALESCE(e.code_parc, '')),
-                    t.name
-                FROM Equipements e
-                JOIN equipment_type t ON t.id = e.type_id
-                ORDER BY 2 COLLATE NOCASE, 4 COLLATE NOCASE, 3 COLLATE NOCASE;";
-        }
-        else
-        {
-            command.CommandText = @"
-                SELECT e.id_equipement,
-                    COALESCE(TRIM(e.nom), '(sans nom)'),
-                    TRIM(COALESCE(e.code_parc, '')),
-                    t.name
-                FROM Equipements e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p
-                ORDER BY 2 COLLATE NOCASE, 4 COLLATE NOCASE, 3 COLLATE NOCASE;";
-            command.Parameters.AddWithValue("$p", $"%{query}%");
-        }
-
-        using var reader = command.ExecuteReader();
-        var items = new List<EquipmentListItem>();
-        while (reader.Read())
-        {
-            items.Add(new EquipmentListItem
+            if (string.IsNullOrWhiteSpace(query))
             {
-                Id = reader.GetString(0),
-                Name = reader.GetString(1),
-                Code = reader.GetString(2),
-                Type = reader.GetString(3)
-            });
-        }
+                command.CommandText = @"
+                    SELECT e.id_equipement,
+                        COALESCE(TRIM(e.nom), '(sans nom)'),
+                        TRIM(COALESCE(e.code_parc, '')),
+                        t.name
+                    FROM Equipements e
+                    JOIN equipment_type t ON t.id = e.type_id
+                    ORDER BY 2 COLLATE NOCASE, 4 COLLATE NOCASE, 3 COLLATE NOCASE;";
+            }
+            else
+            {
+                command.CommandText = @"
+                    SELECT e.id_equipement,
+                        COALESCE(TRIM(e.nom), '(sans nom)'),
+                        TRIM(COALESCE(e.code_parc, '')),
+                        t.name
+                    FROM Equipements e
+                    JOIN equipment_type t ON t.id = e.type_id
+                    WHERE e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p
+                    ORDER BY 2 COLLATE NOCASE, 4 COLLATE NOCASE, 3 COLLATE NOCASE;";
+                command.Parameters.AddWithValue("$p", $"%{query}%");
+            }
 
-        lbEquipment.DataSource = items;
-        lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
-        lbEquipment.ValueMember = nameof(EquipmentListItem.Id);
+            using var reader = command.ExecuteReader();
+            var items = new List<EquipmentListItem>();
+            while (reader.Read())
+            {
+                items.Add(new EquipmentListItem
+                {
+                    Id = reader.GetString(0),
+                    Name = reader.GetString(1),
+                    Code = reader.GetString(2),
+                    Type = reader.GetString(3)
+                });
+            }
+
+            lbEquipment.DataSource = items;
+            lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
+            lbEquipment.ValueMember = nameof(EquipmentListItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la recherche d'équipements : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

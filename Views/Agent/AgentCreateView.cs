@@ -148,35 +148,51 @@ public class AgentCreateView : UserControl
     /// <summary>Charge la liste des sites depuis la table <c>Sites</c>.</summary>
     private void LoadAgentSite()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = "SELECT id, name FROM Sites ORDER BY name;";
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = "SELECT id, name FROM Sites ORDER BY name;";
 
-        using var reader = command.ExecuteReader();
-        var items = new List<AgentSiteItem>();
-        while (reader.Read())
-            items.Add(new AgentSiteItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
+            using var reader = command.ExecuteReader();
+            var items = new List<AgentSiteItem>();
+            while (reader.Read())
+                items.Add(new AgentSiteItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
 
-        cbSite.DataSource = items;
-        cbSite.DisplayMember = nameof(AgentSiteItem.Name);
-        cbSite.ValueMember   = nameof(AgentSiteItem.Id);
+            cbSite.DataSource = items;
+            cbSite.DisplayMember = nameof(AgentSiteItem.Name);
+            cbSite.ValueMember   = nameof(AgentSiteItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des sites : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Charge la liste des équipes depuis la table <c>Equipes</c>.</summary>
     private void LoadAgentTeam()
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = "SELECT id, name FROM Equipes ORDER BY name;";
+        try
+        {
+            using var connexion = Database.Open();
+            using var command = connexion.CreateCommand();
+            command.CommandText = "SELECT id, name FROM Equipes ORDER BY name;";
 
-        using var reader = command.ExecuteReader();
-        var items = new List<AgentTeamItem>();
-        while (reader.Read())
-            items.Add(new AgentTeamItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
+            using var reader = command.ExecuteReader();
+            var items = new List<AgentTeamItem>();
+            while (reader.Read())
+                items.Add(new AgentTeamItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
 
-        cbTeam.DataSource = items;
-        cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
-        cbTeam.ValueMember   = nameof(AgentTeamItem.Id);
+            cbTeam.DataSource = items;
+            cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
+            cbTeam.ValueMember   = nameof(AgentTeamItem.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des équipes : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>Valide le formulaire de création d'agent (champs obligatoires).</summary>
