@@ -247,13 +247,7 @@ public class MainInventoryView : UserControl
         }
     }
 
-    /// <summary>
-    /// Effectue une recherche dans la liste des équipements
-    /// </summary>
-    // private void SearchEquipments()
-    // {
-    //     LoadEquipments(tbSearch.Text.Trim());
-    // }
+    
 
     /// <summary>
     /// Affiche la fenêtre de création d'un nouveau prêt

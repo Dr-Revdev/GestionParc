@@ -6,7 +6,6 @@ using ProjetParc.Views.Agent;
 using ProjetParc.Views.Equipment;
 using ProjetParc.Views.Loan;
 using ProjetParc.Views.Inventory;
-using System.Windows.Forms.Integration;
 
 namespace ProjetParc.Views;
 
