@@ -22,9 +22,17 @@ Chaque fichier est expliqué **ligne par ligne**, avec des analogies de la vie q
 2. **[DataBase.cs](02_DataBase.md)**
    - Comment on se connecte à la base de données
    - Création automatique des dossiers et fichiers
+   - Configuration du chemin de la base (pour SharePoint)
    - Configuration optimale de SQLite
    - **Durée de lecture :** ~20 minutes
    - **Niveau :** Débutant-Intermédiaire
+
+2bis. **[CsvExporter.cs](02bis_CsvExporter.md)** 🆕
+   - Export des données en fichiers CSV
+   - Formats d'export (Agents, Équipements, Prêts actifs)
+   - Export complet avec plusieurs fichiers
+   - **Durée de lecture :** ~15 minutes
+   - **Niveau :** Débutant
 
 ---
 
@@ -35,6 +43,7 @@ Chaque fichier est expliqué **ligne par ligne**, avec des analogies de la vie q
    - La page d'accueil de l'application
    - Les trois boutons principaux
    - Navigation entre les écrans
+   - Barre d'outils avec export CSV 🆕
    - **Durée de lecture :** ~25 minutes
    - **Niveau :** Débutant
 
@@ -149,8 +158,10 @@ ProjetParc/
 │   └─ Point d'entrée de l'application
 │
 ├── 📁 Data/
-│   └── 📄 DataBase.cs
-│       └─ Gestion de la base de données
+│   ├── 📄 DataBase.cs
+│   │   └─ Gestion de la base de données
+│   └── 📄 CsvExporter.cs
+│       └─ Export des données en fichiers CSV
 │
 ├── 📁 Views/
 │   ├── 📄 WelcomePage.cs
@@ -201,6 +212,13 @@ ProjetParc/
          │
          └─► Ouvre WelcomePage.cs
                     │
+                    ├─► Barre d'outils : Bouton "Export CSV" 🆕
+                    │   └─► Menu d'export (CsvExporter.cs)
+                    │       ├─► Export Agents
+                    │       ├─► Export Équipements
+                    │       ├─► Export Prêts actifs
+                    │       └─► Export complet (3 fichiers)
+                    │
                     ├─► Bouton "Prêt Equipement"
                     │   └─► MainInventoryView.cs
                     │       └─► LoanCreationView.cs
@@ -244,6 +262,13 @@ Bibliothèque pour créer des **interfaces graphiques** (fenêtres, boutons, for
 
 ### SQLite
 Système de base de données **léger** et **portable**. Tout est dans un seul fichier `.db`.
+
+### CSV (Comma-Separated Values) 🆕
+Format de fichier texte pour exporter des données. Utilisé pour :
+- Partager les données avec Excel, Google Sheets
+- Archiver des rapports
+- Analyser les données dans d'autres outils
+- **Format utilisé :** Point-virgule (`;`) comme séparateur, UTF-8 avec BOM
 
 ### .NET 9.0
 La plateforme sur laquelle tourne l'application. Version la plus récente.
@@ -315,4 +340,4 @@ Pour toute question ou suggestion d'amélioration :
 
 **🚀 Bonne lecture et bon apprentissage !**
 
-*Dernière mise à jour : 22 octobre 2025*
+*Dernière mise à jour : 24 octobre 2025*

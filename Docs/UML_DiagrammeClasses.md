@@ -61,6 +61,20 @@ Ce diagramme montre les principales classes du système et leurs relations.
   - DateDebut : date
   - DateFin : date (nullable)
 
+### Database 🔧
+- **Méthodes statiques** :
+  - Open() : SqliteConnection
+  - EnsureInitialized() : void
+
+### CsvExporter 🆕
+- **Méthodes statiques** :
+  - ExportAgents(filePath)
+  - ExportEquipements(filePath)
+  - ExportPrets(filePath)
+  - ExportComplet(folderPath)
+  - SelectExportFile() : string
+  - SelectExportFolder() : string
+
 ## Code PlantUML
 
 ```plantuml
@@ -133,6 +147,14 @@ class Travail {
 
 class Database {
   {static} + Open() : SqliteConnection
+  {static} + EnsureInitialized() : void
+}
+
+class CsvExporter <<utility>> {
+  {static} + ExportAgents(path)
+  {static} + ExportEquipements(path)
+  {static} + ExportPrets(path)
+  {static} + ExportComplet(folder)
 }
 
 ' Relations
@@ -145,6 +167,10 @@ Agent "0..*" -- "1" Site : travaille sur >
 Agent ..> Database : utilise
 Equipement ..> Database : utilise
 Travail ..> Database : utilise
+CsvExporter ..> Database : lit depuis
+CsvExporter ..> Agent : exporte
+CsvExporter ..> Equipement : exporte
+CsvExporter ..> Travail : exporte
 
 note right of Travail
   Table de liaison pour gérer

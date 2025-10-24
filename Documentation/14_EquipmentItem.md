@@ -374,4 +374,4 @@ if (comboBox.SelectedItem is EquipmentItem equipment)
 
 *Durée de lecture : ~15 minutes*  
 *Niveau : Débutant-Intermédiaire*  
-*Dernière mise à jour : 22 octobre 2025*
+*Dernière mise à jour : 24 octobre 2025*
