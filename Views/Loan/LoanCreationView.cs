@@ -14,12 +14,14 @@ namespace ProjetParc.Views.Loan;
 public class LoanCreationView : Form
 {
     private ComboBox cmbAgent;
+    private Label lblAgentDisplay; // Pour afficher le nom en mode édition
     private FlowLayoutPanel pnlEquipments;
     private Button btnAddEquipment;
     private Button btnValidate;
     private Button btnCancel;
 
     private string selectedAgentId = string.Empty;
+    private bool isEditMode = false;
     
     // Optional pre-selected agent id when editing
     [System.ComponentModel.Browsable(true)]
@@ -31,6 +33,8 @@ public class LoanCreationView : Form
         set 
         {
             selectedAgentId = value ?? string.Empty;
+            isEditMode = !string.IsNullOrEmpty(selectedAgentId);
+            
             if (IsHandleCreated && !string.IsNullOrEmpty(selectedAgentId))
             {
                 SelectAgentById(selectedAgentId);
@@ -38,6 +42,7 @@ public class LoanCreationView : Form
                 {
                     LoadAssignedEquipments(selectedAgentId);
                 }
+                UpdateUIForEditMode();
             }
         }
     }
@@ -55,6 +60,28 @@ public class LoanCreationView : Form
         if (!string.IsNullOrEmpty(selectedAgentId))
         {
             SelectedAgentId = selectedAgentId;
+        }
+        UpdateUIForEditMode();
+    }
+
+    private void UpdateUIForEditMode()
+    {
+        if (isEditMode)
+        {
+            Text = "Édition de prêt";
+            cmbAgent.Visible = false;
+            lblAgentDisplay.Visible = true;
+            
+            if (cmbAgent.SelectedItem is AgentItem agent)
+            {
+                lblAgentDisplay.Text = agent.DisplayName;
+            }
+        }
+        else
+        {
+            Text = "Nouveau prêt";
+            cmbAgent.Visible = true;
+            lblAgentDisplay.Visible = false;
         }
     }
 
@@ -125,24 +152,46 @@ public class LoanCreationView : Form
         Controls.Add(mainLayout);
 
         // Agent section panel
-        Panel agentPanel = new Panel { Dock = DockStyle.Fill };
+        TableLayoutPanel agentPanel = new TableLayoutPanel 
+        { 
+            Dock = DockStyle.Fill,
+            RowCount = 2,
+            ColumnCount = 1,
+            RowStyles = {
+                new RowStyle(SizeType.Absolute, 25),  // Label
+                new RowStyle(SizeType.Absolute, 35)   // ComboBox/Label
+            }
+        };
+        
         var lblAgent = new Label
         {
             Text = "Agent :",
             AutoSize = true,
-            Dock = DockStyle.Top,
-            Padding = new Padding(0, 0, 0, 5)
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.BottomLeft
         };
-        agentPanel.Controls.Add(lblAgent);
+        agentPanel.Controls.Add(lblAgent, 0, 0);
 
         cmbAgent = new ComboBox
         {
-            Dock = DockStyle.Top,
-            Top = 25,
+            Dock = DockStyle.Fill,
             Height = 30,
             DropDownStyle = ComboBoxStyle.DropDownList
         };
-        agentPanel.Controls.Add(cmbAgent);
+        agentPanel.Controls.Add(cmbAgent, 0, 1);
+        
+        // Label pour affichage en mode édition (invisible par défaut)
+        lblAgentDisplay = new Label
+        {
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 9f, FontStyle.Regular),
+            BackColor = SystemColors.Control,
+            BorderStyle = BorderStyle.Fixed3D,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Visible = false
+        };
+        agentPanel.Controls.Add(lblAgentDisplay, 0, 1);
+        
         mainLayout.Controls.Add(agentPanel, 0, 0);
 
         // Equipment label
@@ -313,7 +362,8 @@ public class LoanCreationView : Form
 
     private void ValidateLoan()
     {
-        if (cmbAgent.SelectedItem == null)
+        // En mode édition, on utilise l'agent déjà sélectionné
+        if (!isEditMode && cmbAgent.SelectedItem == null)
         {
             MessageBox.Show("Veuillez sélectionner un agent.", "Validation",
                           MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -333,17 +383,28 @@ public class LoanCreationView : Form
 
         try
         {
-            var agent = (AgentItem)cmbAgent.SelectedItem;
+            // En mode édition, on utilise selectedAgentId, sinon on prend l'agent sélectionné
+            string agentId;
+            if (isEditMode)
+            {
+                agentId = selectedAgentId;
+            }
+            else
+            {
+                var agent = (AgentItem)cmbAgent.SelectedItem;
+                agentId = agent.Id;
+            }
+            
             using var connection = Database.Open();
             using var transaction = connection.BeginTransaction();
 
             // If editing an existing agent assignment, get previously assigned equipment ids
             var previouslyAssigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(SelectedAgentId))
+            if (!string.IsNullOrWhiteSpace(selectedAgentId))
             {
                 using var prevCmd = connection.CreateCommand();
                 prevCmd.CommandText = "SELECT id_equipement FROM Equipements WHERE idrh = $idrh";
-                prevCmd.Parameters.AddWithValue("$idrh", SelectedAgentId);
+                prevCmd.Parameters.AddWithValue("$idrh", selectedAgentId);
                 using var prevR = prevCmd.ExecuteReader();
                 while (prevR.Read()) previouslyAssigned.Add(prevR.GetString(0));
             }
@@ -364,7 +425,7 @@ public class LoanCreationView : Form
                             ELSE 1                      -- Sinon met en état prêt
                         END 
                     WHERE id_equipement = $id";
-                command.Parameters.AddWithValue("$idrh", agent.Id);
+                command.Parameters.AddWithValue("$idrh", agentId);
                 command.Parameters.AddWithValue("$id", id);
                 command.ExecuteNonQuery();
             }

@@ -80,7 +80,7 @@ public class FreeEquipmentView : UserControl
         };
 
         // Configuration des lignes
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // En-tête
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // En-tête
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Contenu
 
         Controls.Add(mainLayout);
@@ -96,7 +96,13 @@ public class FreeEquipmentView : UserControl
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140)); // Bouton retour
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Titre
 
-        var btnBack = new Button { Text = "← Retour", Height = 36, Width = 120, Dock = DockStyle.Left };
+        var btnBack = new Button 
+        { 
+            Text = "← Retour", 
+            Width = 120, 
+            Height = 36, 
+            Anchor = AnchorStyles.Left
+        };
         btnBack.Click += (_, __) => _onBack?.Invoke();
 
         var lblTitle = new Label
@@ -179,7 +185,7 @@ public class FreeEquipmentView : UserControl
                 new RowStyle(SizeType.Percent, 100)   // Liste
             }
         };
-        mainLayout.Controls.Add(middlePanel, 1, 0);
+        contentLayout.Controls.Add(middlePanel, 1, 0);
 
         // Titre milieu
         var lblReturned = new Label { Text = "Rendu DSEM", Dock = DockStyle.Fill };
@@ -205,8 +211,6 @@ public class FreeEquipmentView : UserControl
         // Liste milieu
         lbReturned = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
         middlePanel.Controls.Add(lbReturned, 0, 2);
-        
-        contentLayout.Controls.Add(middlePanel, 1, 0);
 
         // Panneau droit (Détails)
         TableLayoutPanel rightPanel = new TableLayoutPanel

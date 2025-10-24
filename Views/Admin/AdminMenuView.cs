@@ -49,7 +49,7 @@ namespace ProjetParc.Views.Admin;
             };
 
             // Configuration des lignes du layout principal
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // En-tête (augmenté pour le bouton)
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // En-tête
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 70)); // Zone des boutons principaux
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 30)); // Zone du bouton échange
 

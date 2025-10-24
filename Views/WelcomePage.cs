@@ -128,6 +128,23 @@ public class WelcomePage : Form
         mainLayout.Controls.Add(content, 0, 1);
         Controls.Add(mainLayout);
 
+        // Barre d'outils
+        var toolStrip = new ToolStrip 
+        { 
+            Dock = DockStyle.Top,
+            GripStyle = ToolStripGripStyle.Hidden
+        };
+        
+        var btnExportTool = new ToolStripButton
+        {
+            Text = "Export CSV",
+            DisplayStyle = ToolStripItemDisplayStyle.Text
+        };
+        btnExportTool.Click += (s, e) => ShowExportMenu();
+        
+        toolStrip.Items.Add(btnExportTool);
+        Controls.Add(toolStrip);
+
         // Affiche le panneau d'accueil contenant les trois tuiles
         ShowHome();
 
@@ -227,5 +244,109 @@ public class WelcomePage : Form
     {
         content.Controls.Clear();
         content.Controls.Add(new EquipementEditView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
+    }
+
+    private void ShowExportMenu()
+    {
+        var exportForm = new Form
+        {
+            Text = "Export CSV",
+            Size = new Size(500, 450),
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.Sizable,
+            MaximizeBox = true,
+            MinimizeBox = true,
+            MinimumSize = new Size(450, 400)
+        };
+
+        var layout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 7,
+            Padding = new Padding(20)
+        };
+
+        for (int i = 0; i < 6; i++)
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        var title = new Label
+        {
+            Text = "Sélectionnez le type d'export :",
+            Font = new Font("Segoe UI", 11f, FontStyle.Bold),
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        layout.Controls.Add(title, 0, 0);
+
+        var btnExpAgents = new Button
+        {
+            Text = "Exporter les Agents",
+            Dock = DockStyle.Fill,
+            Height = 40
+        };
+        btnExpAgents.Click += (s, e) =>
+        {
+            var path = Data.CsvExporter.SelectExportFile("agents.csv");
+            if (path != null) Data.CsvExporter.ExportAgents(path);
+        };
+        layout.Controls.Add(btnExpAgents, 0, 1);
+
+        var btnExpEquip = new Button
+        {
+            Text = "Exporter les Équipements",
+            Dock = DockStyle.Fill,
+            Height = 40
+        };
+        btnExpEquip.Click += (s, e) =>
+        {
+            var path = Data.CsvExporter.SelectExportFile("equipements.csv");
+            if (path != null) Data.CsvExporter.ExportEquipements(path);
+        };
+        layout.Controls.Add(btnExpEquip, 0, 2);
+
+        var btnExpPrets = new Button
+        {
+            Text = "Exporter les Prêts actifs",
+            Dock = DockStyle.Fill,
+            Height = 40
+        };
+        btnExpPrets.Click += (s, e) =>
+        {
+            var path = Data.CsvExporter.SelectExportFile("prets_actifs.csv");
+            if (path != null) Data.CsvExporter.ExportPrets(path);
+        };
+        layout.Controls.Add(btnExpPrets, 0, 3);
+
+        var separator = new Label
+        {
+            Text = "ou",
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Color.Gray
+        };
+    layout.Controls.Add(separator, 0, 4);
+
+        var btnExpComplet = new Button
+        {
+            Text = "Export complet (tous les fichiers)",
+            Dock = DockStyle.Fill,
+            Height = 40,
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold)
+        };
+        btnExpComplet.Click += (s, e) =>
+        {
+            var folder = Data.CsvExporter.SelectExportFolder();
+            if (folder != null)
+            {
+                Data.CsvExporter.ExportComplet(folder);
+                exportForm.Close();
+            }
+        };
+        layout.Controls.Add(btnExpComplet, 0, 5);
+
+        exportForm.Controls.Add(layout);
+        exportForm.ShowDialog();
     }
 }
