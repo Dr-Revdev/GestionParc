@@ -15,7 +15,8 @@ public class AgentEditView : UserControl
 {
     private TextBox tbSearch;
     private Button btnSearch;
-    private ListBox lbAgents;
+    private ListView lvAgents;
+    private ListViewColumnSorter lvAgentsSorter;
 
     private TextBox tbIDRH, tbAgentName, tbFirstName, tbEmail, tbComment;
     private ComboBox cbTeam, cbSite;
@@ -37,7 +38,7 @@ public class AgentEditView : UserControl
         LoadAgentList();
 
         btnSearch.Click += btnSearch_Click;
-        lbAgents.SelectedIndexChanged += lbAgents_SelectedIndexChanged;
+        lvAgents.SelectedIndexChanged += lbAgents_SelectedIndexChanged;
         btnUpdate.Click += (_, __) => SaveAgentChanges();
         btnDelete.Click += (_, __) => DeleteSelectedAgent();
     }
@@ -48,7 +49,8 @@ public class AgentEditView : UserControl
     private void BuildUi()
     {
         Dock = DockStyle.Fill;
-        Font = new Font("Segoe UI", 11f);
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
 
         // Layout principal : une ligne pour le bouton retour, une ligne pour le contenu
         TableLayoutPanel mainLayout = new TableLayoutPanel
@@ -57,6 +59,7 @@ public class AgentEditView : UserControl
             ColumnCount = 1,
             RowCount = 2,
             Padding = new Padding(20),
+            BackColor = Theme.Colors.Background,
             RowStyles = {
                 new RowStyle(SizeType.Absolute, 45),    // Bouton retour
                 new RowStyle(SizeType.Percent, 100)     // Contenu
@@ -65,7 +68,8 @@ public class AgentEditView : UserControl
         Controls.Add(mainLayout);
 
         // Bouton retour
-        var btnBack = new Button { Text = "← Retour", Width = 120, Height = 36, Anchor = AnchorStyles.Left };
+        var btnBack = new Button { Text = "← Retour", Width = Theme.Sizes.ButtonWidth, Anchor = AnchorStyles.Left };
+        Theme.StyleSecondaryButton(btnBack);
         btnBack.Click += (_, __) => _onBack?.Invoke();
         mainLayout.Controls.Add(btnBack, 0, 0);
 
@@ -92,7 +96,7 @@ public class AgentEditView : UserControl
             RowCount = 2,
             Padding = new Padding(0, 0, 20, 0),
             RowStyles = {
-                new RowStyle(SizeType.Absolute, 40),    // Barre de recherche
+                new RowStyle(SizeType.Absolute, 50),    // Barre de recherche
                 new RowStyle(SizeType.Percent, 100)     // Liste
             }
         };
@@ -106,22 +110,47 @@ public class AgentEditView : UserControl
             RowCount = 1,
             Margin = new Padding(0, 0, 0, 10),
             ColumnStyles = {
-                new ColumnStyle(SizeType.Percent, 85),
+                new ColumnStyle(SizeType.Percent, 100),
                 new ColumnStyle(SizeType.Absolute, 40)
             }
         };
-        tbSearch = new TextBox { Dock = DockStyle.Fill };
-        btnSearch = new Button { Text = "🔍", Dock = DockStyle.Fill };
+        tbSearch = new TextBox { Dock = DockStyle.Fill, Font = Theme.Fonts.Body };
+        Theme.StyleTextBox(tbSearch);
+        btnSearch = new Button { Text = "🔍", Width = Theme.Sizes.SearchButtonSize, Height = Theme.Sizes.SearchButtonSize, Dock = DockStyle.Right };
+        Theme.StyleSecondaryButton(btnSearch, setHeight: false);
+        btnSearch.Font = new Font("Segoe UI", 12f);
         searchPanel.Controls.Add(tbSearch, 0, 0);
         searchPanel.Controls.Add(btnSearch, 1, 0);
         leftPanel.Controls.Add(searchPanel, 0, 0);
 
-        // Liste des agents
-        lbAgents = new ListBox { Dock = DockStyle.Fill };
-        leftPanel.Controls.Add(lbAgents, 0, 1);
+        // Liste des agents avec colonnes
+        lvAgents = new ListView
+        {
+            Dock = DockStyle.Fill,
+            Font = Theme.Fonts.Body,
+            BackColor = Theme.Colors.Surface,
+            View = View.Details,
+            FullRowSelect = true,
+            GridLines = true,
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        lvAgents.Columns.Add("IDRH", 100);
+        lvAgents.Columns.Add("Nom Prénom", 200);
+        lvAgents.Columns.Add("Equipe", 120);
+        lvAgents.Columns.Add("Site", 120);
+        
+        // Configuration du tri par colonnes
+        lvAgentsSorter = new ListViewColumnSorter();
+        lvAgents.ListViewItemSorter = lvAgentsSorter;
+        lvAgents.ColumnClick += (s, e) => {
+            lvAgentsSorter.SetSortColumn(e.Column);
+            lvAgents.Sort();
+        };
+        
+        leftPanel.Controls.Add(lvAgents, 0, 1);
 
         // Séparateur vertical
-        var separator = new Panel { Dock = DockStyle.Fill, BackColor = Color.Silver };
+        var separator = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Colors.Border };
         contentLayout.Controls.Add(separator, 1, 0);
 
         // Panel droit (formulaire d'édition)
@@ -131,6 +160,7 @@ public class AgentEditView : UserControl
             ColumnCount = 3,
             RowCount = 8,
             Padding = new Padding(20),
+            BackColor = Theme.Colors.Surface,
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f),
@@ -150,44 +180,67 @@ public class AgentEditView : UserControl
         contentLayout.Controls.Add(formPanel, 2, 0);
 
         // Première ligne : IDRH, Nom, Prénom
-        AddFormRow(formPanel, 0, "IDRH", tbIDRH = new TextBox { Height = 36, ReadOnly = true });
-        AddFormRow(formPanel, 0, "Nom", tbAgentName = new TextBox { Height = 36 }, 1);
-        AddFormRow(formPanel, 0, "Prénom", tbFirstName = new TextBox { Height = 36 }, 2);
+        tbIDRH = new TextBox { Height = Theme.Sizes.InputHeight, ReadOnly = true };
+        Theme.StyleTextBox(tbIDRH);
+        AddFormRow(formPanel, 0, "IDRH", tbIDRH);
+        
+        tbAgentName = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbAgentName);
+        AddFormRow(formPanel, 0, "Nom", tbAgentName, 1);
+        
+        tbFirstName = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbFirstName);
+        AddFormRow(formPanel, 0, "Prénom", tbFirstName, 2);
 
         // Deuxième ligne : Email, Équipe, Hébergé
-        AddFormRow(formPanel, 2, "Email", tbEmail = new TextBox { Height = 36 });
-        AddFormRow(formPanel, 2, "Équipe", cbTeam = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList }, 1);
+        tbEmail = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbEmail);
+        AddFormRow(formPanel, 2, "Email", tbEmail);
         
-        var hebergePanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
-        var lblHeb = new Label { Text = "Hébergé", AutoSize = true, Padding = new Padding(0, 5, 10, 0) };
+        cbTeam = new ComboBox { Height = Theme.Sizes.InputHeight, DropDownStyle = ComboBoxStyle.DropDownList };
+        Theme.StyleComboBox(cbTeam);
+        AddFormRow(formPanel, 2, "Équipe", cbTeam, 1);
+        
+        var hebergePanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, BackColor = Theme.Colors.Surface };
+        var lblHeb = new Label { Text = "Hébergé", AutoSize = true, Padding = new Padding(0, 5, 10, 0), Font = Theme.Fonts.Label, ForeColor = Theme.Colors.TextSecondary };
         cbxHeberge = new CheckBox { AutoSize = true };
         hebergePanel.Controls.AddRange(new Control[] { lblHeb, cbxHeberge });
         formPanel.Controls.Add(hebergePanel, 2, 2);
         formPanel.SetRowSpan(hebergePanel, 2);
 
         // Troisième ligne : Commentaire (2 colonnes), Site
-        AddFormRow(formPanel, 4, "Commentaire", tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical }, 0, 2);
-        AddFormRow(formPanel, 4, "Site", cbSite = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList }, 2);
+        tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical };
+        Theme.StyleTextBox(tbComment);
+        AddFormRow(formPanel, 4, "Commentaire", tbComment, 0, 2);
+        
+        cbSite = new ComboBox { Height = Theme.Sizes.InputHeight, DropDownStyle = ComboBoxStyle.DropDownList };
+        Theme.StyleComboBox(cbSite);
+        AddFormRow(formPanel, 4, "Site", cbSite, 2);
 
         // Boutons Modifier/Supprimer
         FlowLayoutPanel buttonPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Padding(0, 10, 0, 0)
+            Margin = new Padding(0, 10, 0, 0),
+            BackColor = Theme.Colors.Surface,
+            WrapContents = false,
+            Padding = new Padding(0)
         };
         formPanel.Controls.Add(buttonPanel, 0, 7);
         formPanel.SetColumnSpan(buttonPanel, 3);
 
-        btnDelete = new Button { Text = "Supprimer", Width = 120, Height = 40 };
-        btnUpdate = new Button { Text = "Modifier", Width = 120, Height = 40, Margin = new Padding(0, 0, 10, 0) };
-        buttonPanel.Controls.AddRange(new Control[] { btnDelete, btnUpdate });
+        btnDelete = new Button { Text = "Supprimer", Width = Theme.Sizes.ButtonWidth, Height = Theme.Sizes.ButtonHeight, Margin = new Padding(0, 0, 10, 0) };
+        Theme.StyleDangerButton(btnDelete);
+        
+        btnUpdate = new Button { Text = "Modifier", Width = Theme.Sizes.ButtonWidth, Height = Theme.Sizes.ButtonHeight, Margin = new Padding(0) };
+        Theme.StylePrimaryButton(btnUpdate);
+        
+        buttonPanel.Controls.AddRange(new Control[] { btnUpdate, btnDelete });
 
         ResumeLayout(false);
     }
 
-    /// <summary>Item minimal pour la ListBox des agents.</summary>
-    private sealed class AgentListItem { public string IdRh { get; set; } = ""; public string Label { get; set; } = ""; public override string ToString() => Label; }
     /// <summary>Représentation d'un site (id, nom) utilisée par la ComboBox.</summary>
     private sealed class AgentSiteItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
     /// <summary>Représentation d'une équipe (id, nom) utilisée par la ComboBox.</summary>
@@ -246,30 +299,42 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Charge la liste complète des agents et l'affiche dans la ListBox.</summary>
+    /// <summary>Charge la liste complète des agents et l'affiche dans le ListView.</summary>
     private void LoadAgentList()
     {
         try
         {
             using var connexion = Database.Open();
             using var command = connexion.CreateCommand();
-            command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')) AS n, TRIM(COALESCE(prenom,'')) AS p
-                                    FROM ""Agents"" ORDER BY n, p, idrh;";
+            command.CommandText = @"
+                SELECT 
+                    a.idrh, 
+                    TRIM(COALESCE(a.nom,'')) AS n, 
+                    TRIM(COALESCE(a.prenom,'')) AS p,
+                    COALESCE(e.name, '-') AS equipe,
+                    COALESCE(s.name, '-') AS site
+                FROM ""Agents"" a
+                LEFT JOIN ""Equipes"" e ON a.equipe_id = e.id
+                LEFT JOIN ""Sites"" s ON a.site_id = s.id
+                ORDER BY n, p, a.idrh;";
             using var r = command.ExecuteReader();
 
-            var list = new List<AgentListItem>();
+            lvAgents.Items.Clear();
             while (r.Read())
             {
                 var id = r.IsDBNull(0) ? "" : r.GetString(0);
                 var n = r.IsDBNull(1) ? "" : r.GetString(1);
                 var p = r.IsDBNull(2) ? "" : r.GetString(2);
-                var label = (n, p) switch { ("", "") => id, _ => $"{n} {p} [{id}]" };
-                list.Add(new AgentListItem { IdRh = id, Label = label });
+                var equipe = r.GetString(3);
+                var site = r.GetString(4);
+                
+                var nomComplet = (n, p) switch { ("", "") => "-", _ => $"{n} {p}".Trim() };
+                
+                var item = new ListViewItem(id);
+                item.SubItems.AddRange(new[] { nomComplet, equipe, site });
+                item.Tag = id;
+                lvAgents.Items.Add(item);
             }
-
-            lbAgents.DataSource = list;
-            lbAgents.DisplayMember = nameof(AgentListItem.Label);
-            lbAgents.ValueMember = nameof(AgentListItem.IdRh);
         }
         catch (Exception ex)
         {
@@ -288,31 +353,52 @@ public class AgentEditView : UserControl
 
             if (string.IsNullOrWhiteSpace(query))
             {
-                command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')), TRIM(COALESCE(prenom,'')) FROM ""Agents"" ORDER BY 2, 3, 1;";
+                command.CommandText = @"
+                    SELECT 
+                        a.idrh, 
+                        TRIM(COALESCE(a.nom,'')), 
+                        TRIM(COALESCE(a.prenom,'')),
+                        COALESCE(e.name, '-'),
+                        COALESCE(s.name, '-')
+                    FROM ""Agents"" a
+                    LEFT JOIN ""Equipes"" e ON a.equipe_id = e.id
+                    LEFT JOIN ""Sites"" s ON a.site_id = s.id
+                    ORDER BY 2, 3, 1;";
             }
             else
             {
-                command.CommandText = @"SELECT idrh, TRIM(COALESCE(nom,'')), TRIM(COALESCE(prenom,'')) 
-                                        FROM ""Agents""
-                                        WHERE idrh LIKE $p OR nom LIKE $p OR prenom LIKE $p OR email LIKE $p
-                                        ORDER BY 2, 3, 1;";
+                command.CommandText = @"
+                    SELECT 
+                        a.idrh, 
+                        TRIM(COALESCE(a.nom,'')), 
+                        TRIM(COALESCE(a.prenom,'')),
+                        COALESCE(e.name, '-'),
+                        COALESCE(s.name, '-')
+                    FROM ""Agents"" a
+                    LEFT JOIN ""Equipes"" e ON a.equipe_id = e.id
+                    LEFT JOIN ""Sites"" s ON a.site_id = s.id
+                    WHERE a.idrh LIKE $p OR a.nom LIKE $p OR a.prenom LIKE $p OR a.email LIKE $p
+                    ORDER BY 2, 3, 1;";
                 command.Parameters.AddWithValue("$p", $"%{query}%");
             }
 
             using var r = command.ExecuteReader();
-            var list = new List<AgentListItem>();
+            lvAgents.Items.Clear();
             while (r.Read())
             {
                 var id = r.IsDBNull(0) ? "" : r.GetString(0);
                 var n = r.IsDBNull(1) ? "" : r.GetString(1);
                 var p = r.IsDBNull(2) ? "" : r.GetString(2);
-                var label = (n, p) switch { ("", "") => id, _ => $"{n} {p} [{id}]" };
-                list.Add(new AgentListItem { IdRh = id, Label = label });
+                var equipe = r.GetString(3);
+                var site = r.GetString(4);
+                
+                var nomComplet = (n, p) switch { ("", "") => "-", _ => $"{n} {p}".Trim() };
+                
+                var item = new ListViewItem(id);
+                item.SubItems.AddRange(new[] { nomComplet, equipe, site });
+                item.Tag = id;
+                lvAgents.Items.Add(item);
             }
-
-            lbAgents.DataSource = list;
-            lbAgents.DisplayMember = nameof(AgentListItem.Label);
-            lbAgents.ValueMember = nameof(AgentListItem.IdRh);
         }
         catch (Exception ex)
         {
@@ -378,8 +464,12 @@ public class AgentEditView : UserControl
     /// <summary>Quand l'utilisateur change la sélection, charge les détails de l'agent sélectionné.</summary>
     private void lbAgents_SelectedIndexChanged(object sender, EventArgs e)
     {
-        if (lbAgents.SelectedItem is AgentListItem item)
-            LoadAgentById(item.IdRh);
+        if (lvAgents.SelectedItems.Count > 0)
+        {
+            var selectedItem = lvAgents.SelectedItems[0];
+            var agentId = (string)selectedItem.Tag;
+            LoadAgentById(agentId);
+        }
     }
 
     /// <summary>Valide le formulaire d'édition pour s'assurer des champs minimaux requis.</summary>
@@ -394,7 +484,7 @@ public class AgentEditView : UserControl
     /// <summary>Enregistre les modifications de l'agent dans la base.</summary>
     private void SaveAgentChanges()
     {
-        if (lbAgents.SelectedItem is not AgentListItem) { MessageBox.Show("Choisir d'abord un agent."); return; }
+        if (lvAgents.SelectedItems.Count == 0) { MessageBox.Show("Choisir d'abord un agent."); return; }
         if (!ValidateAgentForm(out var msg)) { MessageBox.Show(msg); return; }
 
         int? teamId = (cbTeam.SelectedItem as AgentTeamItem)?.Id;
@@ -424,13 +514,8 @@ public class AgentEditView : UserControl
 
             MessageBox.Show("Modifications enregistrées.");
 
-            if (lbAgents.SelectedItem is AgentListItem it)
-            {
-                var newLabel = $"{tbAgentName.Text.Trim()} {tbFirstName.Text.Trim()} [{tbIDRH.Text.Trim()}]".Trim();
-                it.Label = newLabel;
-                lbAgents.DisplayMember = null;
-                lbAgents.DisplayMember = nameof(AgentListItem.Label);
-            }
+            // Recharger la liste pour refléter les modifications
+            LoadAgentList();
         }
         catch (SqliteException ex)
         {
@@ -441,11 +526,15 @@ public class AgentEditView : UserControl
     /// <summary>Supprime l'agent sélectionné après confirmation utilisateur.</summary>
     private void DeleteSelectedAgent()
     {
-        if (lbAgents.SelectedItem is not AgentListItem item)
+        if (lvAgents.SelectedItems.Count == 0)
         { MessageBox.Show("Sélectionne un agent à supprimer."); return; }
 
+        var selectedItem = lvAgents.SelectedItems[0];
+        var agentId = (string)selectedItem.Tag;
+        var agentLabel = $"{selectedItem.SubItems[1].Text} [{selectedItem.Text}]";
+        
         var confirm = MessageBox.Show(
-            $"Supprimer « {item.Label} » ?",
+            $"Supprimer « {agentLabel} » ?",
             "Confirmer la suppression",
             MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
@@ -456,7 +545,7 @@ public class AgentEditView : UserControl
             using var connexion = Database.Open();
             using var command = connexion.CreateCommand();
             command.CommandText = @"DELETE FROM ""Agents"" WHERE idrh = $id;";
-            command.Parameters.AddWithValue("$id", item.IdRh);
+            command.Parameters.AddWithValue("$id", agentId);
             var rows = command.ExecuteNonQuery();
 
             if (rows == 0) { MessageBox.Show("Agent introuvable."); return; }
@@ -482,7 +571,8 @@ public class AgentEditView : UserControl
             Text = labelText, 
             Dock = DockStyle.Fill,
             Padding = new Padding(5, 0, 0, 5),
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold)
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary
         };
         panel.Controls.Add(label, col, row);
 

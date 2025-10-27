@@ -5,7 +5,7 @@ namespace ProjetParc.Views.Loan.Models;
 /// </summary>
 public class AgentItem
 {
-    public string Id { get; set; }
+    public string Idrh { get; set; }
     public string DisplayName { get; set; }
     public override string ToString() => DisplayName;
 }

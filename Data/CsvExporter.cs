@@ -115,8 +115,8 @@ public static class CsvExporter
             var maxEquipments = Convert.ToInt32(cmdMax.ExecuteScalar() ?? 0);
 
             // Récupérer les agents qui ont des équipements
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
                 SELECT DISTINCT
                     a.idrh,
                     a.nom,
@@ -136,7 +136,7 @@ public static class CsvExporter
                 ORDER BY a.nom, a.prenom";
 
             var agents = new List<Dictionary<string, object>>();
-            using (var reader = cmd.ExecuteReader())
+            using (var reader = command.ExecuteReader())
             {
                 while (reader.Read())
                 {

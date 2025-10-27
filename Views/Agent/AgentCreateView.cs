@@ -44,16 +44,18 @@ public class AgentCreateView : UserControl
     private void BuildUi()
     {
         Dock = DockStyle.Fill;
-        Font = new Font("Segoe UI", 11f, FontStyle.Regular);
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
 
         TableLayoutPanel mainLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 3,
-            Padding = new Padding(20),
+            Padding = new Padding(Theme.Spacing.Large),
+            BackColor = Theme.Colors.Background,
             RowStyles = {
-                new RowStyle(SizeType.Absolute, 45),  // Bouton retour
+                new RowStyle(SizeType.Absolute, 60),  // Bouton retour
                 new RowStyle(SizeType.Percent, 100),  // Formulaire
                 new RowStyle(SizeType.Absolute, 80)   // Bouton créer
             }
@@ -61,7 +63,17 @@ public class AgentCreateView : UserControl
         Controls.Add(mainLayout);
 
         // Bouton retour
-        var btnBack = new Button { Text = "← Retour", Width = 120, Height = 36, Anchor = AnchorStyles.Left };
+        var btnBack = new Button 
+        { 
+            Text = "← Retour", 
+            Width = Theme.Sizes.ButtonWidth, 
+            Height = Theme.Sizes.ButtonHeightLarge, 
+            Anchor = AnchorStyles.Left,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0),
+            Font = Theme.Fonts.Button
+        };
+        Theme.StyleOutlineButton(btnBack);
         btnBack.Click += (_, __) => _onBack?.Invoke();
         mainLayout.Controls.Add(btnBack, 0, 0);
 
@@ -71,7 +83,8 @@ public class AgentCreateView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 8,
-            Padding = new Padding(20),
+            Padding = new Padding(Theme.Spacing.Large),
+            BackColor = Theme.Colors.Surface,
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f),
@@ -91,34 +104,64 @@ public class AgentCreateView : UserControl
         mainLayout.Controls.Add(formLayout, 0, 1);
 
         // Première ligne : IDRH, Nom, Prénom
-        AddFormRow(formLayout, 0, "IDRH", tbIDRH = new TextBox { Height = 36 });
-        AddFormRow(formLayout, 0, "Nom", tbAgentName = new TextBox { Height = 36 }, 1);
-        AddFormRow(formLayout, 0, "Prénom", tbFirstName = new TextBox { Height = 36 }, 2);
+        tbIDRH = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbIDRH);
+        AddFormRow(formLayout, 0, "IDRH", tbIDRH);
+        
+        tbAgentName = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbAgentName);
+        AddFormRow(formLayout, 0, "Nom", tbAgentName, 1);
+        
+        tbFirstName = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbFirstName);
+        AddFormRow(formLayout, 0, "Prénom", tbFirstName, 2);
 
         // Deuxième ligne : Email, Équipe, Hébergé
-        AddFormRow(formLayout, 2, "Email", tbEmail = new TextBox { Height = 36 });
-        AddFormRow(formLayout, 2, "Équipe", cbTeam = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList }, 1);
+        tbEmail = new TextBox { Height = Theme.Sizes.InputHeight };
+        Theme.StyleTextBox(tbEmail);
+        AddFormRow(formLayout, 2, "Email", tbEmail);
         
-        var hebergePanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
-        var lblHeb = new Label { Text = "Hébergé", AutoSize = true, Padding = new Padding(0, 5, 10, 0) };
+        cbTeam = new ComboBox { Height = Theme.Sizes.InputHeight, DropDownStyle = ComboBoxStyle.DropDownList };
+        Theme.StyleComboBox(cbTeam);
+        AddFormRow(formLayout, 2, "Équipe", cbTeam, 1);
+        
+        var hebergePanel = new FlowLayoutPanel 
+        { 
+            Dock = DockStyle.Fill, 
+            FlowDirection = FlowDirection.LeftToRight,
+            BackColor = Theme.Colors.Surface
+        };
+        var lblHeb = new Label 
+        { 
+            Text = "Hébergé", 
+            AutoSize = true, 
+            Padding = new Padding(0, 5, 10, 0),
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary
+        };
         cbxHeberge = new CheckBox { AutoSize = true };
         hebergePanel.Controls.AddRange(new Control[] { lblHeb, cbxHeberge });
         formLayout.Controls.Add(hebergePanel, 2, 2);
         formLayout.SetRowSpan(hebergePanel, 2);
 
         // Troisième ligne : Commentaire (2 colonnes), Site
-        AddFormRow(formLayout, 4, "Commentaire", tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical }, 0, 2);
-        AddFormRow(formLayout, 4, "Site", cbSite = new ComboBox { Height = 36, DropDownStyle = ComboBoxStyle.DropDownList }, 2);
+        tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical };
+        Theme.StyleTextBox(tbComment);
+        AddFormRow(formLayout, 4, "Commentaire", tbComment, 0, 2);
+        
+        cbSite = new ComboBox { Height = Theme.Sizes.InputHeight, DropDownStyle = ComboBoxStyle.DropDownList };
+        Theme.StyleComboBox(cbSite);
+        AddFormRow(formLayout, 4, "Site", cbSite, 2);
 
         // Bouton créer (en bas)
         btnCreate = new Button
         {
             Text = "Créer",
-            Height = 52,
-            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
+            Height = Theme.Sizes.ButtonHeight,
             Dock = DockStyle.Right,
-            Width = 180
+            Width = Theme.Sizes.ButtonWidth
         };
+        Theme.StylePrimaryButton(btnCreate);
         mainLayout.Controls.Add(btnCreate, 0, 2);
 
         // Définir l'ordre de tabulation
@@ -282,7 +325,8 @@ public class AgentCreateView : UserControl
             Text = labelText, 
             Dock = DockStyle.Fill,
             Padding = new Padding(5, 0, 0, 5),
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold)
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary
         };
         panel.Controls.Add(label, col, row);
 

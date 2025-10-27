@@ -6,6 +6,7 @@ using ProjetParc.Views.Agent;
 using ProjetParc.Views.Equipment;
 using ProjetParc.Views.Loan;
 using ProjetParc.Views.Inventory;
+using ProjetParc.Views.Settings;
 
 namespace ProjetParc.Views;
 
@@ -31,40 +32,60 @@ public class WelcomePage : Form
         WindowState = FormWindowState.Maximized;
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(800, 600);
+        BackColor = Theme.Colors.Background;
 
         // Création du layout principal
         var mainLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.White,
+            BackColor = Theme.Colors.Background,
             RowCount = 2,
             ColumnCount = 1,
-            Padding = new Padding(20)
+            Padding = new Padding(Theme.Spacing.Large)
         };
 
         // Configuration des lignes
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 120)); // En-tête
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 100)); // En-tête
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Contenu
 
-        // En-tête avec titre
+        // En-tête avec titre et sous-titre
         var headerPanel = new TableLayoutPanel 
         { 
             Dock = DockStyle.Fill,
-            RowCount = 1,
-            ColumnCount = 1
+            RowCount = 2,
+            ColumnCount = 1,
+            BackColor = Theme.Colors.Background
         };
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
         
         title = new Label
         {
             Text = "Gestion de Parc",
-            Font = new Font("Segoe UI", 28f, FontStyle.Bold),
+            Font = Theme.Fonts.H1,
+            ForeColor = Theme.Colors.Primary,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleCenter
+            TextAlign = ContentAlignment.BottomCenter
         };
+        
+        var subtitle = new Label
+        {
+            Text = "Système de gestion des équipements et des prêts",
+            Font = Theme.Fonts.BodyLarge,
+            ForeColor = Theme.Colors.TextSecondary,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.TopCenter
+        };
+        
         headerPanel.Controls.Add(title, 0, 0);
+        headerPanel.Controls.Add(subtitle, 0, 1);
 
         // Panneau de contenu
-        content = new Panel { Dock = DockStyle.Fill, BackColor = Color.White };
+        content = new Panel 
+        { 
+            Dock = DockStyle.Fill, 
+            BackColor = Theme.Colors.Background 
+        };
 
         // Configuration du layout des boutons
         var buttonLayout = new TableLayoutPanel
@@ -72,7 +93,8 @@ public class WelcomePage : Form
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
-            Padding = new Padding(10)
+            Padding = new Padding(Theme.Spacing.XLarge),
+            BackColor = Theme.Colors.Background
         };
 
         // Configuration des colonnes pour les boutons (répartition égale)
@@ -81,35 +103,47 @@ public class WelcomePage : Form
             buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
         }
 
-        // Configuration des boutons
-        var tileFont = new Font("Segoe UI", 14f, FontStyle.Bold);
+        // Configuration des boutons avec le thème
+        var tileFont = new Font("Segoe UI", 14f, FontStyle.Regular);
+        
         btnSetEquipment = new Button
         {
-            Text = "Equipements en place",
+            Text = "Équipements en place\n\nConsulter les prêts actifs",
             Font = tileFont,
             Dock = DockStyle.None,
-            Size = new Size(400, 250), // largeur moitié, hauteur 1/3
+            Size = new Size(380, 280),
             Anchor = AnchorStyles.None,
-            Margin = new Padding(10)
+            Margin = new Padding(Theme.Spacing.Medium),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Cursor = Cursors.Hand
         };
+        Theme.StylePrimaryButton(btnSetEquipment, setHeight: false);
+        
         btnFreeEquipment = new Button
         {
-            Text = "Equipements disponibles",
+            Text = "Équipements disponibles\n\nVoir le stock libre",
             Font = tileFont,
             Dock = DockStyle.None,
-            Size = new Size(400, 250),
+            Size = new Size(380, 280),
             Anchor = AnchorStyles.None,
-            Margin = new Padding(10)
+            Margin = new Padding(Theme.Spacing.Medium),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Cursor = Cursors.Hand
         };
+        Theme.StylePrimaryButton(btnFreeEquipment, setHeight: false);
+        
         btnNewMod = new Button
         {
-            Text = "Modification / Création",
+            Text = "Administration\n\nGérer les données",
             Font = tileFont,
             Dock = DockStyle.None,
-            Size = new Size(400, 250),
+            Size = new Size(380, 280),
             Anchor = AnchorStyles.None,
-            Margin = new Padding(10)
+            Margin = new Padding(Theme.Spacing.Medium),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Cursor = Cursors.Hand
         };
+        Theme.StyleSecondaryButton(btnNewMod, setHeight: false);
 
         // Ajout des boutons au layout
         buttonLayout.Controls.Add(btnSetEquipment, 0, 0);
@@ -127,17 +161,21 @@ public class WelcomePage : Form
         mainLayout.Controls.Add(content, 0, 1);
         Controls.Add(mainLayout);
 
-        // Barre d'outils
+        // Barre d'outils modernisée
         var toolStrip = new ToolStrip 
         { 
             Dock = DockStyle.Top,
-            GripStyle = ToolStripGripStyle.Hidden
+            GripStyle = ToolStripGripStyle.Hidden,
+            BackColor = Theme.Colors.Surface,
+            Padding = new Padding(Theme.Spacing.Small)
         };
         
         var btnExportTool = new ToolStripButton
         {
             Text = "Export CSV",
-            DisplayStyle = ToolStripItemDisplayStyle.Text
+            DisplayStyle = ToolStripItemDisplayStyle.Text,
+            Font = Theme.Fonts.Button,
+            ForeColor = Theme.Colors.Primary
         };
         btnExportTool.Click += (s, e) => ShowExportMenu();
         
@@ -162,7 +200,8 @@ public class WelcomePage : Form
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
-            Padding = new Padding(40, 20, 40, 20) // padding réduit
+            Padding = new Padding(Theme.Spacing.XLarge),
+            BackColor = Theme.Colors.Background
         };
 
         // Configuration des colonnes pour les boutons (répartition égale)
@@ -171,9 +210,9 @@ public class WelcomePage : Form
             buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
         }
 
-    buttonLayout.Controls.Add(btnSetEquipment, 0, 0);
-    buttonLayout.Controls.Add(btnFreeEquipment, 1, 0);
-    buttonLayout.Controls.Add(btnNewMod, 2, 0);
+        buttonLayout.Controls.Add(btnSetEquipment, 0, 0);
+        buttonLayout.Controls.Add(btnFreeEquipment, 1, 0);
+        buttonLayout.Controls.Add(btnNewMod, 2, 0);
 
         content.Controls.Add(buttonLayout);
     }
@@ -186,7 +225,7 @@ public class WelcomePage : Form
     {
         content.Controls.Clear();
 
-        var admin = new AdminMenuView(onBack: ShowHome, onCreateEquipment: ShowEquipmentCreate, onCreateAgent: ShowAgentCreate, onEditAgent: ShowAgentEdit, onEditEquipment: ShowEquipmentEdit);
+        var admin = new AdminMenuView(onBack: ShowHome, onCreateEquipment: ShowEquipmentCreate, onCreateAgent: ShowAgentCreate, onEditAgent: ShowAgentEdit, onEditEquipment: ShowEquipmentEdit, onSettings: ShowSettings);
         admin.Dock = DockStyle.Fill;
         content.Controls.Add(admin);
     }
@@ -245,6 +284,15 @@ public class WelcomePage : Form
         content.Controls.Add(new EquipementEditView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
 
+    /// <summary>
+    /// Affiche la vue des paramètres (Équipes, Sites, Types d'équipement).
+    /// </summary>
+    private void ShowSettings()
+    {
+        content.Controls.Clear();
+        content.Controls.Add(new SettingsView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
+    }
+
     private void ShowExportMenu()
     {
         var exportForm = new Form
@@ -255,7 +303,8 @@ public class WelcomePage : Form
             FormBorderStyle = FormBorderStyle.Sizable,
             MaximizeBox = true,
             MinimizeBox = true,
-            MinimumSize = new Size(450, 400)
+            MinimumSize = new Size(450, 400),
+            BackColor = Theme.Colors.Background
         };
 
         var layout = new TableLayoutPanel
@@ -263,17 +312,19 @@ public class WelcomePage : Form
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 7,
-            Padding = new Padding(20)
+            Padding = new Padding(Theme.Spacing.Large),
+            BackColor = Theme.Colors.Background
         };
 
         for (int i = 0; i < 6; i++)
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         var title = new Label
         {
             Text = "Sélectionnez le type d'export :",
-            Font = new Font("Segoe UI", 11f, FontStyle.Bold),
+            Font = Theme.Fonts.H5,
+            ForeColor = Theme.Colors.TextPrimary,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft
         };
@@ -283,8 +334,10 @@ public class WelcomePage : Form
         {
             Text = "Exporter les Agents",
             Dock = DockStyle.Fill,
-            Height = 40
+            Height = Theme.Sizes.ButtonHeightLarge,
+            Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
+        Theme.StylePrimaryButton(btnExpAgents);
         btnExpAgents.Click += (s, e) =>
         {
             var path = Data.CsvExporter.SelectExportFile("agents.csv");
@@ -296,8 +349,10 @@ public class WelcomePage : Form
         {
             Text = "Exporter les Équipements",
             Dock = DockStyle.Fill,
-            Height = 40
+            Height = Theme.Sizes.ButtonHeightLarge,
+            Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
+        Theme.StylePrimaryButton(btnExpEquip);
         btnExpEquip.Click += (s, e) =>
         {
             var path = Data.CsvExporter.SelectExportFile("equipements.csv");
@@ -309,8 +364,10 @@ public class WelcomePage : Form
         {
             Text = "Exporter les Prêts actifs",
             Dock = DockStyle.Fill,
-            Height = 40
+            Height = Theme.Sizes.ButtonHeightLarge,
+            Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
+        Theme.StylePrimaryButton(btnExpPrets);
         btnExpPrets.Click += (s, e) =>
         {
             var path = Data.CsvExporter.SelectExportFile("prets_actifs.csv");
@@ -323,17 +380,19 @@ public class WelcomePage : Form
             Text = "ou",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.Gray
+            ForeColor = Theme.Colors.TextSecondary,
+            Font = Theme.Fonts.Body
         };
-    layout.Controls.Add(separator, 0, 4);
+        layout.Controls.Add(separator, 0, 4);
 
         var btnExpComplet = new Button
         {
             Text = "Export complet (tous les fichiers)",
             Dock = DockStyle.Fill,
-            Height = 40,
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold)
+            Height = Theme.Sizes.ButtonHeightLarge,
+            Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
+        Theme.StyleSecondaryButton(btnExpComplet);
         btnExpComplet.Click += (s, e) =>
         {
             var folder = Data.CsvExporter.SelectExportFolder();

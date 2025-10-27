@@ -14,11 +14,13 @@ namespace ProjetParc.Views.Admin;
         private readonly Action _onCreateAgent;
         private readonly Action _onEditAgent;
         private readonly Action _onEditEquipment;
+        private readonly Action _onSettings;
         private Button btnCreateEquipment;
         private Button btnCreateAgent;
         private Button btnModificationEquipment;
         private Button btnModificationAgent;
         private Button btnExange;
+        private Button btnSettings;
 
         /// <summary>
         /// Initialise une nouvelle instance du menu d'administration
@@ -28,28 +30,32 @@ namespace ProjetParc.Views.Admin;
         /// <param name="onCreateAgent">Action à exécuter pour créer un agent</param>
         /// <param name="onEditAgent">Action à exécuter pour modifier un agent</param>
         /// <param name="onEditEquipment">Action à exécuter pour modifier un équipement</param>
-        public AdminMenuView(Action onBack, Action onCreateEquipment, Action onCreateAgent, Action onEditAgent, Action onEditEquipment)
+        /// <param name="onSettings">Action à exécuter pour accéder aux paramètres</param>
+        public AdminMenuView(Action onBack, Action onCreateEquipment, Action onCreateAgent, Action onEditAgent, Action onEditEquipment, Action onSettings)
         {
             _onBack = onBack;
             _onCreateEquipment = onCreateEquipment;
             _onCreateAgent = onCreateAgent;
             _onEditAgent = onEditAgent;
             _onEditEquipment = onEditEquipment;
+            _onSettings = onSettings;
 
             // Configuration de base
             Dock = DockStyle.Fill;
-            Padding = new Padding(0, 20, 20, 20); // Pas de padding à gauche
+            BackColor = Theme.Colors.Background;
+            Padding = new Padding(Theme.Spacing.Large);
 
             // Layout principal
             var mainLayout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 RowCount = 3,
-                ColumnCount = 1
+                ColumnCount = 1,
+                BackColor = Theme.Colors.Background
             };
 
             // Configuration des lignes du layout principal
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // En-tête
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 80)); // En-tête (augmenté pour laisser de l'espace)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 70)); // Zone des boutons principaux
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 30)); // Zone du bouton échange
 
@@ -57,34 +63,54 @@ namespace ProjetParc.Views.Admin;
             var headerPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 2,
+                ColumnCount = 3,
                 RowCount = 1,
-                Margin = new Padding(0, 0, 0, 20)
+                Margin = new Padding(0, 0, 0, Theme.Spacing.Large),
+                BackColor = Theme.Colors.Background
             };
             headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140)); // Bouton retour
             headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Titre
+            headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140)); // Bouton paramètres
 
             var btnBack = new Button 
             { 
                 Text = "← Retour",
-                Height = 36,
-                Width = 120,
+                Width = Theme.Sizes.ButtonWidth,
+                Height = Theme.Sizes.ButtonHeight,
                 Dock = DockStyle.Left,
-                Margin = new Padding(20, 0, 0, 0)
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(0),
+                Font = Theme.Fonts.Button
             };
+            Theme.StyleOutlineButton(btnBack, setHeight: false);
             btnBack.Click += (_, __) => _onBack?.Invoke();
 
             var title = new Label 
             { 
-                Text = "Menu Admin",
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                Text = "Administration",
+                Font = Theme.Fonts.H3,
+                ForeColor = Theme.Colors.Primary,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
+                Padding = new Padding(Theme.Spacing.Medium, 0, 0, 0)
             };
+
+            btnSettings = new Button
+            {
+                Text = "⚙ Paramètres",
+                Width = Theme.Sizes.ButtonWidth,
+                Height = Theme.Sizes.ButtonHeight,
+                Dock = DockStyle.Right,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(0),
+                Font = Theme.Fonts.Button
+            };
+            Theme.StyleSecondaryButton(btnSettings, setHeight: false);
+            btnSettings.Click += (_, __) => _onSettings?.Invoke();
 
             headerPanel.Controls.Add(btnBack, 0, 0);
             headerPanel.Controls.Add(title, 1, 0);
+            headerPanel.Controls.Add(btnSettings, 2, 0);
 
             // Zone des boutons principaux
             var buttonLayout = new TableLayoutPanel
@@ -92,7 +118,8 @@ namespace ProjetParc.Views.Admin;
                 Dock = DockStyle.Fill,
                 RowCount = 2,
                 ColumnCount = 2,
-                Margin = new Padding(0)
+                Margin = new Padding(0),
+                BackColor = Theme.Colors.Background
             };
 
             // Configuration des lignes et colonnes pour les boutons principaux
@@ -102,14 +129,23 @@ namespace ProjetParc.Views.Admin;
                 buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
             }
 
-            var tileFont = new Font("Segoe UI", 15f, FontStyle.Bold);
+            var tileFont = new Font("Segoe UI", 14f, FontStyle.Regular);
 
             // Création des boutons principaux
-            btnCreateEquipment = CreateMenuButton("Création Equipement", tileFont);
+            btnCreateEquipment = CreateMenuButton("Création Équipement", tileFont);
+            Theme.StylePrimaryButton(btnCreateEquipment, setHeight: false);
+            
             btnCreateAgent = CreateMenuButton("Création Agent", tileFont);
-            btnModificationEquipment = CreateMenuButton("Modification Equipement", tileFont);
-            btnModificationAgent = CreateMenuButton("Modification agent", tileFont);
-            btnExange = CreateMenuButton("Echange", tileFont);
+            Theme.StylePrimaryButton(btnCreateAgent, setHeight: false);
+            
+            btnModificationEquipment = CreateMenuButton("Modification Équipement", tileFont);
+            Theme.StyleSecondaryButton(btnModificationEquipment, setHeight: false);
+            
+            btnModificationAgent = CreateMenuButton("Modification Agent", tileFont);
+            Theme.StyleSecondaryButton(btnModificationAgent, setHeight: false);
+            
+            btnExange = CreateMenuButton("Échange", tileFont);
+            Theme.StyleOutlineButton(btnExange, setHeight: false);
 
             // Ajout des boutons au layout avec espacement
             buttonLayout.Controls.Add(btnCreateEquipment, 0, 0);
@@ -117,19 +153,27 @@ namespace ProjetParc.Views.Admin;
             buttonLayout.Controls.Add(btnModificationEquipment, 0, 1);
             buttonLayout.Controls.Add(btnModificationAgent, 1, 1);
 
-            // Zone du bouton échange
-            var exchangePanel = new Panel { Dock = DockStyle.Fill };
+            // Zone du bouton échange - Panneau avec fond
+            var exchangePanel = new Panel 
+            { 
+                Dock = DockStyle.Fill,
+                BackColor = Theme.Colors.Background,
+                Padding = new Padding(0, Theme.Spacing.Large, 0, 0)
+            };
+            
             btnExange.Dock = DockStyle.None;
             btnExange.Anchor = AnchorStyles.None;
-            btnExange.Width = 200;
-            btnExange.Height = 60;
+            btnExange.Width = Theme.Sizes.ButtonWidthLarge;
+            btnExange.Height = Theme.Sizes.ButtonHeightXLarge;
             exchangePanel.Controls.Add(btnExange);
             
             // Centrer le bouton échange
-            btnExange.Location = new Point(
-                (exchangePanel.ClientSize.Width - btnExange.Width) / 2,
-                (exchangePanel.ClientSize.Height - btnExange.Height) / 2
-            );
+            exchangePanel.Resize += (s, e) => {
+                btnExange.Location = new Point(
+                    (exchangePanel.ClientSize.Width - btnExange.Width) / 2,
+                    (exchangePanel.ClientSize.Height - btnExange.Height) / 2
+                );
+            };
 
             // Assemblage final
             mainLayout.Controls.Add(headerPanel, 0, 0);
@@ -162,9 +206,9 @@ namespace ProjetParc.Views.Admin;
                 Text = text,
                 Font = font,
                 Dock = DockStyle.Fill,
-                Margin = new Padding(50, 40, 50, 40),
-                AutoSize = false
+                Margin = new Padding(Theme.Spacing.Medium),
+                AutoSize = false,
+                Cursor = Cursors.Hand
             };
-
         }
     }

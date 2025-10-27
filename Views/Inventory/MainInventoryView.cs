@@ -14,6 +14,7 @@ public class MainInventoryView : UserControl
     private readonly Action _onBack;
     private Button btnNewLoan;
     private ListView lvEquipments;
+    private ListViewColumnSorter lvEquipmentsSorter;
     private Label lblTitle;
     private TabControl detailsTabControl;
 
@@ -38,8 +39,9 @@ public class MainInventoryView : UserControl
         {
             SuspendLayout();
             Dock = DockStyle.Fill;
-            Font = new Font("Segoe UI", 11f);
-            Padding = new Padding(20);
+            Font = Theme.Fonts.Body;
+            BackColor = Theme.Colors.Background;
+            Padding = new Padding(Theme.Spacing.Large);
 
             // TableLayoutPanel principal pour organiser la vue
             var mainLayout = new TableLayoutPanel
@@ -47,15 +49,16 @@ public class MainInventoryView : UserControl
                 Dock = DockStyle.Fill,
                 RowCount = 5,
                 ColumnCount = 1,
-                Padding = new Padding(0)
+                Padding = new Padding(0),
+                BackColor = Theme.Colors.Background
             };
 
             // Configuration des lignes
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // En-tête
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // En-tête
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 60)); // Liste des équipements
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 40)); // Détails (TabControl)
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 10)); // Espacement
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // Boutons en bas
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Boutons en bas
 
             // En-tête avec bouton retour et titre
             var headerPanel = new TableLayoutPanel
@@ -63,7 +66,8 @@ public class MainInventoryView : UserControl
                 Dock = DockStyle.Fill,
                 ColumnCount = 3,
                 RowCount = 1,
-                Margin = new Padding(0)
+                Margin = new Padding(0, 0, 0, Theme.Spacing.Medium),
+                BackColor = Theme.Colors.Background
             };
 
             headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140)); // Bouton retour
@@ -72,19 +76,24 @@ public class MainInventoryView : UserControl
 
             var btnBack = new Button { 
                 Text = "← Retour", 
-                Height = 36,
+                Height = Theme.Sizes.ButtonHeightLarge,
                 Dock = DockStyle.Left,
-                Width = 120
+                Width = Theme.Sizes.ButtonWidth,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(0),
+                Font = Theme.Fonts.Button
             };
+            Theme.StyleOutlineButton(btnBack);
             btnBack.Click += (_, __) => _onBack?.Invoke();
 
             lblTitle = new Label 
             { 
-                Text = "Equipements en place",
-                Font = new Font("Segoe UI", 14f, FontStyle.Bold),
+                Text = "Équipements en place",
+                Font = Theme.Fonts.H3,
+                ForeColor = Theme.Colors.Primary,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(10, 0, 0, 0)
+                Padding = new Padding(Theme.Spacing.Medium, 0, 0, 0)
             };
 
             headerPanel.Controls.Add(btnBack, 0, 0);
@@ -96,34 +105,47 @@ public class MainInventoryView : UserControl
                 Dock = DockStyle.Fill,
                 View = View.Details,
                 FullRowSelect = true,
-                GridLines = true
+                GridLines = true,
+                BackColor = Theme.Colors.Surface,
+                ForeColor = Theme.Colors.TextPrimary,
+                Font = Theme.Fonts.Body,
+                BorderStyle = BorderStyle.FixedSingle
             };
             lvEquipments.Columns.AddRange(new[]
             {
                 new ColumnHeader { Text = "Agent", Width = 200 },
                 new ColumnHeader { Text = "Équipements", Width = 800 }
             });
+            
+            // Configuration du tri par colonnes
+            lvEquipmentsSorter = new ListViewColumnSorter();
+            lvEquipments.ListViewItemSorter = lvEquipmentsSorter;
+            lvEquipments.ColumnClick += (s, e) => {
+                lvEquipmentsSorter.SetSortColumn(e.Column);
+                lvEquipments.Sort();
+            };
+            
             lvEquipments.SelectedIndexChanged += LvEquipments_SelectedIndexChanged;
 
             // TabControl pour les détails
             detailsTabControl = new TabControl
             {
                 Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10f)
+                Font = Theme.Fonts.Body
             };
             
             // Onglet par défaut (vide au démarrage)
             var defaultTab = new TabPage("Sélectionnez une ligne")
             {
-                BackColor = Color.White
+                BackColor = Theme.Colors.Surface
             };
             var defaultLabel = new Label
             {
                 Text = "Sélectionnez une ligne dans le tableau ci-dessus pour voir les détails",
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.Gray,
-                Font = new Font("Segoe UI", 11f, FontStyle.Italic)
+                ForeColor = Theme.Colors.TextSecondary,
+                Font = Theme.Fonts.BodyLarge
             };
             defaultTab.Controls.Add(defaultLabel);
             detailsTabControl.TabPages.Add(defaultTab);
@@ -134,32 +156,35 @@ public class MainInventoryView : UserControl
                 Dock = DockStyle.Fill,
                 ColumnCount = 3,
                 RowCount = 1,
-                Margin = new Padding(0)
+                Margin = new Padding(0),
+                BackColor = Theme.Colors.Background
             };
 
             bottomButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Espace
-            bottomButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100)); // Bouton diagnostic
-            bottomButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140)); // Bouton nouveau prêt
+            bottomButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110)); // Bouton diagnostic
+            bottomButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150)); // Bouton nouveau prêt
 
             var btnDiag = new Button
             {
-                Text = "Diag DB",
-                Height = 32,
+                Text = "Diagnostic",
+                Height = Theme.Sizes.ButtonHeight,
                 Dock = DockStyle.Fill,
-                Margin = new Padding(5)
+                Margin = new Padding(Theme.Spacing.Small)
             };
+            Theme.StyleOutlineButton(btnDiag);
             btnDiag.Click += (_, __) => ShowDbDiagnostic();
 
             btnNewLoan = new Button
             {
                 Text = "Nouveau prêt",
-                Height = 32,
+                Height = Theme.Sizes.ButtonHeight,
                 Dock = DockStyle.Fill,
-                Margin = new Padding(5)
+                Margin = new Padding(Theme.Spacing.Small)
             };
+            Theme.StylePrimaryButton(btnNewLoan);
             btnNewLoan.Click += (_, __) => ShowLoanCreationDialog();
 
-            bottomButtonsPanel.Controls.Add(new Label(), 0, 0); // Filler
+            bottomButtonsPanel.Controls.Add(new Label { BackColor = Theme.Colors.Background }, 0, 0); // Filler
             bottomButtonsPanel.Controls.Add(btnDiag, 1, 0);
             bottomButtonsPanel.Controls.Add(btnNewLoan, 2, 0);
 
@@ -167,7 +192,7 @@ public class MainInventoryView : UserControl
             mainLayout.Controls.Add(headerPanel, 0, 0);
             mainLayout.Controls.Add(lvEquipments, 0, 1);
             mainLayout.Controls.Add(detailsTabControl, 0, 2);
-            mainLayout.Controls.Add(new Label(), 0, 3); // Espacement
+            mainLayout.Controls.Add(new Label { BackColor = Theme.Colors.Background }, 0, 3); // Espacement
             mainLayout.Controls.Add(bottomButtonsPanel, 0, 4);
 
             Controls.Add(mainLayout);
@@ -401,10 +426,10 @@ public class MainInventoryView : UserControl
             using var connection = Database.Open();
 
             // === ONGLET AGENT ===
-            var agentTab = new TabPage("👤 Agent")
+            var agentTab = new TabPage("Agent")
             {
-                BackColor = Color.White,
-                Padding = new Padding(15)
+                BackColor = Theme.Colors.Surface,
+                Padding = new Padding(Theme.Spacing.Medium)
             };
 
             var agentPanel = new TableLayoutPanel
@@ -412,7 +437,8 @@ public class MainInventoryView : UserControl
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
                 RowCount = 8,
-                AutoSize = true
+                AutoSize = true,
+                BackColor = Theme.Colors.Surface
             };
 
             // Configuration des colonnes
@@ -426,9 +452,9 @@ public class MainInventoryView : UserControl
             }
 
             // Requête pour récupérer les infos de l'agent
-            using (var cmd = connection.CreateCommand())
+            using (var command = connection.CreateCommand())
             {
-                cmd.CommandText = @"
+                command.CommandText = @"
                     SELECT 
                         a.nom, 
                         a.prenom, 
@@ -442,9 +468,9 @@ public class MainInventoryView : UserControl
                     LEFT JOIN Sites s ON a.site_id = s.id
                     LEFT JOIN Equipes e ON a.equipe_id = e.id
                     WHERE a.idrh = $agentId";
-                cmd.Parameters.AddWithValue("$agentId", agentId);
+                command.Parameters.AddWithValue("$agentId", agentId);
 
-                using var reader = cmd.ExecuteReader();
+                using var reader = command.ExecuteReader();
                 if (reader.Read())
                 {
                     var nom = reader.IsDBNull(0) ? "" : reader.GetString(0);
@@ -469,9 +495,9 @@ public class MainInventoryView : UserControl
             detailsTabControl.TabPages.Add(agentTab);
 
             // === ONGLETS ÉQUIPEMENTS ===
-            using (var cmd = connection.CreateCommand())
+            using (var command = connection.CreateCommand())
             {
-                cmd.CommandText = @"
+                command.CommandText = @"
                     SELECT 
                         e.code_parc,
                         t.name as type_equipement,
@@ -483,9 +509,9 @@ public class MainInventoryView : UserControl
                     JOIN equipment_type t ON t.id = e.type_id
                     WHERE e.idrh = $agentId AND e.etat_pret = 1
                     ORDER BY t.name, e.nom";
-                cmd.Parameters.AddWithValue("$agentId", agentId);
+                command.Parameters.AddWithValue("$agentId", agentId);
 
-                using var reader = cmd.ExecuteReader();
+                using var reader = command.ExecuteReader();
                 int equipmentIndex = 1;
 
                 while (reader.Read())
@@ -497,10 +523,10 @@ public class MainInventoryView : UserControl
                     var marque = reader.IsDBNull(4) ? "" : reader.GetString(4);
                     var etat = reader.GetInt32(5);
 
-                    var equipTab = new TabPage($"🖥️ Équipement {equipmentIndex}")
+                    var equipTab = new TabPage($"Équipement {equipmentIndex}")
                     {
-                        BackColor = Color.White,
-                        Padding = new Padding(15)
+                        BackColor = Theme.Colors.Surface,
+                        Padding = new Padding(Theme.Spacing.Medium)
                     };
 
                     var equipPanel = new TableLayoutPanel
@@ -508,7 +534,8 @@ public class MainInventoryView : UserControl
                         Dock = DockStyle.Fill,
                         ColumnCount = 2,
                         RowCount = 6,
-                        AutoSize = true
+                        AutoSize = true,
+                        BackColor = Theme.Colors.Surface
                     };
 
                     // Configuration des colonnes
@@ -558,20 +585,22 @@ public class MainInventoryView : UserControl
         var label = new Label
         {
             Text = labelText,
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(5)
+            Padding = new Padding(Theme.Spacing.Small)
         };
 
         var value = new Label
         {
             Text = valueText,
-            Font = new Font("Segoe UI", 10f),
+            Font = Theme.Fonts.Body,
+            ForeColor = Theme.Colors.TextPrimary,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(5),
-            BackColor = Color.FromArgb(245, 245, 245)
+            Padding = new Padding(Theme.Spacing.Small),
+            BackColor = Theme.Colors.SurfaceHover
         };
 
         panel.Controls.Add(label, 0, row);

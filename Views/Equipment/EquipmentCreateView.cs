@@ -38,16 +38,18 @@ public class EquipmentCreateView : UserControl
     private void BuildUi()
     {
         Dock = DockStyle.Fill;
-        Font = new Font("Segoe UI", 11f, FontStyle.Regular);
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
 
         TableLayoutPanel mainLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 3,
-            Padding = new Padding(20),
+            Padding = new Padding(Theme.Spacing.Large),
+            BackColor = Theme.Colors.Background,
             RowStyles = {
-                new RowStyle(SizeType.Absolute, 45),  // Bouton retour
+                new RowStyle(SizeType.Absolute, 60),  // Bouton retour
                 new RowStyle(SizeType.Percent, 100),  // Formulaire
                 new RowStyle(SizeType.Absolute, 80)   // Bouton créer
             }
@@ -55,7 +57,17 @@ public class EquipmentCreateView : UserControl
         Controls.Add(mainLayout);
 
         // Bouton retour
-        var btnBack = new Button { Text = "← Retour", Width = 120, Height = 36, Anchor = AnchorStyles.Left };
+        var btnBack = new Button 
+        { 
+            Text = "← Retour", 
+            Width = Theme.Sizes.ButtonWidth, 
+            Height = Theme.Sizes.ButtonHeightLarge, 
+            Anchor = AnchorStyles.Left,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0),
+            Font = Theme.Fonts.Button
+        };
+        Theme.StyleOutlineButton(btnBack);
         btnBack.Click += (_, __) => _onBack?.Invoke();
         mainLayout.Controls.Add(btnBack, 0, 0);
 
@@ -65,7 +77,8 @@ public class EquipmentCreateView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 7,
-            Padding = new Padding(20),
+            Padding = new Padding(Theme.Spacing.Large),
+            BackColor = Theme.Colors.Surface,
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33.33f),
                 new ColumnStyle(SizeType.Percent, 33.33f),
@@ -84,26 +97,41 @@ public class EquipmentCreateView : UserControl
         mainLayout.Controls.Add(formLayout, 0, 1);
 
         // Première ligne : Type, Nom, Code parc
-        AddFormRow(formLayout, 0, "Type", cbType = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList });
-        AddFormRow(formLayout, 0, "Nom", tbName = new TextBox(), 1);
-        AddFormRow(formLayout, 0, "Code parc", tbCodeParc = new TextBox(), 2);
+        cbType = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+        Theme.StyleComboBox(cbType);
+        AddFormRow(formLayout, 0, "Type", cbType);
+        
+        tbName = new TextBox();
+        Theme.StyleTextBox(tbName);
+        AddFormRow(formLayout, 0, "Nom", tbName, 1);
+        
+        tbCodeParc = new TextBox();
+        Theme.StyleTextBox(tbCodeParc);
+        AddFormRow(formLayout, 0, "Code parc", tbCodeParc, 2);
 
         // Deuxième ligne : Numéro de série, Marque
-        AddFormRow(formLayout, 2, "Numéro de série", tbSerial = new TextBox());
-        AddFormRow(formLayout, 2, "Marque", tbBrand = new TextBox(), 1);
+        tbSerial = new TextBox();
+        Theme.StyleTextBox(tbSerial);
+        AddFormRow(formLayout, 2, "Numéro de série", tbSerial);
+        
+        tbBrand = new TextBox();
+        Theme.StyleTextBox(tbBrand);
+        AddFormRow(formLayout, 2, "Marque", tbBrand, 1);
 
         // Troisième ligne : Commentaire (sur toute la largeur)
-        AddFormRow(formLayout, 4, "Commentaire", tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical }, 0, 3);
+        tbComment = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical };
+        Theme.StyleTextBox(tbComment);
+        AddFormRow(formLayout, 4, "Commentaire", tbComment, 0, 3);
 
         // Bouton créer (en bas)
         btnCreate = new Button
         {
             Text = "Créer",
-            Height = 52,
-            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
+            Height = Theme.Sizes.ButtonHeight,
             Dock = DockStyle.Right,
-            Width = 180
+            Width = Theme.Sizes.ButtonWidth
         };
+        Theme.StylePrimaryButton(btnCreate);
         mainLayout.Controls.Add(btnCreate, 0, 2);
 
         // Définir l'ordre de tabulation
@@ -263,7 +291,8 @@ public class EquipmentCreateView : UserControl
         { 
             Text = labelText, 
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary,
             Padding = new Padding(5, 0, 0, 5),
             Margin = new Padding(5, 0, 15, 0)
         };

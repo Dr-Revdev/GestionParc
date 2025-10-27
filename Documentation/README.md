@@ -110,6 +110,21 @@ Chaque fichier est expliqué **ligne par ligne**, avec des analogies de la vie q
     - **Durée de lecture :** ~15 minutes
     - **Niveau :** Débutant-Intermédiaire
 
+#### Vues de paramètres
+15. **[SettingsView.cs](14_SettingsView.md)** ✅ Terminé
+    - Configuration de l'application
+    - Gestion des paramètres (équipes, sites, types d'équipements)
+    - **Durée de lecture :** ~30 minutes
+    - **Niveau :** Intermédiaire
+
+#### Utilitaires
+16. **[ListViewColumnSorter.cs](15_ListViewColumnSorter.md)** ✅ Terminé 🆕
+    - Classe utilitaire pour trier les colonnes de ListView
+    - Tri alphabétique et numérique intelligent
+    - Utilisé dans toutes les vues avec tableaux
+    - **Durée de lecture :** ~15 minutes
+    - **Niveau :** Intermédiaire
+
 ---
 
 ## 🎓 Comment utiliser cette documentation
@@ -167,7 +182,10 @@ ProjetParc/
 │   ├── 📄 WelcomePage.cs
 │   │   └─ Page d'accueil
 │   │
-│   ├── 📁 Admin/
+│   ├── � ListViewColumnSorter.cs 🆕
+│   │   └─ Utilitaire de tri pour ListView
+│   │
+│   ├── �📁 Admin/
 │   │   └── 📄 AdminMenuView.cs
 │   │
 │   ├── 📁 Agent/
@@ -181,6 +199,9 @@ ProjetParc/
 │   │
 │   ├── 📁 Inventory/
 │   │   └── 📄 MainInventoryView.cs
+│   │
+│   ├── 📁 Settings/
+│   │   └── 📄 SettingsView.cs
 │   │
 │   └── 📁 Loan/
 │       ├── 📄 LoanCreationView.cs
@@ -287,6 +308,11 @@ La plateforme sur laquelle tourne l'application. Version la plus récente.
 
 ### Si tu veux créer des interfaces graphiques
 - [Microsoft Docs - Windows Forms](https://docs.microsoft.com/fr-fr/dotnet/desktop/winforms/)
+
+### Si tu veux comprendre les ListView et le tri 🆕
+- ListView : Affichage de données sous forme de tableau avec colonnes
+- Tri : Organisation automatique par ordre alphabétique ou numérique
+- Notre implémentation : `ListViewColumnSorter.cs` (voir documentation)
 
 ---
 

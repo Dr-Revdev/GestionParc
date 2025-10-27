@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
+using ProjetParc.Views.Loan.Models;
 
 namespace ProjetParc.Views.Equipment;
 
@@ -33,7 +34,8 @@ public class EquipmentExchangeView : Form
         Text = "Échange d'équipements entre agents";
         Size = new Size(900, 600);
         StartPosition = FormStartPosition.CenterParent;
-        Font = new Font("Segoe UI", 10f);
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -43,7 +45,8 @@ public class EquipmentExchangeView : Form
             Dock = DockStyle.Fill,
             RowCount = 4,
             ColumnCount = 1,
-            Padding = new Padding(20)
+            Padding = new Padding(20),
+            BackColor = Theme.Colors.Background
         };
 
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Titre
@@ -55,7 +58,8 @@ public class EquipmentExchangeView : Form
         var lblTitle = new Label
         {
             Text = "Échange d'équipements entre agents",
-            Font = new Font("Segoe UI", 14f, FontStyle.Bold),
+            Font = Theme.Fonts.H3,
+            ForeColor = Theme.Colors.TextPrimary,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter
         };
@@ -85,16 +89,16 @@ public class EquipmentExchangeView : Form
         var separatorPanel = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.LightGray,
+            BackColor = Theme.Colors.Border,
             Padding = new Padding(20, 0, 20, 0)
         };
         var lblSeparator = new Label
         {
             Text = "⇄",
-            Font = new Font("Segoe UI", 36f, FontStyle.Bold),
+            Font = Theme.Fonts.H1,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.Gray
+            ForeColor = Theme.Colors.TextSecondary
         };
         separatorPanel.Controls.Add(lblSeparator);
 
@@ -115,20 +119,16 @@ public class EquipmentExchangeView : Form
         // === BOUTON ÉCHANGER (CENTRE) ===
         var exchangeButtonPanel = new Panel
         {
-            Dock = DockStyle.Fill
+            Dock = DockStyle.Fill,
+            BackColor = Theme.Colors.Background
         };
 
         btnExchange = new Button
         {
             Text = "Échanger",
-            Width = 150,
-            Height = 40,
-            Font = new Font("Segoe UI", 11f, FontStyle.Bold),
-            BackColor = Color.FromArgb(0, 120, 215),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
+            Width = 150
         };
-        btnExchange.FlatAppearance.BorderSize = 0;
+        Theme.StylePrimaryButton(btnExchange);
         btnExchange.Click += BtnExchange_Click;
 
         // Centrer le bouton
@@ -148,21 +148,17 @@ public class EquipmentExchangeView : Form
         {
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            WrapContents = false
+            WrapContents = false,
+            BackColor = Theme.Colors.Background
         };
 
         btnCancel = new Button
         {
             Text = "Valider",
             Width = 120,
-            Height = 36,
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
-            BackColor = Color.FromArgb(40, 167, 69),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
             Margin = new Padding(5)
         };
-        btnCancel.FlatAppearance.BorderSize = 0;
+        Theme.StyleSuccessButton(btnCancel);
         btnCancel.Click += (s, e) => { DialogResult = DialogResult.OK; Close(); };
 
         validateButtonPanel.Controls.Add(btnCancel);
@@ -182,7 +178,8 @@ public class EquipmentExchangeView : Form
             Dock = DockStyle.Fill,
             RowCount = 4,
             ColumnCount = 1,
-            Padding = new Padding(10)
+            Padding = new Padding(10),
+            BackColor = Theme.Colors.Surface
         };
 
         panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40)); // Titre
@@ -194,7 +191,8 @@ public class EquipmentExchangeView : Form
         var lblTitle = new Label
         {
             Text = title,
-            Font = new Font("Segoe UI", 12f, FontStyle.Bold),
+            Font = Theme.Fonts.H5,
+            ForeColor = Theme.Colors.TextPrimary,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft
         };
@@ -203,15 +201,16 @@ public class EquipmentExchangeView : Form
         comboBox = new ComboBox
         {
             Dock = DockStyle.Fill,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Font = new Font("Segoe UI", 10f)
+            DropDownStyle = ComboBoxStyle.DropDownList
         };
+        Theme.StyleComboBox(comboBox);
 
         // CheckedListBox
         checkedListBox = new CheckedListBox
         {
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9f),
+            Font = Theme.Fonts.BodySmall,
+            BackColor = Theme.Colors.Surface,
             CheckOnClick = true
         };
 
@@ -221,8 +220,8 @@ public class EquipmentExchangeView : Form
             Text = "Sélectionnés : 0",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 9f, FontStyle.Italic),
-            ForeColor = Color.Gray
+            Font = Theme.Fonts.Caption,
+            ForeColor = Theme.Colors.TextSecondary
         };
 
         panel.Controls.Add(lblTitle, 0, 0);
@@ -243,14 +242,14 @@ public class EquipmentExchangeView : Form
             var agents = new List<AgentItem>();
 
             using var connection = Database.Open();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
                 SELECT a.idrh, a.nom, a.prenom, e.name as equipe
                 FROM Agents a
                 LEFT JOIN Equipes e ON a.equipe_id = e.id
                 ORDER BY a.nom, a.prenom";
 
-            using var reader = cmd.ExecuteReader();
+            using var reader = command.ExecuteReader();
             while (reader.Read())
             {
                 var idrh = reader.GetString(0);
@@ -313,16 +312,16 @@ public class EquipmentExchangeView : Form
         try
         {
             using var connection = Database.Open();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
                 SELECT e.id_equipement, t.name, e.nom, e.code_parc, e.numero_serie
                 FROM Equipements e
                 JOIN equipment_type t ON e.type_id = t.id
                 WHERE e.idrh = $idrh AND e.etat_pret = 1
                 ORDER BY t.name, e.nom";
-            cmd.Parameters.AddWithValue("$idrh", agent.Idrh);
+            command.Parameters.AddWithValue("$idrh", agent.Idrh);
 
-            using var reader = cmd.ExecuteReader();
+            using var reader = command.ExecuteReader();
             while (reader.Read())
             {
                 var equipmentItem = new EquipmentItem
@@ -425,21 +424,21 @@ public class EquipmentExchangeView : Form
             // Transférer les équipements de Agent1 vers Agent2
             foreach (var equipment in agent1Equipments)
             {
-                using var cmd = connection.CreateCommand();
-                cmd.CommandText = "UPDATE Equipements SET idrh = $newIdrh WHERE id_equipement = $id";
-                cmd.Parameters.AddWithValue("$newIdrh", agent2.Idrh);
-                cmd.Parameters.AddWithValue("$id", equipment.Id);
-                cmd.ExecuteNonQuery();
+                using var command = connection.CreateCommand();
+                command.CommandText = "UPDATE Equipements SET idrh = $newIdrh WHERE id_equipement = $id";
+                command.Parameters.AddWithValue("$newIdrh", agent2.Idrh);
+                command.Parameters.AddWithValue("$id", equipment.Id);
+                command.ExecuteNonQuery();
             }
 
             // Transférer les équipements de Agent2 vers Agent1
             foreach (var equipment in agent2Equipments)
             {
-                using var cmd = connection.CreateCommand();
-                cmd.CommandText = "UPDATE Equipements SET idrh = $newIdrh WHERE id_equipement = $id";
-                cmd.Parameters.AddWithValue("$newIdrh", agent1.Idrh);
-                cmd.Parameters.AddWithValue("$id", equipment.Id);
-                cmd.ExecuteNonQuery();
+                using var command = connection.CreateCommand();
+                command.CommandText = "UPDATE Equipements SET idrh = $newIdrh WHERE id_equipement = $id";
+                command.Parameters.AddWithValue("$newIdrh", agent1.Idrh);
+                command.Parameters.AddWithValue("$id", equipment.Id);
+                command.ExecuteNonQuery();
             }
 
             transaction.Commit();
@@ -456,25 +455,5 @@ public class EquipmentExchangeView : Form
             MessageBox.Show($"Erreur lors de l'échange : {ex.Message}", 
                           "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-    }
-
-    /// <summary>
-    /// Classe pour représenter un agent dans les ComboBox
-    /// </summary>
-    private class AgentItem
-    {
-        public string Idrh { get; set; }
-        public string DisplayName { get; set; }
-        public override string ToString() => DisplayName;
-    }
-
-    /// <summary>
-    /// Classe pour représenter un équipement dans les CheckedListBox
-    /// </summary>
-    private class EquipmentItem
-    {
-        public string Id { get; set; }
-        public string DisplayName { get; set; }
-        public override string ToString() => DisplayName;
     }
 }

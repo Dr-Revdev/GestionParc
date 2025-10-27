@@ -9,11 +9,13 @@ Vue de **modification et suppression** d'équipements existants. Interface en 3 
 
 ## 📋 Structure principale
 
-Fichier de **334 lignes** avec :
-- **Liste d'équipements** (gauche, 30%)
+Fichier de **~590 lignes** avec :
+- **Liste d'équipements** (gauche, 30%) - **ListView triable avec colonnes**
 - **Séparateur gris** (2px)
 - **Formulaire d'édition** (droite, 70%)
 - Recherche, modification, suppression
+
+**Nouveau** : Utilise `ListView` avec 4 colonnes triables au lieu de `ListBox`.
 
 ---
 
@@ -22,22 +24,30 @@ Fichier de **334 lignes** avec :
 ### Layout en 3 colonnes
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ [← Retour]                                          │
-├─────────────────────┬──┬─────────────────────────────┤
-│ [🔍 Recherche]  [⌕] │░░│  FORMULAIRE D'ÉDITION       │
-│                     │░░│  ┌──────┬──────┬──────────┐ │
-│ Liste équipements:  │░░│  │ Type │ Nom  │Code parc │ │
-│ ┌─────────────────┐ │░░│  ├──────┼──────┼──────────┤ │
-│ │ PC Dell [...001]│ │░░│  │ N°   │Marque│          │ │
-│ │ Écran LG [..02] │◄┼░░┼─►│série │      │          │ │
-│ │ Souris MS [03]  │ │░░│  ├──────┴──────┴──────────┤ │
-│ │ ...             │ │░░│  │ Commentaire (multiligne)│ │
-│ └─────────────────┘ │░░│  │                         │ │
-│                     │░░│  └─────────────────────────┘ │
-│                     │░░│        [Modifier] [Supprimer]│
-└─────────────────────┴──┴─────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│ [← Retour]                                                 │
+├─────────────────────┬──┬────────────────────────────────────┤
+│ [🔍 Recherche]  [⌕] │░░│  FORMULAIRE D'ÉDITION             │
+│                     │░░│  ┌──────┬──────┬──────────┐       │
+│ Liste équipements:  │░░│  │ Type │ Nom  │Code parc │       │
+│ ┌─────────────────┐ │░░│  ├──────┼──────┼──────────┤       │
+│ │Type│Code│N°│Nom │ │░░│  │ N°   │Marque│          │       │
+│ ├────┼────┼──┼────┤ │░░│  │série │      │          │       │
+│ │PC  │001 │..│Dell│◄┼░░┼─►├──────┴──────┴──────────┤       │
+│ │Écrn│02  │..│LG  │ │░░│  │ Commentaire (multiligne)│       │
+│ │... │    │  │    │ │░░│  │                         │       │
+│ └────┴────┴──┴────┘ │░░│  └─────────────────────────┘       │
+│ ⬆️ Clic pour trier   │░░│        [Modifier] [Supprimer]    │
+└─────────────────────┴──┴────────────────────────────────────┘
 ```
+
+**Colonnes triables** :
+- Type
+- Code Parc
+- N° Série
+- Nom
+
+Cliquer sur une colonne pour trier, re-cliquer pour inverser l'ordre.
 
 ---
 
@@ -50,15 +60,20 @@ WHERE e.nom LIKE $p OR e.code_parc LIKE $p
    OR e.numero_serie LIKE $p OR t.name LIKE $p
 ```
 
-### 2. **Affichage liste**
-Format : `Nom [Code] Type`
-Exemple : `Dell Latitude [PC-001] Ordinateur portable`
+### 2. **Affichage liste (ListView avec colonnes)**
+**Nouveau** : Format en colonnes séparées au lieu d'un label unique.
 
-Requête avec JOIN :
+Requête avec JOIN et colonnes :
 ```sql
-SELECT e.id_equipement, e.nom, e.code_parc, t.name
+SELECT e.id_equipement,
+       t.name AS type,
+       TRIM(COALESCE(e.code_parc, '-')) AS code,
+       TRIM(COALESCE(e.numero_serie, '-')) AS serial,
+       COALESCE(TRIM(e.nom), '(sans nom)') AS nom
 FROM Equipements e
 JOIN equipment_type t ON t.id = e.type_id
+ORDER BY type, code, serial;
+```
 ORDER BY e.nom COLLATE NOCASE
 ```
 

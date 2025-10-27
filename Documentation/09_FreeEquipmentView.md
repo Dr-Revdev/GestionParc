@@ -9,10 +9,12 @@ Vue affichant **deux listes d'équipements** : disponibles et rendus DSEM. Perme
 
 ## 📋 Structure principale
 
-Fichier de **327 lignes** avec interface en 3 colonnes :
-- **Colonne gauche** : Équipements disponibles (etat_pret = 0)
-- **Colonne milieu** : Équipements rendus DSEM (etat_pret = 2)
+Fichier de **~630 lignes** avec interface en 3 colonnes :
+- **Colonne gauche** : Équipements disponibles (etat_pret = 0) - **ListView triable**
+- **Colonne milieu** : Équipements rendus DSEM (etat_pret = 2) - **ListView triable**
 - **Colonne droite** : Détails de l'équipement sélectionné
+
+**Nouveau** : Les listes utilisent maintenant `ListView` au lieu de `ListBox` avec colonnes triables.
 
 ---
 
@@ -21,22 +23,31 @@ Fichier de **327 lignes** avec interface en 3 colonnes :
 ### Layout en 3 colonnes égales
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│ [← Retour]  Gestion des équipements                      │
-├──────────────────┬──────────────────┬────────────────────┤
-│ Disponible       │ Rendu DSEM       │ Détails            │
-│ [🔍____] [⌕]     │ [🔍____] [⌕]     │                    │
-│ ┌──────────────┐ │ ┌──────────────┐ │ Type: [_________] │
-│ │PC Dell [001] │ │ │Écran LG [05] │ │ Nom: [_________]  │
-│ │Souris MS [02]│ │ │Clavier HP..  │ │ Code: [_________] │
-│ │Écran SA [03] │◄┼─┼─────────────►│ │ N° série: [____]  │
-│ │...           │ │ │              │ │ Marque: [_______] │
-│ └──────────────┘ │ └──────────────┘ │                   │
-│                  │                  │ ☑ Rendre DSEM     │
-│                  │                  │ Commentaire:      │
-│                  │                  │ [______________]  │
-└──────────────────┴──────────────────┴────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ [← Retour]  Gestion des équipements                              │
+├──────────────────┬──────────────────┬──────────────────────────┤
+│ Disponible       │ Rendu DSEM       │ Détails                  │
+│ [🔍____] [⌕]     │ [🔍____] [⌕]     │                          │
+│ ┌────────────────┐ ┌────────────────┐                          │
+│ │Type│Code│N°│Nom│ │Type│Code│N°│Nom│ Type: [_________]       │
+│ ├────┼────┼──┼───┤ ├────┼────┼──┼───┤ Nom: [_________]        │
+│ │PC  │001 │..│..│◄┼─│Écrn│05 │..│..│ Code: [_________]       │
+│ │Sour│02  │..│..│ │ │Clav│HP │..│..│ N° série: [____]        │
+│ │Écrn│03  │..│..│ │ │... │   │  │  │ Marque: [_______]       │
+│ └────┴────┴──┴───┘ └────┴────┴──┴───┘                          │
+│                                       ☑ Rendre DSEM             │
+│ ⬆️ Cliquer colonne pour trier         Commentaire:             │
+│                                       [______________]          │
+└──────────────────┴──────────────────┴──────────────────────────┘
 ```
+
+**Colonnes triables** :
+- Type
+- Code Parc
+- N° Série
+- Nom
+
+Cliquer sur une colonne pour trier, re-cliquer pour inverser l'ordre.
 
 ---
 
@@ -68,21 +79,31 @@ Cocher/décocher "Rendre DSEM" :
 
 ### **LoadAvailable()** - Liste disponibles
 ```sql
-SELECT e.id_equipement, e.nom, e.code_parc, t.name
+SELECT e.id_equipement, 
+       t.name AS type,
+       TRIM(COALESCE(e.code_parc, '-')) AS code,
+       TRIM(COALESCE(e.numero_serie, '-')) AS serial,
+       COALESCE(TRIM(e.nom), '(sans nom)') AS nom
 FROM "Equipements" e
 JOIN equipment_type t ON t.id = e.type_id
 WHERE COALESCE(e.etat_pret,0) = 0
-ORDER BY n, c;
+ORDER BY type, code, serial;
 ```
+**Nouveau** : Retourne les colonnes séparées pour le ListView.
 
 ### **LoadReturned()** - Liste rendus
 ```sql
-SELECT e.id_equipement, e.nom, e.code_parc, t.name
+SELECT e.id_equipement, 
+       t.name AS type,
+       TRIM(COALESCE(e.code_parc, '-')) AS code,
+       TRIM(COALESCE(e.numero_serie, '-')) AS serial,
+       COALESCE(TRIM(e.nom), '(sans nom)') AS nom
 FROM "Equipements" e
 JOIN equipment_type t ON t.id = e.type_id
 WHERE COALESCE(e.etat_pret,0) = 2
-ORDER BY n, c;
+ORDER BY type, code, serial;
 ```
+**Nouveau** : Retourne les colonnes séparées pour le ListView.
 
 ### **LoadDetails()** - Détails équipement
 ```sql
@@ -141,14 +162,34 @@ Avec `$v = 2` si checked, `$v = 0` si unchecked.
 
 ## 🎓 Concepts techniques
 
-### **1. Désélection croisée**
-Quand on sélectionne dans une liste, désélectionner l'autre :
+### **1. ListView avec tri par colonnes**
+Utilise `ListViewColumnSorter` pour le tri :
 ```csharp
-lbAvailabe.Enter += (_, __) => lbReturned.ClearSelected();
-lbReturned.Enter += (_, __) => lbAvailabe.ClearSelected();
+lvAvailableSorter = new ListViewColumnSorter();
+lvAvailable.ListViewItemSorter = lvAvailableSorter;
+lvAvailable.ColumnClick += (s, e) => {
+    lvAvailableSorter.SetSortColumn(e.Column);
+    lvAvailable.Sort();
+};
 ```
 
-### **2. Événement CheckedChanged**
+### **2. Remplissage du ListView**
+```csharp
+lvAvailable.Items.Clear();
+var item = new ListViewItem(type);
+item.SubItems.AddRange(new[] { code, serial, nom });
+item.Tag = id; // Stocke l'ID pour récupération
+lvAvailable.Items.Add(item);
+```
+
+### **3. Sélection croisée**
+Quand on sélectionne dans une liste, désélectionner l'autre :
+```csharp
+lvAvailable.Enter += (_, __) => lvReturned.SelectedItems.Clear();
+lvReturned.Enter += (_, __) => lvAvailable.SelectedItems.Clear();
+```
+
+### **4. Événement CheckedChanged**
 Détaché temporairement pour éviter les boucles :
 ```csharp
 cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
@@ -156,23 +197,14 @@ cbxRenduDsem.Checked = r.GetInt32(7) != 0;
 cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
 ```
 
-### **3. Tag pour stocker l'ID**
+### **5. Tag pour stocker l'ID**
 ```csharp
 cbxRenduDsem.Tag = equipmentId;
 // Plus tard:
 if (cbxRenduDsem.Tag is not string id) return;
 ```
 
-### **4. BeginUpdate/EndUpdate**
-Optimisation pour le remplissage des ListBox :
-```csharp
-lbAvailabe.BeginUpdate();
-lbAvailabe.DataSource = items;
-lbAvailabe.SelectedIndex = -1;
-lbAvailabe.EndUpdate();
-```
-
-### **5. Champs en lecture seule**
+### **6. Champs en lecture seule**
 ```csharp
 tbType = new TextBox { ReadOnly = true }
 ```
@@ -199,6 +231,13 @@ Code parc affiché seulement s'il existe.
 **Recherche persistante :**
 Le texte de recherche est conservé lors des rafraîchissements.
 
+**Bordures et grille :**
+```csharp
+BorderStyle = BorderStyle.FixedSingle,
+GridLines = true
+```
+Affichage professionnel avec bordures noires et lignes de séparation.
+
 ---
 
 ## ⚠️ Attention
@@ -218,6 +257,7 @@ Seul le checkbox "Rendre DSEM" est interactif.
 - **WelcomePage.cs** - Appelle cette vue (bouton "Equipements disponibles")
 - **EquipmentEditView.cs** - Pour modification complète
 - **MainInventoryView.cs** - Pour voir les prêts
+- **ListViewColumnSorter.cs** - Gestion du tri des colonnes
 - **DataBase.cs** - Connexion
 - **Tables** : `Equipements`, `equipment_type`
 

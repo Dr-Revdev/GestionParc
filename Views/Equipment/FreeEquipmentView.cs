@@ -15,12 +15,14 @@ public class FreeEquipmentView : UserControl
     // Affichage gauche
     private TextBox tbSearchAvailable;
     private Button btnSearchAvailable;
-    private ListBox lbAvailabe;
+    private ListView lvAvailable;
+    private ListViewColumnSorter lvAvailableSorter;
 
     // Affichage milieu
     private TextBox tbSearchReturned;
     private Button btnSearchReturned;
-    private ListBox lbReturned;
+    private ListView lvReturned;
+    private ListViewColumnSorter lvReturnedSorter;
 
     // Affichage détail sélection droite
     private TextBox tbType, tbName, tbCodeParc, tbSerial, tbBrand, tbComment;
@@ -49,16 +51,16 @@ public class FreeEquipmentView : UserControl
         btnSearchReturned.Click += (_, __) => LoadReturned(tbSearchReturned.Text);
 
         // Chargement du panneau droit quand sélection d'un item
-        lbAvailabe.SelectedIndexChanged += LbAvailable_Selected;
-        lbReturned.SelectedIndexChanged += LbReturned_Selected;
+        lvAvailable.SelectedIndexChanged += LbAvailable_Selected;
+        lvReturned.SelectedIndexChanged += LbReturned_Selected;
 
         // Maj et rafraichisement des 2 listes
 
         cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
 
         // Mise à zéro de la sélection
-        lbAvailabe.Enter += (_, __) => lbReturned.ClearSelected();
-        lbReturned.Enter += (_, __) => lbAvailabe.ClearSelected();
+        lvAvailable.Enter += (_, __) => lvReturned.SelectedItems.Clear();
+        lvReturned.Enter += (_, __) => lvAvailable.SelectedItems.Clear();
     }
 
     /// <summary>
@@ -68,7 +70,8 @@ public class FreeEquipmentView : UserControl
     {
         SuspendLayout();
         Dock = DockStyle.Fill;
-        Font = new Font("Segoe UI", 11f, FontStyle.Regular);
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
         
         // Layout principal avec en-tête
         TableLayoutPanel mainLayout = new TableLayoutPanel
@@ -76,11 +79,12 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 2,
-            Padding = new Padding(20)
+            Padding = new Padding(Theme.Spacing.Large),
+            BackColor = Theme.Colors.Background
         };
 
         // Configuration des lignes
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // En-tête
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 60)); // En-tête
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Contenu
 
         Controls.Add(mainLayout);
@@ -91,7 +95,8 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
-            Margin = new Padding(0, 0, 0, 10)
+            Margin = new Padding(0, 0, 0, Theme.Spacing.Medium),
+            BackColor = Theme.Colors.Background
         };
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 140)); // Bouton retour
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Titre
@@ -99,18 +104,24 @@ public class FreeEquipmentView : UserControl
         var btnBack = new Button 
         { 
             Text = "← Retour", 
-            Width = 120, 
-            Height = 36, 
-            Anchor = AnchorStyles.Left
+            Width = Theme.Sizes.ButtonWidth, 
+            Height = Theme.Sizes.ButtonHeightLarge, 
+            Anchor = AnchorStyles.Left,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0),
+            Font = Theme.Fonts.Button
         };
+        Theme.StyleOutlineButton(btnBack);
         btnBack.Click += (_, __) => _onBack?.Invoke();
 
         var lblTitle = new Label
         {
             Text = "Gestion des équipements",
-            Font = new Font("Segoe UI", 14f, FontStyle.Bold),
+            Font = Theme.Fonts.H3,
+            ForeColor = Theme.Colors.Primary,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(Theme.Spacing.Medium, 0, 0, 0)
         };
 
         headerPanel.Controls.Add(btnBack, 0, 0);
@@ -123,6 +134,7 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 1,
+            BackColor = Theme.Colors.Background,
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 33),  // Liste disponible
                 new ColumnStyle(SizeType.Percent, 33),  // Liste DSEM
@@ -138,17 +150,27 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             RowCount = 3,
             ColumnCount = 1,
-            Padding = new Padding(5),
+            Padding = new Padding(Theme.Spacing.Small),
+            BackColor = Theme.Colors.Surface,
+            Margin = new Padding(0, 0, Theme.Spacing.Small, 0),
             RowStyles = {
-                new RowStyle(SizeType.Absolute, 40),  // Titre
-                new RowStyle(SizeType.Absolute, 40),  // Recherche
+                new RowStyle(SizeType.Absolute, 45),  // Titre
+                new RowStyle(SizeType.Absolute, 55),  // Recherche
                 new RowStyle(SizeType.Percent, 100)   // Liste
             }
         };
         contentLayout.Controls.Add(leftPanel, 0, 0);
 
         // Titre gauche
-        var lblAvailable = new Label { Text = "Disponible", Dock = DockStyle.Fill };
+        var lblAvailable = new Label 
+        { 
+            Text = "Disponible", 
+            Dock = DockStyle.Fill,
+            Font = Theme.Fonts.H5,
+            ForeColor = Theme.Colors.Primary,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0, Theme.Spacing.Small, 0, 0)
+        };
         leftPanel.Controls.Add(lblAvailable, 0, 0);
 
         // Recherche gauche
@@ -157,20 +179,50 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
+            Margin = new Padding(Theme.Spacing.Small),
             ColumnStyles = {
-                new ColumnStyle(SizeType.Percent, 85),
-                new ColumnStyle(SizeType.Percent, 15)
+                new ColumnStyle(SizeType.Percent, 100),
+                new ColumnStyle(SizeType.Absolute, 40)
             }
         };
-        tbSearchAvailable = new TextBox { Dock = DockStyle.Fill, Height = 32 };
-        btnSearchAvailable = new Button { Text = "🔍", Dock = DockStyle.Fill };
+        tbSearchAvailable = new TextBox { Dock = DockStyle.Fill, Font = Theme.Fonts.Body };
+        Theme.StyleTextBox(tbSearchAvailable);
+        btnSearchAvailable = new Button { Text = "🔍", Width = Theme.Sizes.SearchButtonSize, Height = Theme.Sizes.SearchButtonSize, Dock = DockStyle.Right };
+        Theme.StylePrimaryButton(btnSearchAvailable, setHeight: false);
+        btnSearchAvailable.Font = new Font("Segoe UI", 12f);
         searchPanel.Controls.Add(tbSearchAvailable, 0, 0);
         searchPanel.Controls.Add(btnSearchAvailable, 1, 0);
         leftPanel.Controls.Add(searchPanel, 0, 1);
 
-        // Liste gauche
-        lbAvailabe = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
-        leftPanel.Controls.Add(lbAvailabe, 0, 2);
+        // Liste gauche (ListView avec colonnes)
+        lvAvailable = new ListView 
+        { 
+            Dock = DockStyle.Fill,
+            View = View.Details,
+            FullRowSelect = true,
+            GridLines = true,
+            BackColor = Theme.Colors.Surface,
+            ForeColor = Theme.Colors.TextPrimary,
+            Font = Theme.Fonts.Body,
+            BorderStyle = BorderStyle.FixedSingle,
+            Margin = new Padding(Theme.Spacing.Small)
+        };
+        
+        // Colonnes pour équipements : Type | Nom | Code Parc | N° Série
+        lvAvailable.Columns.Add("Type", 120);
+        lvAvailable.Columns.Add("Code Parc", 100);
+        lvAvailable.Columns.Add("N° Série", 100);
+        lvAvailable.Columns.Add("Nom", 150);
+        
+        // Configuration du tri par colonnes
+        lvAvailableSorter = new ListViewColumnSorter();
+        lvAvailable.ListViewItemSorter = lvAvailableSorter;
+        lvAvailable.ColumnClick += (s, e) => {
+            lvAvailableSorter.SetSortColumn(e.Column);
+            lvAvailable.Sort();
+        };
+        
+        leftPanel.Controls.Add(lvAvailable, 0, 2);
 
         // Panneau milieu (DSEM)
         TableLayoutPanel middlePanel = new TableLayoutPanel
@@ -178,17 +230,27 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             RowCount = 3,
             ColumnCount = 1,
-            Padding = new Padding(5),
+            Padding = new Padding(Theme.Spacing.Small),
+            BackColor = Theme.Colors.Surface,
+            Margin = new Padding(Theme.Spacing.Small, 0, Theme.Spacing.Small, 0),
             RowStyles = {
-                new RowStyle(SizeType.Absolute, 40),  // Titre
-                new RowStyle(SizeType.Absolute, 40),  // Recherche
+                new RowStyle(SizeType.Absolute, 45),  // Titre
+                new RowStyle(SizeType.Absolute, 55),  // Recherche
                 new RowStyle(SizeType.Percent, 100)   // Liste
             }
         };
         contentLayout.Controls.Add(middlePanel, 1, 0);
 
         // Titre milieu
-        var lblReturned = new Label { Text = "Rendu DSEM", Dock = DockStyle.Fill };
+        var lblReturned = new Label 
+        { 
+            Text = "Rendu DSEM", 
+            Dock = DockStyle.Fill,
+            Font = Theme.Fonts.H5,
+            ForeColor = Theme.Colors.Secondary,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0, Theme.Spacing.Small, 0, 0)
+        };
         middlePanel.Controls.Add(lblReturned, 0, 0);
 
         // Recherche milieu
@@ -197,20 +259,50 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
+            Margin = new Padding(Theme.Spacing.Small),
             ColumnStyles = {
-                new ColumnStyle(SizeType.Percent, 85),
-                new ColumnStyle(SizeType.Percent, 15)
+                new ColumnStyle(SizeType.Percent, 100),
+                new ColumnStyle(SizeType.Absolute, 40)
             }
         };
-        tbSearchReturned = new TextBox { Dock = DockStyle.Fill, Height = 32 };
-        btnSearchReturned = new Button { Text = "🔍", Dock = DockStyle.Fill };
+        tbSearchReturned = new TextBox { Dock = DockStyle.Fill, Font = Theme.Fonts.Body };
+        Theme.StyleTextBox(tbSearchReturned);
+        btnSearchReturned = new Button { Text = "🔍", Width = Theme.Sizes.SearchButtonSize, Height = Theme.Sizes.SearchButtonSize, Dock = DockStyle.Right };
+        Theme.StylePrimaryButton(btnSearchReturned, setHeight: false);
+        btnSearchReturned.Font = new Font("Segoe UI", 12f);
         searchPanel2.Controls.Add(tbSearchReturned, 0, 0);
         searchPanel2.Controls.Add(btnSearchReturned, 1, 0);
         middlePanel.Controls.Add(searchPanel2, 0, 1);
 
-        // Liste milieu
-        lbReturned = new ListBox { Dock = DockStyle.Fill, IntegralHeight = false };
-        middlePanel.Controls.Add(lbReturned, 0, 2);
+        // Liste milieu (ListView avec colonnes)
+        lvReturned = new ListView 
+        { 
+            Dock = DockStyle.Fill,
+            View = View.Details,
+            FullRowSelect = true,
+            GridLines = true,
+            BackColor = Theme.Colors.Surface,
+            ForeColor = Theme.Colors.TextPrimary,
+            Font = Theme.Fonts.Body,
+            BorderStyle = BorderStyle.FixedSingle,
+            Margin = new Padding(Theme.Spacing.Small)
+        };
+        
+        // Colonnes pour équipements : Type | Nom | Code Parc | N° Série
+        lvReturned.Columns.Add("Type", 120);
+        lvReturned.Columns.Add("Code Parc", 100);
+        lvReturned.Columns.Add("N° Série", 100);
+        lvReturned.Columns.Add("Nom", 150);
+        
+        // Configuration du tri par colonnes
+        lvReturnedSorter = new ListViewColumnSorter();
+        lvReturned.ListViewItemSorter = lvReturnedSorter;
+        lvReturned.ColumnClick += (s, e) => {
+            lvReturnedSorter.SetSortColumn(e.Column);
+            lvReturned.Sort();
+        };
+        
+        middlePanel.Controls.Add(lvReturned, 0, 2);
 
         // Panneau droit (Détails)
         TableLayoutPanel rightPanel = new TableLayoutPanel
@@ -218,7 +310,9 @@ public class FreeEquipmentView : UserControl
             Dock = DockStyle.Fill,
             RowCount = 13,
             ColumnCount = 1,
-            Padding = new Padding(10)
+            Padding = new Padding(Theme.Spacing.Medium),
+            BackColor = Theme.Colors.Surface,
+            Margin = new Padding(0)
         };
         
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Type
@@ -238,26 +332,51 @@ public class FreeEquipmentView : UserControl
         contentLayout.Controls.Add(rightPanel, 2, 0);
 
         // Labels et TextBox pour les détails
-        AddDetailRow(rightPanel, 0, "Type", tbType = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 2, "Nom", tbName = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 4, "Code parc", tbCodeParc = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 6, "Numéro de série", tbSerial = new TextBox { ReadOnly = true });
-        AddDetailRow(rightPanel, 8, "Marque", tbBrand = new TextBox { ReadOnly = true });
+        tbType = new TextBox { ReadOnly = true };
+        Theme.StyleTextBox(tbType);
+        AddDetailRow(rightPanel, 0, "Type", tbType);
+        
+        tbName = new TextBox { ReadOnly = true };
+        Theme.StyleTextBox(tbName);
+        AddDetailRow(rightPanel, 2, "Nom", tbName);
+        
+        tbCodeParc = new TextBox { ReadOnly = true };
+        Theme.StyleTextBox(tbCodeParc);
+        AddDetailRow(rightPanel, 4, "Code parc", tbCodeParc);
+        
+        tbSerial = new TextBox { ReadOnly = true };
+        Theme.StyleTextBox(tbSerial);
+        AddDetailRow(rightPanel, 6, "Numéro de série", tbSerial);
+        
+        tbBrand = new TextBox { ReadOnly = true };
+        Theme.StyleTextBox(tbBrand);
+        AddDetailRow(rightPanel, 8, "Marque", tbBrand);
         
         // Case à cocher DSEM
         var dsemPanel = new FlowLayoutPanel 
         { 
             Dock = DockStyle.Fill, 
             FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(5, 5, 5, 10)
+            Margin = new Padding(Theme.Spacing.Small),
+            BackColor = Theme.Colors.SurfaceHover,
+            Padding = new Padding(Theme.Spacing.Small)
         };
-        dsemPanel.Controls.Add(new Label { Text = "Rendre DSEM", AutoSize = true, Font = new Font("Segoe UI", 10f, FontStyle.Bold) });
+        var dsemLabel = new Label 
+        { 
+            Text = "Rendre DSEM", 
+            AutoSize = true, 
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextPrimary
+        };
+        dsemPanel.Controls.Add(dsemLabel);
         cbxRenduDsem = new CheckBox { AutoSize = true, Margin = new Padding(10, 3, 0, 0) };
         dsemPanel.Controls.Add(cbxRenduDsem);
         rightPanel.Controls.Add(dsemPanel, 0, 10);
 
         // Commentaire
-        AddDetailRow(rightPanel, 11, "Commentaire", tbComment = new TextBox { ReadOnly = true, Multiline = true, ScrollBars = ScrollBars.Vertical });
+        tbComment = new TextBox { ReadOnly = true, Multiline = true, ScrollBars = ScrollBars.Vertical };
+        Theme.StyleTextBox(tbComment);
+        AddDetailRow(rightPanel, 11, "Commentaire", tbComment);
 
         ResumeLayout(false);
     }
@@ -265,13 +384,6 @@ public class FreeEquipmentView : UserControl
     /// Gestionnaire d'événement pour le CheckBox "Rendu DSEM" qui délègue vers <see cref="UpdateRenduDsem"/>.
     /// </summary>
     private void CbxRenduDsem_CheckedChanged(object sender, EventArgs e) => UpdateRenduDsem();
-
-    private sealed class EquipmentListItem
-    {
-        public string Id { get; set; } = "";
-        public string Label { get; set; } = "";
-        public override string ToString() => Label;
-    }
 
     /// <summary>
     /// Charge et remplit la colonne des équipements disponibles (non prêtés).
@@ -286,46 +398,54 @@ public class FreeEquipmentView : UserControl
         {
             command.CommandText = @"
                 SELECT e.id_equipement,
-                        COALESCE(TRIM(e.nom),'(sans nom)') AS n,
-                        TRIM(COALESCE(e.code_parc,''))     AS c,
-                        t.name                              AS type
+                        t.name AS type,
+                        COALESCE(TRIM(e.code_parc),'') AS code_parc,
+                        COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
+                        COALESCE(TRIM(e.nom),'(sans nom)') AS nom
                 FROM ""Equipements"" e
                 JOIN equipment_type t ON t.id = e.type_id
                 WHERE COALESCE(e.etat_pret,0) = 0
-                ORDER BY n, c;";
+                ORDER BY t.name, e.nom;";
         }
         else
         {
             command.CommandText = @"
                 SELECT e.id_equipement,
-                        COALESCE(TRIM(e.nom),'(sans nom)') AS n,
-                        TRIM(COALESCE(e.code_parc,''))     AS c,
-                        t.name                              AS type
+                        t.name AS type,
+                        COALESCE(TRIM(e.code_parc),'') AS code_parc,
+                        COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
+                        COALESCE(TRIM(e.nom),'(sans nom)') AS nom
                 FROM ""Equipements"" e
                 JOIN equipment_type t ON t.id = e.type_id
                 WHERE COALESCE(e.etat_pret,0) = 0
                     AND (e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p)
-                ORDER BY n, c;";
+                ORDER BY t.name, e.nom;";
             command.Parameters.AddWithValue("$p", $"%{filter.Trim()}%");
         }
 
         using var r = command.ExecuteReader();
-        var items = new List<EquipmentListItem>();
+        
+        lvAvailable.SelectedIndexChanged -= LbAvailable_Selected;
+        lvAvailable.Items.Clear();
+        
         while (r.Read())
         {
             var id = r.GetString(0);
-            var n = r.GetString(1);
-            var c = r.GetString(2);
-            var ty = r.GetString(3);
-            var label = string.IsNullOrEmpty(c) ? $"{n} | {ty}" : $"{n} | {c} | {ty}";
-            items.Add(new EquipmentListItem { Id = id, Label = label });
+            var type = r.GetString(1);
+            var codeParc = r.GetString(2);
+            var numeroSerie = r.GetString(3);
+            var nom = r.GetString(4);
+            
+            var item = new ListViewItem(type);
+            item.SubItems.Add(codeParc);
+            item.SubItems.Add(numeroSerie);
+            item.SubItems.Add(nom);
+            item.Tag = id;
+            
+            lvAvailable.Items.Add(item);
         }
-        lbAvailabe.SelectedIndexChanged -= LbAvailable_Selected;
-        lbAvailabe.BeginUpdate();
-        lbAvailabe.DataSource = items;
-        lbAvailabe.SelectedIndex = -1;
-        lbAvailabe.EndUpdate();
-        lbAvailabe.SelectedIndexChanged += LbAvailable_Selected;
+        
+        lvAvailable.SelectedIndexChanged += LbAvailable_Selected;
     }
 
     /// <summary>
@@ -343,46 +463,54 @@ public class FreeEquipmentView : UserControl
                 {
                     command.CommandText = @"
                     SELECT e.id_equipement,
-                            COALESCE(TRIM(e.nom),'(sans nom)') AS n,
-                            TRIM(COALESCE(e.code_parc,''))     AS c,
-                            t.name                              AS type
+                            t.name AS type,
+                            COALESCE(TRIM(e.code_parc),'') AS code_parc,
+                            COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
+                            COALESCE(TRIM(e.nom),'(sans nom)') AS nom
                     FROM ""Equipements"" e
                     JOIN equipment_type t ON t.id = e.type_id
                     WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
-                    ORDER BY n, c;";
+                    ORDER BY t.name, e.nom;";
             }
             else
             {
                 command.CommandText = @"
                     SELECT e.id_equipement,
-                            COALESCE(TRIM(e.nom),'(sans nom)') AS n,
-                            TRIM(COALESCE(e.code_parc,''))     AS c,
-                            t.name                              AS type
+                            t.name AS type,
+                            COALESCE(TRIM(e.code_parc),'') AS code_parc,
+                            COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
+                            COALESCE(TRIM(e.nom),'(sans nom)') AS nom
                     FROM ""Equipements"" e
                     JOIN equipment_type t ON t.id = e.type_id
                     WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
                         AND (e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p)
-                    ORDER BY n, c;";
+                    ORDER BY t.name, e.nom;";
                 command.Parameters.AddWithValue("$p", $"%{filter.Trim()}%");
             }
 
             using var r = command.ExecuteReader();
-            var items = new List<EquipmentListItem>();
+            
+            lvReturned.SelectedIndexChanged -= LbReturned_Selected;
+            lvReturned.Items.Clear();
+            
             while (r.Read())
             {
                 var id = r.GetString(0);
-                var n = r.GetString(1);
-                var c = r.GetString(2);
-                var ty = r.GetString(3);
-                var label = string.IsNullOrEmpty(c) ? $"{n} | {ty}" : $"{n} | {c} | {ty}";
-                items.Add(new EquipmentListItem { Id = id, Label = label });
+                var type = r.GetString(1);
+                var codeParc = r.GetString(2);
+                var numeroSerie = r.GetString(3);
+                var nom = r.GetString(4);
+                
+                var item = new ListViewItem(type);
+                item.SubItems.Add(codeParc);
+                item.SubItems.Add(numeroSerie);
+                item.SubItems.Add(nom);
+                item.Tag = id;
+                
+                lvReturned.Items.Add(item);
             }
-            lbReturned.SelectedIndexChanged -= LbReturned_Selected;
-            lbReturned.BeginUpdate();
-            lbReturned.DataSource = items;
-            lbReturned.SelectedIndex = -1;
-            lbReturned.EndUpdate();
-            lbReturned.SelectedIndexChanged += LbReturned_Selected;
+            
+            lvReturned.SelectedIndexChanged += LbReturned_Selected;
         }
         catch (Exception ex)
         {
@@ -453,23 +581,27 @@ public class FreeEquipmentView : UserControl
 
     private void LbAvailable_Selected(object s, EventArgs e)
     {
-        if (lbAvailabe.SelectedItem is EquipmentListItem it)
+        if (lvAvailable.SelectedItems.Count > 0)
         {
             // enlève la surbrillance à droite
-            if (lbReturned.SelectedIndex != -1) lbReturned.SelectedIndex = -1;
+            lvReturned.SelectedItems.Clear();
 
-            LoadDetails(it.Id);
+            var selectedItem = lvAvailable.SelectedItems[0];
+            var id = (string)selectedItem.Tag;
+            LoadDetails(id);
         }
     }
 
     private void LbReturned_Selected(object s, EventArgs e)
     {
-        if (lbReturned.SelectedItem is EquipmentListItem it)
+        if (lvReturned.SelectedItems.Count > 0)
         {
             // enlève la surbrillance à gauche
-            if (lbAvailabe.SelectedIndex != -1) lbAvailabe.SelectedIndex = -1;
+            lvAvailable.SelectedItems.Clear();
 
-            LoadDetails(it.Id);
+            var selectedItem = lvReturned.SelectedItems[0];
+            var id = (string)selectedItem.Tag;
+            LoadDetails(id);
         }
     }
 
@@ -482,13 +614,14 @@ public class FreeEquipmentView : UserControl
         { 
             Text = labelText, 
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
-            Padding = new Padding(5, 0, 0, 5)
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary,
+            Padding = new Padding(Theme.Spacing.Small, 0, 0, Theme.Spacing.Small)
         };
         panel.Controls.Add(label, 0, row);
         
         control.Dock = DockStyle.Fill;
-        control.Margin = new Padding(5, 0, 5, 10);
+        control.Margin = new Padding(Theme.Spacing.Small, 0, Theme.Spacing.Small, Theme.Spacing.Medium);
         panel.Controls.Add(control, 0, row + 1);
     }
 }

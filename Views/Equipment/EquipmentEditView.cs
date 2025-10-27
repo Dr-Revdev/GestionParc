@@ -13,7 +13,8 @@ public class EquipementEditView : UserControl
 {
     private TextBox tbSearch;
     private Button btnSearch;
-    private ListBox lbEquipment;
+    private ListView lvEquipment;
+    private ListViewColumnSorter lvEquipmentSorter;
     private TextBox tbSerialNumber, tbName, tbBrand, tbCodeParc, tbComment;
     private ComboBox cbType;
 
@@ -34,7 +35,7 @@ public class EquipementEditView : UserControl
         LoadEquipmentList();
 
         btnSearch.Click += btnSearch_Click;
-        lbEquipment.SelectedIndexChanged += lbEquipment_SelectedIndexChanged;
+        lvEquipment.SelectedIndexChanged += lbEquipment_SelectedIndexChanged;
         btnUpdate.Click += (_, __) => SaveEquipmentChanges();
         btnDelete.Click += (_, __) => DeleteSelectedEquipment();
     }
@@ -47,7 +48,8 @@ public class EquipementEditView : UserControl
     {
         SuspendLayout();
         Dock = DockStyle.Fill;
-        Font = new Font("Segoe UI", 11f);
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
         Padding = new Padding(20);
 
         // TableLayoutPanel principal
@@ -68,14 +70,16 @@ public class EquipementEditView : UserControl
             Dock = DockStyle.Fill,
             RowCount = 3,
             ColumnCount = 1,
-            Padding = new Padding(10)
+            Padding = new Padding(10),
+            BackColor = Theme.Colors.Background
         };
 
         leftPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // Bouton retour
-        leftPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // Recherche
+        leftPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Recherche
         leftPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Liste
 
-        var btnBack = new Button { Text = "← Retour", Dock = DockStyle.Left, Height = 36, Width = 120 };
+        var btnBack = new Button { Text = "← Retour", Dock = DockStyle.Left, Width = 120 };
+        Theme.StyleSecondaryButton(btnBack);
         btnBack.Click += (_, __) => _onBack?.Invoke();
 
         var searchPanel = new TableLayoutPanel
@@ -83,25 +87,50 @@ public class EquipementEditView : UserControl
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
+            Margin = new Padding(0, 0, 0, 5),
             ColumnStyles = {
-                new ColumnStyle(SizeType.Percent, 85),
+                new ColumnStyle(SizeType.Percent, 100),
                 new ColumnStyle(SizeType.Absolute, 40)
             }
         };
 
-        tbSearch = new TextBox { Dock = DockStyle.Fill };
-        btnSearch = new Button { Dock = DockStyle.Fill, Text = "🔍" };
+        tbSearch = new TextBox { Dock = DockStyle.Fill, Font = Theme.Fonts.Body };
+        Theme.StyleTextBox(tbSearch);
+        btnSearch = new Button { Text = "🔍", Width = Theme.Sizes.SearchButtonSize, Height = Theme.Sizes.SearchButtonSize, Dock = DockStyle.Right };
+        Theme.StyleSecondaryButton(btnSearch, setHeight: false);
+        btnSearch.Font = new Font("Segoe UI", 12f);
         searchPanel.Controls.Add(tbSearch, 0, 0);
         searchPanel.Controls.Add(btnSearch, 1, 0);
 
-        lbEquipment = new ListBox { Dock = DockStyle.Fill };
+        lvEquipment = new ListView
+        {
+            Dock = DockStyle.Fill,
+            Font = Theme.Fonts.Body,
+            BackColor = Theme.Colors.Surface,
+            View = View.Details,
+            FullRowSelect = true,
+            GridLines = true,
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        lvEquipment.Columns.Add("Type", 150);
+        lvEquipment.Columns.Add("Code Parc", 120);
+        lvEquipment.Columns.Add("N° Série", 150);
+        lvEquipment.Columns.Add("Nom", 200);
+        
+        // Configuration du tri par colonnes
+        lvEquipmentSorter = new ListViewColumnSorter();
+        lvEquipment.ListViewItemSorter = lvEquipmentSorter;
+        lvEquipment.ColumnClick += (s, e) => {
+            lvEquipmentSorter.SetSortColumn(e.Column);
+            lvEquipment.Sort();
+        };
 
         leftPanel.Controls.Add(btnBack, 0, 0);
         leftPanel.Controls.Add(searchPanel, 0, 1);
-        leftPanel.Controls.Add(lbEquipment, 0, 2);
+        leftPanel.Controls.Add(lvEquipment, 0, 2);
 
         // Séparateur
-        var separator = new Panel { Dock = DockStyle.Fill, BackColor = Color.Silver };
+        var separator = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Colors.Border };
 
         // Panneau droit (formulaire d'édition)
         var rightPanel = new TableLayoutPanel
@@ -109,7 +138,8 @@ public class EquipementEditView : UserControl
             Dock = DockStyle.Fill,
             RowCount = 8,
             ColumnCount = 3,
-            Padding = new Padding(20)
+            Padding = new Padding(20),
+            BackColor = Theme.Colors.Surface
         };
 
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Label ligne 1
@@ -127,11 +157,22 @@ public class EquipementEditView : UserControl
 
         // Initialisation des contrôles du formulaire
         cbType = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+        Theme.StyleComboBox(cbType);
+        
         tbName = new TextBox { Dock = DockStyle.Fill };
+        Theme.StyleTextBox(tbName);
+        
         tbCodeParc = new TextBox { Dock = DockStyle.Fill };
+        Theme.StyleTextBox(tbCodeParc);
+        
         tbSerialNumber = new TextBox { Dock = DockStyle.Fill };
+        Theme.StyleTextBox(tbSerialNumber);
+        
         tbBrand = new TextBox { Dock = DockStyle.Fill };
+        Theme.StyleTextBox(tbBrand);
+        
         tbComment = new TextBox { Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Vertical };
+        Theme.StyleTextBox(tbComment);
 
         // Ajout des labels et contrôles au panneau droit
         void AddFormRow(string label, Control control, int col, int labelRow)
@@ -140,7 +181,8 @@ public class EquipementEditView : UserControl
             { 
                 Text = label, 
                 Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                Font = Theme.Fonts.Label,
+                ForeColor = Theme.Colors.TextSecondary,
                 Padding = new Padding(5, 0, 0, 5),
                 Margin = new Padding(5, 0, 15, 0)
             };
@@ -159,7 +201,8 @@ public class EquipementEditView : UserControl
         { 
             Text = "Commentaire", 
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary,
             Padding = new Padding(5, 0, 0, 5),
             Margin = new Padding(5, 0, 0, 0)
         };
@@ -174,11 +217,17 @@ public class EquipementEditView : UserControl
         {
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            WrapContents = false
+            WrapContents = false,
+            BackColor = Theme.Colors.Surface,
+            Padding = new Padding(0)
         };
 
-        btnUpdate = new Button { Text = "Modifier", Width = 120, Height = 40 };
-        btnDelete = new Button { Text = "Supprimer", Width = 120, Height = 40, Margin = new Padding(10, 0, 0, 0) };
+        btnUpdate = new Button { Text = "Modifier", Width = Theme.Sizes.ButtonWidth, Height = Theme.Sizes.ButtonHeight, Margin = new Padding(0) };
+        Theme.StylePrimaryButton(btnUpdate);
+        
+        btnDelete = new Button { Text = "Supprimer", Width = Theme.Sizes.ButtonWidth, Height = Theme.Sizes.ButtonHeight, Margin = new Padding(0, 0, 10, 0) };
+        Theme.StyleDangerButton(btnDelete);
+        
         buttonsPanel.Controls.AddRange([btnUpdate, btnDelete]);
 
         rightPanel.Controls.Add(buttonsPanel, 0, 7);
@@ -194,21 +243,6 @@ public class EquipementEditView : UserControl
 
     }
 
-    /// <summary>
-    /// Éléments affichés dans la liste des équipements. Contient les informations utiles pour
-    /// l'affichage et la récupération de l'identifiant réel stocké en base.
-    /// </summary>
-    private sealed class EquipmentListItem
-    {
-        public string Id { get; set; } = "";
-        public string Name { get; set; } = "";
-        public string Code { get; set; } = "";
-        public string Type { get; set; } = "";
-
-        /// <summary>Label calculé pour l'affichage dans la liste.</summary>
-        public string Label => string.IsNullOrEmpty(Code) ? $"{Name}  {Type}" : $"{Name}  [{Code}]  {Type}";
-        public override string ToString() => Label;
-    }
     /// <summary>
     /// Représentation minimale d'un type d'équipement (pour les ComboBox).
     /// </summary>
@@ -254,7 +288,7 @@ public class EquipementEditView : UserControl
         }
     }
     /// <summary>
-    /// Charge la liste complète des équipements depuis la base et alimente la ListBox.
+    /// Charge la liste complète des équipements depuis la base et alimente le ListView.
     /// Utilise un tri insensible à la casse pour l'affichage.
     /// </summary>
     private void LoadEquipmentList()
@@ -265,29 +299,29 @@ public class EquipementEditView : UserControl
             using var command = connexion.CreateCommand();
             command.CommandText = @"
                 SELECT e.id_equipement,
-                    COALESCE(TRIM(e.nom), '(sans nom)') AS n,
-                    TRIM(COALESCE(e.code_parc, ''))     AS c,
-                    t.name AS typ
+                    t.name AS typ,
+                    TRIM(COALESCE(e.code_parc, '-'))    AS c,
+                    TRIM(COALESCE(e.numero_serie, '-')) AS s,
+                    COALESCE(TRIM(e.nom), '(sans nom)') AS n
                 FROM Equipements e
                 JOIN equipment_type t ON t.id = e.type_id
-                ORDER BY n COLLATE NOCASE, typ COLLATE NOCASE, c COLLATE NOCASE;";
+                ORDER BY typ COLLATE NOCASE, c COLLATE NOCASE, s COLLATE NOCASE;";
 
             using var reader = command.ExecuteReader();
-            var list = new List<EquipmentListItem>();
+            lvEquipment.Items.Clear();
             while (reader.Read())
             {
-                list.Add(new EquipmentListItem
-                {
-                    Id = reader.GetString(0),
-                    Name = reader.GetString(1),
-                    Code = reader.GetString(2),
-                    Type = reader.GetString(3)
-                });
+                var id = reader.GetString(0);
+                var type = reader.GetString(1);
+                var code = reader.GetString(2);
+                var serial = reader.GetString(3);
+                var nom = reader.GetString(4);
+                
+                var item = new ListViewItem(type);
+                item.SubItems.AddRange(new[] { code, serial, nom });
+                item.Tag = id;
+                lvEquipment.Items.Add(item);
             }
-
-            lbEquipment.DataSource = list;
-            lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
-            lbEquipment.ValueMember = nameof(EquipmentListItem.Id);
         }
         catch (Exception ex)
         {
@@ -345,8 +379,12 @@ public class EquipementEditView : UserControl
     /// </summary>
     private void lbEquipment_SelectedIndexChanged(object sender, EventArgs e)
     {
-        if (lbEquipment.SelectedItem is EquipmentListItem item)
-            LoadEquipmentById(item.Id);
+        if (lvEquipment.SelectedItems.Count > 0)
+        {
+            var selectedItem = lvEquipment.SelectedItems[0];
+            var equipmentId = (string)selectedItem.Tag;
+            LoadEquipmentById(equipmentId);
+        }
     }
 
     /// <summary>
@@ -382,7 +420,7 @@ public class EquipementEditView : UserControl
     /// </summary>
     private void SaveEquipmentChanges()
     {
-        if (lbEquipment.SelectedItem is not EquipmentListItem selected)
+        if (lvEquipment.SelectedItems.Count == 0)
         {
             MessageBox.Show("Choisir d'abord un équipement.");
             return;
@@ -393,6 +431,8 @@ public class EquipementEditView : UserControl
             return;
         }
 
+        var selectedItem = lvEquipment.SelectedItems[0];
+        var equipmentId = (string)selectedItem.Tag;
         var selectedType = (EquipmentTypeItem)cbType.SelectedItem;
 
         using var connexion = Database.Open();
@@ -407,7 +447,7 @@ public class EquipementEditView : UserControl
             commentaire = $comment
         WHERE id_equipement = $id;";
 
-        command.Parameters.AddWithValue("$id", selected.Id);
+        command.Parameters.AddWithValue("$id", equipmentId);
         command.Parameters.AddWithValue("$typeId", selectedType.Id);
         command.Parameters.AddWithValue("$name", tbName.Text.Trim());
         command.Parameters.AddWithValue("$codeParc", tbCodeParc.Text.Trim());
@@ -426,12 +466,8 @@ public class EquipementEditView : UserControl
 
             MessageBox.Show("Modifications enregistrées.");
 
-            selected.Name = tbName.Text.Trim();
-            selected.Code = tbCodeParc.Text.Trim();
-            selected.Type = selectedType.Name;
-
-            lbEquipment.DisplayMember = null;
-            lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
+            // Recharger la liste pour refléter les modifications
+            LoadEquipmentList();
 
         }
         catch (SqliteException ex)
@@ -465,43 +501,44 @@ public class EquipementEditView : UserControl
             {
                 command.CommandText = @"
                     SELECT e.id_equipement,
-                        COALESCE(TRIM(e.nom), '(sans nom)'),
-                        TRIM(COALESCE(e.code_parc, '')),
-                        t.name
+                        t.name,
+                        TRIM(COALESCE(e.code_parc, '-')),
+                        TRIM(COALESCE(e.numero_serie, '-')),
+                        COALESCE(TRIM(e.nom), '(sans nom)')
                     FROM Equipements e
                     JOIN equipment_type t ON t.id = e.type_id
-                    ORDER BY 2 COLLATE NOCASE, 4 COLLATE NOCASE, 3 COLLATE NOCASE;";
+                    ORDER BY 2 COLLATE NOCASE, 3 COLLATE NOCASE, 4 COLLATE NOCASE;";
             }
             else
             {
                 command.CommandText = @"
                     SELECT e.id_equipement,
-                        COALESCE(TRIM(e.nom), '(sans nom)'),
-                        TRIM(COALESCE(e.code_parc, '')),
-                        t.name
+                        t.name,
+                        TRIM(COALESCE(e.code_parc, '-')),
+                        TRIM(COALESCE(e.numero_serie, '-')),
+                        COALESCE(TRIM(e.nom), '(sans nom)')
                     FROM Equipements e
                     JOIN equipment_type t ON t.id = e.type_id
                     WHERE e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p
-                    ORDER BY 2 COLLATE NOCASE, 4 COLLATE NOCASE, 3 COLLATE NOCASE;";
+                    ORDER BY 2 COLLATE NOCASE, 3 COLLATE NOCASE, 4 COLLATE NOCASE;";
                 command.Parameters.AddWithValue("$p", $"%{query}%");
             }
 
             using var reader = command.ExecuteReader();
-            var items = new List<EquipmentListItem>();
+            lvEquipment.Items.Clear();
             while (reader.Read())
             {
-                items.Add(new EquipmentListItem
-                {
-                    Id = reader.GetString(0),
-                    Name = reader.GetString(1),
-                    Code = reader.GetString(2),
-                    Type = reader.GetString(3)
-                });
+                var id = reader.GetString(0);
+                var type = reader.GetString(1);
+                var code = reader.GetString(2);
+                var serial = reader.GetString(3);
+                var nom = reader.GetString(4);
+                
+                var item = new ListViewItem(type);
+                item.SubItems.AddRange(new[] { code, serial, nom });
+                item.Tag = id;
+                lvEquipment.Items.Add(item);
             }
-
-            lbEquipment.DataSource = items;
-            lbEquipment.DisplayMember = nameof(EquipmentListItem.Label);
-            lbEquipment.ValueMember = nameof(EquipmentListItem.Id);
         }
         catch (Exception ex)
         {
@@ -516,11 +553,15 @@ public class EquipementEditView : UserControl
     /// </summary>
     private void DeleteSelectedEquipment()
     {
-        if (lbEquipment.SelectedItem is not EquipmentListItem item)
+        if (lvEquipment.SelectedItems.Count == 0)
         { MessageBox.Show("Sélectionne un équipement à supprimer."); return; }
 
+        var selectedItem = lvEquipment.SelectedItems[0];
+        var equipmentId = (string)selectedItem.Tag;
+        var equipmentLabel = $"{selectedItem.SubItems[3].Text} [{selectedItem.Text}]";
+        
         var confirm = MessageBox.Show(
-            $"Supprimer « {item.Label} » ?",
+            $"Supprimer « {equipmentLabel} » ?",
             "Confirmer la suppression",
             MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
@@ -529,10 +570,10 @@ public class EquipementEditView : UserControl
         try
         {
             using var connexion = Database.Open();
-            using var cmd = connexion.CreateCommand();
-            cmd.CommandText = @"DELETE FROM ""Equipements"" WHERE id_equipement = $id;";
-            cmd.Parameters.AddWithValue("$id", item.Id);
-            var rows = cmd.ExecuteNonQuery();
+            using var command = connexion.CreateCommand();
+            command.CommandText = @"DELETE FROM ""Equipements"" WHERE id_equipement = $id;";
+            command.Parameters.AddWithValue("$id", equipmentId);
+            var rows = command.ExecuteNonQuery();
 
             if (rows == 0)
             {

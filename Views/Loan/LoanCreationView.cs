@@ -89,7 +89,7 @@ public class LoanCreationView : Form
     {
         for (int i = 0; i < cmbAgent.Items.Count; i++)
         {
-            if (cmbAgent.Items[i] is AgentItem ai && ai.Id == id)
+            if (cmbAgent.Items[i] is AgentItem ai && ai.Idrh == id)
             {
                 cmbAgent.SelectedIndex = i;
                 return;
@@ -135,6 +135,8 @@ public class LoanCreationView : Form
         MaximizeBox = true;
         MinimizeBox = true;
         AutoScroll = true;
+        Font = Theme.Fonts.Body;
+        BackColor = Theme.Colors.Background;
 
         TableLayoutPanel mainLayout = new TableLayoutPanel
         {
@@ -142,6 +144,7 @@ public class LoanCreationView : Form
             ColumnCount = 1,
             RowCount = 4,
             Padding = new Padding(20),
+            BackColor = Theme.Colors.Background,
             RowStyles = {
                 new RowStyle(SizeType.Absolute, 80),  // Agent section
                 new RowStyle(SizeType.Absolute, 40),  // Equipment label
@@ -157,6 +160,7 @@ public class LoanCreationView : Form
             Dock = DockStyle.Fill,
             RowCount = 2,
             ColumnCount = 1,
+            BackColor = Theme.Colors.Surface,
             RowStyles = {
                 new RowStyle(SizeType.Absolute, 25),  // Label
                 new RowStyle(SizeType.Absolute, 35)   // ComboBox/Label
@@ -168,7 +172,9 @@ public class LoanCreationView : Form
             Text = "Agent :",
             AutoSize = true,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.BottomLeft
+            TextAlign = ContentAlignment.BottomLeft,
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary
         };
         agentPanel.Controls.Add(lblAgent, 0, 0);
 
@@ -178,14 +184,15 @@ public class LoanCreationView : Form
             Height = 30,
             DropDownStyle = ComboBoxStyle.DropDownList
         };
+        Theme.StyleComboBox(cmbAgent);
         agentPanel.Controls.Add(cmbAgent, 0, 1);
         
         // Label pour affichage en mode édition (invisible par défaut)
         lblAgentDisplay = new Label
         {
             Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9f, FontStyle.Regular),
-            BackColor = SystemColors.Control,
+            Font = Theme.Fonts.Body,
+            BackColor = Theme.Colors.Surface,
             BorderStyle = BorderStyle.Fixed3D,
             TextAlign = ContentAlignment.MiddleLeft,
             Visible = false
@@ -199,7 +206,9 @@ public class LoanCreationView : Form
         {
             Text = "Équipements :",
             AutoSize = true,
-            Dock = DockStyle.Fill
+            Dock = DockStyle.Fill,
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary
         };
         mainLayout.Controls.Add(lblEquipments, 0, 1);
 
@@ -210,7 +219,8 @@ public class LoanCreationView : Form
             AutoScroll = true,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = Theme.Colors.Surface
         };
         mainLayout.Controls.Add(pnlEquipments, 0, 2);
 
@@ -220,6 +230,7 @@ public class LoanCreationView : Form
             Dock = DockStyle.Fill,
             ColumnCount = 4,
             RowCount = 1,
+            BackColor = Theme.Colors.Background,
             ColumnStyles = {
                 new ColumnStyle(SizeType.Percent, 30),  // Add equipment
                 new ColumnStyle(SizeType.Percent, 30),  // Delete
@@ -233,9 +244,9 @@ public class LoanCreationView : Form
         {
             Text = "Ajouter un équipement",
             Dock = DockStyle.Fill,
-            Height = 36,
             Margin = new Padding(0, 0, 10, 0)
         };
+        Theme.StyleSecondaryButton(btnAddEquipment);
         btnAddEquipment.Click += (_, _) => AddEquipmentControl();
         buttonPanel.Controls.Add(btnAddEquipment, 0, 0);
 
@@ -244,10 +255,9 @@ public class LoanCreationView : Form
         {
             Text = "Supprimer le prêt",
             Dock = DockStyle.Fill,
-            Height = 36,
-            ForeColor = Color.Red,
             Margin = new Padding(10, 0, 10, 0)
         };
+        Theme.StyleDangerButton(btnDelete);
         btnDelete.Click += (_, _) => DeleteLoan();
         buttonPanel.Controls.Add(btnDelete, 1, 0);
 
@@ -255,9 +265,9 @@ public class LoanCreationView : Form
         {
             Text = "Valider",
             Dock = DockStyle.Fill,
-            Height = 36,
             Margin = new Padding(10, 0, 10, 0)
         };
+        Theme.StyleSuccessButton(btnValidate);
         btnValidate.Click += (_, _) => ValidateLoan();
         buttonPanel.Controls.Add(btnValidate, 2, 0);
 
@@ -265,9 +275,9 @@ public class LoanCreationView : Form
         {
             Text = "Annuler",
             Dock = DockStyle.Fill,
-            Height = 36,
             Margin = new Padding(10, 0, 0, 0)
         };
+        Theme.StyleSecondaryButton(btnCancel);
         btnCancel.Click += (_, _) => Close();
         buttonPanel.Controls.Add(btnCancel, 3, 0);
 
@@ -291,7 +301,7 @@ public class LoanCreationView : Form
             {
                 var agent = new AgentItem
                 {
-                    Id = reader.GetString(0),
+                    Idrh = reader.GetString(0),
                     DisplayName = $"{reader.GetString(1)} {reader.GetString(2)}"
                 };
                 cmbAgent.Items.Add(agent);
@@ -392,7 +402,7 @@ public class LoanCreationView : Form
             else
             {
                 var agent = (AgentItem)cmbAgent.SelectedItem;
-                agentId = agent.Id;
+                agentId = agent.Idrh;
             }
             
             using var connection = Database.Open();
@@ -435,14 +445,14 @@ public class LoanCreationView : Form
             {
                 if (!newlySelected.Contains(prevId))
                 {
-                    using var cmd = connection.CreateCommand();
-                    cmd.Transaction = transaction;
-                    cmd.CommandText = @"
+                    using var command = connection.CreateCommand();
+                    command.Transaction = transaction;
+                    command.CommandText = @"
                         UPDATE Equipements
                         SET idrh = NULL, etat_pret = 0
                         WHERE id_equipement = $id";
-                    cmd.Parameters.AddWithValue("$id", prevId);
-                    cmd.ExecuteNonQuery();
+                    command.Parameters.AddWithValue("$id", prevId);
+                    command.ExecuteNonQuery();
                 }
             }
 
