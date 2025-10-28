@@ -197,19 +197,21 @@ public class EquipmentCreateView : UserControl
     /// <returns>true si la validation est réussie, false sinon</returns>
     private bool ValidateEquipmentForm(out string errorMessage)
     {
-        if (string.IsNullOrWhiteSpace(tbName.Text))
-        {
-            errorMessage = "Le nom est obligatoire.";
-            return false;
-        }
+        // Type obligatoire (toujours nécessaire pour identifier l'équipement)
         if (cbType.SelectedItem is not EquipmentTypeItem)
         {
             errorMessage = "Sélectionner un type d'équipement.";
             return false;
         }
-        if (string.IsNullOrWhiteSpace(tbCodeParc.Text))
+
+        // Au moins UN champ identifiant doit être rempli
+        bool hasName = !string.IsNullOrWhiteSpace(tbName.Text);
+        bool hasCodeParc = !string.IsNullOrWhiteSpace(tbCodeParc.Text);
+        bool hasSerial = !string.IsNullOrWhiteSpace(tbSerial.Text);
+
+        if (!hasName && !hasCodeParc && !hasSerial)
         {
-            errorMessage = "Le code parc est obligatoire.";
+            errorMessage = "Au moins un champ parmi Nom, Code Parc ou N° Série doit être renseigné.";
             return false;
         }
 
@@ -249,8 +251,8 @@ public class EquipmentCreateView : UserControl
 
         command.Parameters.AddWithValue("$id", newId);
         command.Parameters.AddWithValue("$typeId", SelectedType.Id);
-        command.Parameters.AddWithValue("$name", tbName.Text.Trim());
-        command.Parameters.AddWithValue("$codeParc", tbCodeParc.Text.Trim());
+        command.Parameters.AddWithValue("$name",     ToDbNullable(tbName.Text));
+        command.Parameters.AddWithValue("$codeParc", ToDbNullable(tbCodeParc.Text));
 
         command.Parameters.AddWithValue("$serial",   ToDbNullable(tbSerial.Text));
         command.Parameters.AddWithValue("$brand",    ToDbNullable(tbBrand.Text));

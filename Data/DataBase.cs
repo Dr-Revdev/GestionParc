@@ -154,6 +154,7 @@ public static class Database
                 commentaire   TEXT,
                 etat_pret     INTEGER NOT NULL DEFAULT 0,
                 idrh          TEXT NULL,
+                date_rendu_dsem TEXT NULL,
                 FOREIGN KEY (type_id) REFERENCES equipment_type(id)
                     ON DELETE RESTRICT
                     ON UPDATE CASCADE,

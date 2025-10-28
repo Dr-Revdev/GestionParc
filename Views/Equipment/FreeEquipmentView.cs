@@ -27,6 +27,7 @@ public class FreeEquipmentView : UserControl
     // Affichage détail sélection droite
     private TextBox tbType, tbName, tbCodeParc, tbSerial, tbBrand, tbComment;
     private CheckBox cbxRenduDsem;
+    private Label lblDateRenduDsem;
 
     // Action retour parge précedante
     private readonly Action _onBack;
@@ -325,7 +326,7 @@ public class FreeEquipmentView : UserControl
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Numéro de série
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Marque
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Input Marque
-        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));  // Checkbox DSEM
+        rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Checkbox DSEM + Date
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));  // Label Commentaire
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Commentaire multiline
         
@@ -355,22 +356,36 @@ public class FreeEquipmentView : UserControl
         // Case à cocher DSEM
         var dsemPanel = new FlowLayoutPanel 
         { 
-            Dock = DockStyle.Fill, 
+            AutoSize = true,
             FlowDirection = FlowDirection.LeftToRight,
             Margin = new Padding(Theme.Spacing.Small),
             BackColor = Theme.Colors.SurfaceHover,
-            Padding = new Padding(Theme.Spacing.Small)
+            Padding = new Padding(Theme.Spacing.Small),
+            WrapContents = false
         };
         var dsemLabel = new Label 
         { 
             Text = "Rendre DSEM", 
             AutoSize = true, 
             Font = Theme.Fonts.Label,
-            ForeColor = Theme.Colors.TextPrimary
+            ForeColor = Theme.Colors.TextPrimary,
+            Margin = new Padding(0, 3, 10, 0)
         };
         dsemPanel.Controls.Add(dsemLabel);
-        cbxRenduDsem = new CheckBox { AutoSize = true, Margin = new Padding(10, 3, 0, 0) };
+        cbxRenduDsem = new CheckBox { AutoSize = true, Margin = new Padding(0, 3, 5, 0) };
         dsemPanel.Controls.Add(cbxRenduDsem);
+        
+        // Label pour la date de rendu DSEM (sur la même ligne)
+        lblDateRenduDsem = new Label 
+        { 
+            AutoSize = true, 
+            Margin = new Padding(0, 5, 0, 0),
+            Font = Theme.Fonts.BodySmall,
+            ForeColor = Theme.Colors.TextSecondary,
+            Visible = false // Caché par défaut
+        };
+        dsemPanel.Controls.Add(lblDateRenduDsem);
+        
         rightPanel.Controls.Add(dsemPanel, 0, 10);
 
         // Commentaire
@@ -531,7 +546,8 @@ public class FreeEquipmentView : UserControl
             using var connexion = Database.Open();
             using var command = connexion.CreateCommand();
             command.CommandText = @"
-                SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.commentaire, COALESCE(e.etat_pret,0)
+                SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.commentaire, 
+                       COALESCE(e.etat_pret,0), e.date_rendu_dsem
                 FROM ""Equipements"" e
                 JOIN equipment_type t ON t.id = e.type_id
                 WHERE e.id_equipement = $id;";
@@ -548,8 +564,23 @@ public class FreeEquipmentView : UserControl
             tbComment.Text = r.IsDBNull(6) ? "" : r.GetString(6);
             cbxRenduDsem.Tag = equipmentId;
 
+            // Gérer la checkbox et afficher la date si DSEM
             cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
-            cbxRenduDsem.Checked = r.GetInt32(7) != 0;
+            var etatPret = r.GetInt32(7);
+            cbxRenduDsem.Checked = etatPret == 2;
+            
+            // Afficher la date dans un label séparé si DSEM
+            if (etatPret == 2 && !r.IsDBNull(8))
+            {
+                var dateRendu = r.GetString(8);
+                lblDateRenduDsem.Text = $"(Date: {dateRendu})";
+                lblDateRenduDsem.Visible = true;
+            }
+            else
+            {
+                lblDateRenduDsem.Visible = false;
+            }
+            
             cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
         }
         catch (Exception ex)
@@ -561,6 +592,7 @@ public class FreeEquipmentView : UserControl
 
     /// <summary>
     /// Bascule l'état "Rendu DSEM" d'un équipement sélectionné et met à jour la base.
+    /// Demande la date de rendu si on coche DSEM.
     /// Rafraîchit ensuite les deux listes (disponible / rendu).
     /// </summary>
     private void UpdateRenduDsem()
@@ -569,10 +601,114 @@ public class FreeEquipmentView : UserControl
 
         using var connexion = Database.Open();
         using var command = connexion.CreateCommand();
-        command.CommandText = @"UPDATE ""Equipements"" SET etat_pret = $v WHERE id_equipement = $id;";
-        command.Parameters.AddWithValue("$v", cbxRenduDsem.Checked ? 2 : 0); // 2 pour DSEM, 0 pour disponible
-        command.Parameters.AddWithValue("$id", id);
-        command.ExecuteNonQuery();
+
+        if (cbxRenduDsem.Checked)
+        {
+            // Demander la date de rendu DSEM
+            using var dateDialog = new Form
+            {
+                Text = "Date de rendu DSEM",
+                Size = new Size(400, 200),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(20),
+                RowCount = 3,
+                ColumnCount = 1
+            };
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+
+            var label = new Label
+            {
+                Text = "Date de rendu :",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            var datePicker = new DateTimePicker
+            {
+                Dock = DockStyle.Fill,
+                Format = DateTimePickerFormat.Short,
+                Value = DateTime.Now
+            };
+
+            var btnPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.RightToLeft
+            };
+
+            var btnOk = new Button
+            {
+                Text = "OK",
+                Width = 80,
+                Height = 30,
+                DialogResult = DialogResult.OK
+            };
+            Theme.StylePrimaryButton(btnOk);
+
+            var btnCancel = new Button
+            {
+                Text = "Annuler",
+                Width = 80,
+                Height = 30,
+                DialogResult = DialogResult.Cancel,
+                Margin = new Padding(0, 0, 10, 0)
+            };
+            Theme.StyleOutlineButton(btnCancel);
+
+            btnPanel.Controls.Add(btnOk);
+            btnPanel.Controls.Add(btnCancel);
+
+            layout.Controls.Add(label, 0, 0);
+            layout.Controls.Add(datePicker, 0, 1);
+            layout.Controls.Add(btnPanel, 0, 2);
+
+            dateDialog.Controls.Add(layout);
+            dateDialog.AcceptButton = btnOk;
+            dateDialog.CancelButton = btnCancel;
+
+            if (dateDialog.ShowDialog() == DialogResult.OK)
+            {
+                // Mettre à jour avec la date
+                command.CommandText = @"UPDATE ""Equipements"" SET etat_pret = $v, date_rendu_dsem = $date WHERE id_equipement = $id;";
+                command.Parameters.AddWithValue("$v", 2); // 2 pour DSEM
+                command.Parameters.AddWithValue("$date", datePicker.Value.ToString("yyyy-MM-dd"));
+                command.Parameters.AddWithValue("$id", id);
+                command.ExecuteNonQuery();
+                
+                // Afficher la date dans le label
+                lblDateRenduDsem.Text = $"(Date: {datePicker.Value:yyyy-MM-dd})";
+                lblDateRenduDsem.Visible = true;
+            }
+            else
+            {
+                // Annulé, décocher la case
+                cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
+                cbxRenduDsem.Checked = false;
+                cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
+                return;
+            }
+        }
+        else
+        {
+            // Décocher = remettre disponible et enlever la date
+            command.CommandText = @"UPDATE ""Equipements"" SET etat_pret = $v, date_rendu_dsem = NULL WHERE id_equipement = $id;";
+            command.Parameters.AddWithValue("$v", 0); // 0 pour disponible
+            command.Parameters.AddWithValue("$id", id);
+            command.ExecuteNonQuery();
+            
+            // Cacher le label de date
+            lblDateRenduDsem.Visible = false;
+        }
 
         //Rafraichir les listes
         LoadAvailable(tbSearchAvailable.Text);

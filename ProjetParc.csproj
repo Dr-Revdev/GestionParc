@@ -11,9 +11,9 @@
     <!-- Informations de l'application -->
     <AssemblyName>GestiParc</AssemblyName>
     <Product>GestiParc - Gestion de Parc Informatique</Product>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.1.0</FileVersion>
+    <FileVersion>1.0.2.0</FileVersion>
     <Company>Dr-Revdev</Company>
     <Copyright>Copyright © 2025</Copyright>
     <Description>Application de gestion de parc informatique et d'équipements</Description>

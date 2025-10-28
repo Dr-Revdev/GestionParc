@@ -218,7 +218,13 @@ public class MainInventoryView : UserControl
             if (string.IsNullOrWhiteSpace(searchFilter))
             {
                 command.CommandText = @"
-                    SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.etat_pret, e.idrh, a.nom || ' ' || a.prenom as agent_name
+                    SELECT e.type_id, t.name, 
+                           COALESCE(e.nom, '') as nom, 
+                           COALESCE(e.code_parc, '') as code_parc, 
+                           COALESCE(e.numero_serie, '') as numero_serie, 
+                           COALESCE(e.marque, '') as marque, 
+                           e.etat_pret, e.idrh, 
+                           a.nom || ' ' || a.prenom as agent_name
                     FROM Equipements e
                     LEFT JOIN Agents a ON a.idrh = e.idrh
                     JOIN equipment_type t ON t.id = e.type_id
@@ -228,7 +234,13 @@ public class MainInventoryView : UserControl
             else
             {
                      command.CommandText = @"
-                          SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.etat_pret, e.idrh, a.nom || ' ' || a.prenom as agent_name
+                          SELECT e.type_id, t.name, 
+                                 COALESCE(e.nom, '') as nom, 
+                                 COALESCE(e.code_parc, '') as code_parc, 
+                                 COALESCE(e.numero_serie, '') as numero_serie, 
+                                 COALESCE(e.marque, '') as marque, 
+                                 e.etat_pret, e.idrh, 
+                                 a.nom || ' ' || a.prenom as agent_name
                           FROM Equipements e
                           LEFT JOIN Agents a ON a.idrh = e.idrh
                           JOIN equipment_type t ON t.id = e.type_id
@@ -321,33 +333,51 @@ public class MainInventoryView : UserControl
                 }
             }
 
-            // Deuxième passe : charger les données
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT 
+            // Deuxième passe : charger les agents qui ont des prêts
+            using var agentCommand = connection.CreateCommand();
+            agentCommand.CommandText = @"
+                SELECT DISTINCT
                     a.idrh,
-                    a.nom || ' ' || a.prenom as agent_name,
-                    GROUP_CONCAT(t.name || ' - ' || e.nom || ' (' || e.code_parc || ')', '||') as equipments
+                    a.nom || ' ' || a.prenom as agent_name
                 FROM Equipements e
                 JOIN Agents a ON a.idrh = e.idrh
-                JOIN equipment_type t ON t.id = e.type_id
                 WHERE e.etat_pret = 1
-                GROUP BY a.idrh, a.nom, a.prenom
                 ORDER BY a.nom, a.prenom";
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            using var agentReader = agentCommand.ExecuteReader();
+            var agents = new System.Collections.Generic.List<(string idrh, string name)>();
+            
+            while (agentReader.Read())
             {
-                var agentId = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
-                var agentName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
-                var equipments = reader.IsDBNull(2) ? new string[0] : reader.GetString(2).Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries);
+                agents.Add((
+                    agentReader.GetString(0),
+                    agentReader.GetString(1)
+                ));
+            }
+            agentReader.Close();
 
-                var item = new ListViewItem(agentName) { Tag = agentId };
+            // Pour chaque agent, charger ses équipements dans l'ordre
+            foreach (var agent in agents)
+            {
+                var item = new ListViewItem(agent.name) { Tag = agent.idrh };
+
+                using var equipCommand = connection.CreateCommand();
+                equipCommand.CommandText = @"
+                    SELECT 
+                        e.id_equipement,
+                        t.name || ' - ' || COALESCE(e.nom, e.code_parc, e.numero_serie, 'Sans nom') || 
+                        ' (' || COALESCE(e.code_parc, 'N/A') || ')' as equipment_display
+                    FROM Equipements e
+                    JOIN equipment_type t ON t.id = e.type_id
+                    WHERE e.etat_pret = 1 AND e.idrh = $idrh
+                    ORDER BY e.id_equipement";
                 
-                // Ajouter chaque équipement dans sa propre colonne
-                foreach (var eq in equipments)
+                equipCommand.Parameters.AddWithValue("$idrh", agent.idrh);
+
+                using var equipReader = equipCommand.ExecuteReader();
+                while (equipReader.Read())
                 {
-                    item.SubItems.Add(eq.Trim());
+                    item.SubItems.Add(equipReader.GetString(1));
                 }
 
                 // Remplir les colonnes restantes avec des cellules vides
@@ -499,16 +529,17 @@ public class MainInventoryView : UserControl
             {
                 command.CommandText = @"
                     SELECT 
-                        e.code_parc,
+                        COALESCE(e.code_parc, '') as code_parc,
                         t.name as type_equipement,
-                        e.nom,
-                        e.numero_serie,
-                        e.marque,
-                        e.etat_pret
+                        COALESCE(e.nom, '') as nom,
+                        COALESCE(e.numero_serie, '') as numero_serie,
+                        COALESCE(e.marque, '') as marque,
+                        e.etat_pret,
+                        e.date_rendu_dsem
                     FROM Equipements e
                     JOIN equipment_type t ON t.id = e.type_id
                     WHERE e.idrh = $agentId AND e.etat_pret = 1
-                    ORDER BY t.name, e.nom";
+                    ORDER BY e.id_equipement";
                 command.Parameters.AddWithValue("$agentId", agentId);
 
                 using var reader = command.ExecuteReader();
@@ -516,12 +547,13 @@ public class MainInventoryView : UserControl
 
                 while (reader.Read())
                 {
-                    var codeparc = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                    var type = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    var nom = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                    var numeroSerie = reader.IsDBNull(3) ? "" : reader.GetString(3);
-                    var marque = reader.IsDBNull(4) ? "" : reader.GetString(4);
+                    var codeparc = reader.GetString(0);
+                    var type = reader.GetString(1);
+                    var nom = reader.GetString(2);
+                    var numeroSerie = reader.GetString(3);
+                    var marque = reader.GetString(4);
                     var etat = reader.GetInt32(5);
+                    var dateRenduDsem = reader.IsDBNull(6) ? "" : reader.GetString(6);
 
                     var equipTab = new TabPage($"Équipement {equipmentIndex}")
                     {
@@ -533,7 +565,7 @@ public class MainInventoryView : UserControl
                     {
                         Dock = DockStyle.Fill,
                         ColumnCount = 2,
-                        RowCount = 6,
+                        RowCount = 7,
                         AutoSize = true,
                         BackColor = Theme.Colors.Surface
                     };
@@ -543,7 +575,7 @@ public class MainInventoryView : UserControl
                     equipPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Valeurs
 
                     // Configuration des lignes
-                    for (int i = 0; i < 6; i++)
+                    for (int i = 0; i < 7; i++)
                     {
                         equipPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
                     }
@@ -562,6 +594,12 @@ public class MainInventoryView : UserControl
                     AddDetailRow(equipPanel, 3, "N° Série :", numeroSerie);
                     AddDetailRow(equipPanel, 4, "Marque :", marque);
                     AddDetailRow(equipPanel, 5, "État :", etatLabel);
+                    
+                    // Afficher la date de rendu DSEM si elle existe
+                    if (etat == 2 && !string.IsNullOrEmpty(dateRenduDsem))
+                    {
+                        AddDetailRow(equipPanel, 6, "Date rendu DSEM :", dateRenduDsem);
+                    }
 
                     equipTab.Controls.Add(equipPanel);
                     detailsTabControl.TabPages.Add(equipTab);
