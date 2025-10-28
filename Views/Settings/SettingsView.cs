@@ -175,8 +175,9 @@ internal class ParameterManagerControl : UserControl
             BorderStyle = BorderStyle.FixedSingle
         };
 
-        _listView.Columns.Add("ID", 60);
-        _listView.Columns.Add("Nom", 300);
+        // Colonne ID cachée (width = 0) mais conservée pour le tri
+        _listView.Columns.Add("ID", 0);
+        _listView.Columns.Add("Nom", 360);
 
         // Configuration du tri par colonnes
         _listViewSorter = new ListViewColumnSorter();
@@ -217,7 +218,7 @@ internal class ParameterManagerControl : UserControl
         // Label
         var label = new Label
         {
-            Text = "Sélectionner un élément :",
+            Text = "Nom :",
             Font = Theme.Fonts.Label,
             ForeColor = Theme.Colors.TextPrimary,
             Dock = DockStyle.Fill,
@@ -225,12 +226,12 @@ internal class ParameterManagerControl : UserControl
         };
         layout.Controls.Add(label, 0, 0);
 
-        // TextBox (lecture seule, juste pour afficher la sélection)
+        // TextBox (éditable pour modification)
         _txtName = new TextBox
         {
             Height = Theme.Sizes.InputHeight,
             Dock = DockStyle.Fill,
-            ReadOnly = true,
+            ReadOnly = false,
             BackColor = Theme.Colors.Surface
         };
         Theme.StyleTextBox(_txtName);
@@ -330,6 +331,7 @@ internal class ParameterManagerControl : UserControl
         else
         {
             _selectedId = null;
+            _txtName.Clear();
             _btnEdit.Enabled = false;
             _btnDelete.Enabled = false;
         }
