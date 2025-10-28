@@ -7,3 +7,10 @@ obj/
 *.iml
 [Tt]humbs.db
 [Dd]esktop.ini
+
+# Publication et archives
+publish/
+publish-portable/
+*.zip
+InstalllerGuide/
+installer-output/

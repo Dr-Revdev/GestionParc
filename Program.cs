@@ -2,6 +2,7 @@ using System;
 using System.Windows.Forms;
 using ProjetParc.Data;
 using ProjetParc.Views;
+using ProjetParc.Views.FirstRun;
 
 namespace ProjetParc;
 
@@ -12,16 +13,66 @@ static class Program
     {
         try
         {
-            Database.EnsureInitialized(); // :contentReference[oaicite:0]{index=0}
             ApplicationConfiguration.Initialize();
-            Application.Run(new WelcomePage());     // :contentReference[oaicite:1]{index=1}
+
+            // Vérifier si c'est le premier lancement
+            if (AppConfig.IsFirstRun())
+            {
+                // Afficher la fenêtre de configuration du premier lancement
+                using var firstRunView = new FirstRunView();
+                var result = firstRunView.ShowDialog();
+
+                if (result != DialogResult.OK || string.IsNullOrEmpty(firstRunView.SelectedDatabasePath))
+                {
+                    MessageBox.Show(
+                        "Configuration annulée. L'application va se fermer.",
+                        "Configuration requise",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+                    return;
+                }
+
+                // Sauvegarder la configuration
+                var config = new AppConfig
+                {
+                    DatabasePath = firstRunView.SelectedDatabasePath
+                };
+                config.Save();
+
+                // Initialiser la base de données
+                Database.Initialize(config.DatabasePath);
+            }
+            else
+            {
+                // Charger la configuration existante
+                var config = AppConfig.Load();
+
+                if (string.IsNullOrEmpty(config.DatabasePath))
+                {
+                    MessageBox.Show(
+                        "Configuration invalide. Veuillez reconfigurer l'application.",
+                        "Erreur de configuration",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error
+                    );
+                    AppConfig.Reset();
+                    return;
+                }
+
+                // Initialiser la base de données
+                Database.Initialize(config.DatabasePath);
+            }
+
+            // S'assurer que la base de données est initialisée
+            Database.EnsureInitialized();
+
+            // Lancer l'application principale
+            Application.Run(new WelcomePage());
         }
         catch (Exception ex)
         {
             MessageBox.Show("Startup error:\n" + ex, "Crash au démarrage");
         }
-        // Database.EnsureInitialized();
-        // ApplicationConfiguration.Initialize();
-        // Application.Run(new WelcomePage());
     }
 }

@@ -1,4 +1,4 @@
-# 📚 Documentation Complète du Projet ProjetParc
+# 📚 Documentation Complète du Projet GestiParc
 
 ## 🎯 Bienvenue !
 
@@ -167,7 +167,7 @@ Si tu connais déjà un peu la programmation :
 ## 🗂️ Structure du projet
 
 ```
-ProjetParc/
+GestiParc/
 │
 ├── 📄 Program.cs ⭐
 │   └─ Point d'entrée de l'application
@@ -214,7 +214,7 @@ ProjetParc/
 │   └── Diagrammes et maquettes
 │
 └── 📁 database/
-    └── 📄 bddProjetParc.db
+    └── 📄 bddGestiParc.db
         └─ Fichier de base de données SQLite
 ```
 
@@ -266,7 +266,7 @@ Une classe est comme un **plan de construction**. Par exemple, la classe `Databa
 Une méthode est une **action** que peut faire une classe. Par exemple, `Open()` est une action qui ouvre une connexion.
 
 ### Qu'est-ce qu'un "namespace" ?
-C'est comme une **adresse postale** pour organiser le code. `ProjetParc.Data` signifie "dans le projet ProjetParc, dans le dossier Data".
+C'est comme une **adresse postale** pour organiser le code. `GestiParc.Data` signifie "dans le projet GestiParc, dans le dossier Data".
 
 ### Qu'est-ce qu'une "base de données" ?
 C'est un endroit où on **stocke des informations** de manière organisée. Comme un classeur géant avec des dossiers et des fiches.

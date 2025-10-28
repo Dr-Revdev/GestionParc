@@ -54,11 +54,11 @@ Ce fichier est le **point d'entrée** de l'application. C'est comme la porte pri
 - Les outils pour créer des fenêtres graphiques (boutons, formulaires, etc.)
 - Sans ça, impossible de créer l'interface utilisateur
 
-### **Ligne 3 : `using ProjetParc.Data;`**
+### **Ligne 3 : `using GestiParc.Data;`**
 - Notre propre code pour gérer la base de données
 - Permet d'utiliser la classe `Database`
 
-### **Ligne 4 : `using ProjetParc.Views;`**
+### **Ligne 4 : `using GestiParc.Views;`**
 - Notre propre code pour les écrans de l'application
 - Permet d'utiliser `WelcomePage`
 
