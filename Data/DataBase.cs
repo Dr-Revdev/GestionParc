@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace ProjetParc.Data;
 
 /// <summary>
-/// Classe statique gérant les connexions à la base de données SQLite
+/// Gère les connexions à la base de données SQLite
 /// </summary>
 public static class Database
 {
@@ -12,12 +12,12 @@ public static class Database
     private static SharePointSyncManager _syncManager = new SharePointSyncManager();
 
     /// <summary>
-    /// Obtient le gestionnaire de synchronisation SharePoint
+    /// Gestionnaire de synchronisation SharePoint/OneDrive
     /// </summary>
     public static SharePointSyncManager SyncManager => _syncManager;
 
     /// <summary>
-    /// Initialise le chemin de la base de données depuis la configuration
+    /// Initialise le chemin de la base de données
     /// </summary>
     public static void Initialize(string databasePath)
     {
@@ -25,7 +25,7 @@ public static class Database
     }
 
     /// <summary>
-    /// Obtient le chemin actuel de la base de données
+    /// Retourne le chemin actuel de la base de données
     /// </summary>
     public static string GetDatabasePath()
     {
@@ -37,9 +37,8 @@ public static class Database
     }
 
     /// <summary>
-    /// Ouvre une nouvelle connexion à la base de données SQLite
+    /// Ouvre une connexion à la base de données
     /// </summary>
-    /// <returns>Une connexion SQLite ouverte et configurée</returns>
     public static SqliteConnection Open()
     {
         if (string.IsNullOrEmpty(_dbPath))
@@ -47,10 +46,9 @@ public static class Database
             throw new InvalidOperationException("La base de données n'a pas été initialisée. Appelez Database.Initialize() d'abord.");
         }
 
-        // Si le mode SharePoint est actif, utiliser le chemin local
+        // Utiliser la copie locale si SharePoint est actif
         string actualDbPath = _syncManager.IsActive ? _syncManager.LocalWorkingPath : _dbPath;
 
-        // Créer le répertoire si nécessaire
         var directory = Path.GetDirectoryName(actualDbPath);
         if (!string.IsNullOrEmpty(directory))
         {
@@ -66,7 +64,7 @@ public static class Database
     }
 
     /// <summary>
-    /// S'assure que la base de données est initialisée et que le répertoire existe
+    /// Initialise la base et crée le schéma si nécessaire
     /// </summary>
     public static void EnsureInitialized()
     {
@@ -75,13 +73,12 @@ public static class Database
             throw new InvalidOperationException("La base de données n'a pas été initialisée. Appelez Database.Initialize() d'abord.");
         }
 
-        // Si c'est un chemin SharePoint, initialiser la synchronisation
+        // Activer la synchronisation SharePoint si nécessaire
         if (SharePointSyncManager.IsSharePointPath(_dbPath))
         {
             _syncManager.Initialize(_dbPath);
         }
 
-        // Utiliser le chemin approprié (local si SharePoint, sinon original)
         string actualDbPath = _syncManager.IsActive ? _syncManager.LocalWorkingPath : _dbPath;
 
         var directory = Path.GetDirectoryName(actualDbPath);
@@ -90,7 +87,7 @@ public static class Database
             Directory.CreateDirectory(directory);
         }
 
-        // Vérifier si les tables existent déjà
+        // Vérifier si le schéma existe
         bool needsInitialization = false;
         
         try
@@ -106,7 +103,6 @@ public static class Database
             needsInitialization = true;
         }
 
-        // Créer le schéma si nécessaire
         if (needsInitialization)
         {
             using var connection = Open();
@@ -115,7 +111,7 @@ public static class Database
     }
 
     /// <summary>
-    /// Crée le schéma complet de la base de données
+    /// Crée le schéma de la base de données
     /// </summary>
     private static void CreateSchema(SqliteConnection connection)
     {

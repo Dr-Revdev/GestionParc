@@ -68,7 +68,7 @@ public class FirstRunView : Form
         // Bouton "Utiliser une BDD existante"
         _useExistingButton = new Button
         {
-            Text = "📂 Utiliser une base de données existante",
+            Text = "Utiliser une base de données existante",
             Font = new Font("Segoe UI", 11),
             Size = new Size(400, 50),
             Location = new Point(100, 230),

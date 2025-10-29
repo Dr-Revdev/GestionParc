@@ -137,23 +137,22 @@ static class Program
     }
 
     /// <summary>
-    /// Gestionnaire d'événement à la fermeture de l'application
-    /// Nettoie le fichier de verrouillage SharePoint si nécessaire
-    /// Note: La confirmation de sauvegarde est gérée par WelcomePage.OnFormClosing()
+    /// Nettoie les ressources à la fermeture de l'application
     /// </summary>
     private static void OnApplicationExit(object sender, EventArgs e)
     {
         try
         {
-            // Nettoyage du fichier de verrouillage SharePoint
-            // La sauvegarde a déjà été gérée par FormClosing si l'utilisateur l'a confirmée
             Database.SyncManager.Cleanup();
         }
         catch (SharePointSyncException syncEx)
         {
             MessageBox.Show(
-                $"Erreur lors de la synchronisation vers SharePoint :\n\n{syncEx.Message}\n\nVos modifications locales sont conservées dans :\n{Database.SyncManager.LocalWorkingPath}",
-                "Erreur de synchronisation",
+                $"ATTENTION : Vos modifications n'ont PAS été sauvegardées sur SharePoint.\n\n" +
+                $"Erreur : {syncEx.Message}\n\n" +
+                $"Vos données sont conservées localement dans :\n{Database.SyncManager.LocalWorkingPath}\n\n" +
+                $"Reconnectez-vous au réseau et relancez l'application pour synchroniser.",
+                "Sauvegarde SharePoint échouée",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning
             );
@@ -161,7 +160,8 @@ static class Program
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Erreur inattendue lors de la fermeture :\n\n{ex.Message}",
+                $"Erreur inattendue lors de la fermeture :\n\n{ex.Message}\n\n" +
+                $"L'application va se fermer. Vos données locales sont conservées.",
                 "Erreur",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error

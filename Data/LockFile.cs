@@ -6,32 +6,17 @@ using System.Text.Json;
 namespace ProjetParc.Data;
 
 /// <summary>
-/// Représente un fichier de verrouillage pour empêcher l'accès concurrent à la base de données
+/// Fichier de verrouillage pour empêcher l'accès concurrent
 /// </summary>
 public class LockFile
 {
-    /// <summary>
-    /// Nom d'utilisateur qui a verrouillé la base
-    /// </summary>
     public string User { get; set; }
-
-    /// <summary>
-    /// Nom de la machine qui a verrouillé la base
-    /// </summary>
     public string Machine { get; set; }
-
-    /// <summary>
-    /// Date et heure de création du verrou (UTC)
-    /// </summary>
     public DateTime Timestamp { get; set; }
-
-    /// <summary>
-    /// ID du processus qui a créé le verrou
-    /// </summary>
     public int ProcessId { get; set; }
 
     /// <summary>
-    /// Crée un nouveau fichier de verrouillage avec les informations du système actuel
+    /// Crée un nouveau verrou avec les informations système actuelles
     /// </summary>
     public static LockFile Create()
     {
@@ -58,11 +43,11 @@ public class LockFile
     /// </summary>
     public static LockFile Load(string lockFilePath)
     {
-        if (!File.Exists(lockFilePath))
-            return null;
-
         try
         {
+            if (!File.Exists(lockFilePath))
+                return null;
+
             var json = File.ReadAllText(lockFilePath);
             return JsonSerializer.Deserialize<LockFile>(json);
         }
@@ -73,7 +58,7 @@ public class LockFile
     }
 
     /// <summary>
-    /// Vérifie si le verrou est expiré (plus de 4 heures)
+    /// Vérifie si le verrou a expiré (plus de 4 heures)
     /// </summary>
     public bool IsExpired()
     {
@@ -81,7 +66,7 @@ public class LockFile
     }
 
     /// <summary>
-    /// Vérifie si le processus qui a créé le verrou existe encore
+    /// Vérifie si le processus qui a créé le verrou est encore actif
     /// </summary>
     public bool IsProcessAlive()
     {
@@ -97,7 +82,7 @@ public class LockFile
     }
 
     /// <summary>
-    /// Retourne une description lisible du verrou
+    /// Génère une description lisible du verrou pour l'utilisateur
     /// </summary>
     public string GetDescription()
     {

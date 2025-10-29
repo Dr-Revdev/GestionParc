@@ -11,8 +11,7 @@ using ProjetParc.Views.Settings;
 namespace ProjetParc.Views;
 
 /// <summary>
-/// Page d'accueil principale de l'application de gestion de parc
-/// Fournit l'accès aux différentes fonctionnalités via une interface graphique
+/// Page d'accueil principale avec navigation vers les différentes fonctionnalités
 /// </summary>
 public class WelcomePage : Form
 {
@@ -22,10 +21,6 @@ public class WelcomePage : Form
     private Button btnNewMod;
     private Label title;
 
-    /// <summary>
-    /// Initialise la page d'accueil et prépare la navigation entre les vues.
-    /// Définit la taille de la fenêtre, crée les boutons et attache les handlers.
-    /// </summary>
     public WelcomePage()
     {
         Text = "Gestion Parc";
@@ -34,10 +29,8 @@ public class WelcomePage : Form
         MinimumSize = new Size(800, 600);
         BackColor = Theme.Colors.Background;
 
-        // Gestionnaire de fermeture pour confirmer la sauvegarde SharePoint
         FormClosing += OnFormClosing;
 
-        // Création du layout principal
         var mainLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -47,11 +40,9 @@ public class WelcomePage : Form
             Padding = new Padding(Theme.Spacing.Large)
         };
 
-        // Configuration des lignes
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 100)); // En-tête
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Contenu
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 100));
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        // En-tête avec titre et sous-titre
         var headerPanel = new TableLayoutPanel 
         { 
             Dock = DockStyle.Fill,
@@ -83,14 +74,12 @@ public class WelcomePage : Form
         headerPanel.Controls.Add(title, 0, 0);
         headerPanel.Controls.Add(subtitle, 0, 1);
 
-        // Panneau de contenu
         content = new Panel 
         { 
             Dock = DockStyle.Fill, 
             BackColor = Theme.Colors.Background 
         };
 
-        // Configuration du layout des boutons
         var buttonLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -100,13 +89,11 @@ public class WelcomePage : Form
             BackColor = Theme.Colors.Background
         };
 
-        // Configuration des colonnes pour les boutons (répartition égale)
         for (int i = 0; i < 3; i++)
         {
             buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
         }
 
-        // Configuration des boutons avec le thème
         var tileFont = new Font("Segoe UI", 14f, FontStyle.Regular);
         
         btnSetEquipment = new Button
@@ -148,23 +135,19 @@ public class WelcomePage : Form
         };
         Theme.StyleSecondaryButton(btnNewMod, setHeight: false);
 
-        // Ajout des boutons au layout
         buttonLayout.Controls.Add(btnSetEquipment, 0, 0);
         buttonLayout.Controls.Add(btnFreeEquipment, 1, 0);
         buttonLayout.Controls.Add(btnNewMod, 2, 0);
 
-        // Ajout des événements
         btnNewMod.Click += (_, __) => ShowAdminMenu();
         btnFreeEquipment.Click += (_, __) => ShowEquipmentFree();
         btnSetEquipment.Click += (_, __) => ShowMainInventoryPage();
 
-        // Assemblage final
         content.Controls.Add(buttonLayout);
         mainLayout.Controls.Add(headerPanel, 0, 0);
         mainLayout.Controls.Add(content, 0, 1);
         Controls.Add(mainLayout);
 
-        // Barre d'outils modernisée
         var toolStrip = new ToolStrip 
         { 
             Dock = DockStyle.Top,
@@ -184,12 +167,11 @@ public class WelcomePage : Form
         
         toolStrip.Items.Add(btnExportTool);
 
-        // Bouton de sauvegarde SharePoint (visible uniquement si mode SharePoint actif)
         if (Data.Database.SyncManager.IsActive)
         {
             var btnSaveTool = new ToolStripButton
             {
-                Text = "💾 Sauvegarder",
+                Text = "Sauvegarder",
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 Font = Theme.Fonts.Button,
                 ForeColor = Theme.Colors.Primary
@@ -201,14 +183,11 @@ public class WelcomePage : Form
 
         Controls.Add(toolStrip);
 
-        // Affiche le panneau d'accueil contenant les trois tuiles
         ShowHome();
-
     }
 
     /// <summary>
-    /// Affiche l'écran d'accueil avec les tuiles de navigation principales.
-    /// Réutilise les boutons créés dans le constructeur pour éviter la recréation.
+    /// Affiche l'écran d'accueil avec les trois tuiles principales
     /// </summary>
     private void ShowHome()
     {
@@ -223,7 +202,6 @@ public class WelcomePage : Form
             BackColor = Theme.Colors.Background
         };
 
-        // Configuration des colonnes pour les boutons (répartition égale)
         for (int i = 0; i < 3; i++)
         {
             buttonLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33F));
@@ -236,10 +214,6 @@ public class WelcomePage : Form
         content.Controls.Add(buttonLayout);
     }
 
-    /// <summary>
-    /// Remplace le contenu par la vue d'administration (création / modification).
-    /// La vue admin est initialisée avec des callbacks pointant vers les méthodes Show* de cette classe.
-    /// </summary>
     private void ShowAdminMenu()
     {
         content.Controls.Clear();
@@ -249,18 +223,12 @@ public class WelcomePage : Form
         content.Controls.Add(admin);
     }
 
-    /// <summary>
-    /// Affiche la vue des équipements disponibles.
-    /// </summary>
     private void ShowEquipmentFree()
     {
         content.Controls.Clear();
         content.Controls.Add(new FreeEquipmentView(onBack: ShowHome) { Dock = DockStyle.Fill });
     }
 
-    /// <summary>
-    /// Affiche la vue principale d'inventaire (liste complète des équipements).
-    /// </summary>
     private void ShowMainInventoryPage()
     {
         content.Controls.Clear();
@@ -268,44 +236,30 @@ public class WelcomePage : Form
         content.Controls.Add(new MainInventoryView(onBack: ShowHome) { Dock = DockStyle.Fill });
     }
     
-    /// <summary>
-    /// Affiche la vue de création d'équipement.
-    /// Utilisée depuis le menu d'administration.
-    /// </summary>
     private void ShowEquipmentCreate()
     {
         content.Controls.Clear();
         content.Controls.Add(new EquipmentCreateView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
 
-    /// <summary>
-    /// Affiche la vue de création d'agent.
-    /// </summary>
     private void ShowAgentCreate()
     {
         content.Controls.Clear();
         content.Controls.Add(new AgentCreateView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
-    /// <summary>
-    /// Affiche la vue d'édition d'agent.
-    /// </summary>
+    
     private void ShowAgentEdit()
     {
         content.Controls.Clear();
         content.Controls.Add(new AgentEditView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
-    /// <summary>
-    /// Affiche la vue d'édition d'équipement.
-    /// </summary>
+    
     private void ShowEquipmentEdit()
     {
         content.Controls.Clear();
         content.Controls.Add(new EquipementEditView(onBack: ShowAdminMenu) { Dock = DockStyle.Fill });
     }
 
-    /// <summary>
-    /// Affiche la vue des paramètres (Équipes, Sites, Types d'équipement).
-    /// </summary>
     private void ShowSettings()
     {
         content.Controls.Clear();
@@ -428,7 +382,7 @@ public class WelcomePage : Form
     }
 
     /// <summary>
-    /// Sauvegarde manuelle de la base de données vers SharePoint
+    /// Sauvegarde manuelle vers SharePoint
     /// </summary>
     private void SaveToSharePoint()
     {
@@ -465,11 +419,10 @@ public class WelcomePage : Form
     }
 
     /// <summary>
-    /// Gestionnaire de l'événement FormClosing pour confirmer la sauvegarde SharePoint
+    /// Demande confirmation avant fermeture et sauvegarde si nécessaire
     /// </summary>
     private void OnFormClosing(object sender, FormClosingEventArgs e)
     {
-        // Uniquement si SharePoint est actif
         if (!Data.Database.SyncManager.IsActive)
             return;
 
@@ -482,7 +435,6 @@ public class WelcomePage : Form
 
         if (result == DialogResult.Cancel)
         {
-            // Annuler la fermeture
             e.Cancel = true;
             return;
         }
@@ -491,7 +443,6 @@ public class WelcomePage : Form
         {
             try
             {
-                // Sauvegarder vers SharePoint
                 Data.Database.SyncManager.CopyToSharePoint();
             }
             catch (Data.SharePointSyncException ex)
@@ -505,14 +456,10 @@ public class WelcomePage : Form
 
                 if (retry == DialogResult.No)
                 {
-                    // Annuler la fermeture pour réessayer
                     e.Cancel = true;
                     return;
                 }
             }
         }
-
-        // Si on arrive ici (Yes avec succès ou No), on peut fermer
-        // Le ApplicationExit fera le cleanup (suppression du lock)
     }
 }
