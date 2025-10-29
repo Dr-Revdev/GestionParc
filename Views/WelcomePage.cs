@@ -34,6 +34,9 @@ public class WelcomePage : Form
         MinimumSize = new Size(800, 600);
         BackColor = Theme.Colors.Background;
 
+        // Gestionnaire de fermeture pour confirmer la sauvegarde SharePoint
+        FormClosing += OnFormClosing;
+
         // Création du layout principal
         var mainLayout = new TableLayoutPanel
         {
@@ -180,6 +183,22 @@ public class WelcomePage : Form
         btnExportTool.Click += (s, e) => ShowExportMenu();
         
         toolStrip.Items.Add(btnExportTool);
+
+        // Bouton de sauvegarde SharePoint (visible uniquement si mode SharePoint actif)
+        if (Data.Database.SyncManager.IsActive)
+        {
+            var btnSaveTool = new ToolStripButton
+            {
+                Text = "💾 Sauvegarder",
+                DisplayStyle = ToolStripItemDisplayStyle.Text,
+                Font = Theme.Fonts.Button,
+                ForeColor = Theme.Colors.Primary
+            };
+            btnSaveTool.Click += (s, e) => SaveToSharePoint();
+            
+            toolStrip.Items.Add(btnSaveTool);
+        }
+
         Controls.Add(toolStrip);
 
         // Affiche le panneau d'accueil contenant les trois tuiles
@@ -406,5 +425,94 @@ public class WelcomePage : Form
 
         exportForm.Controls.Add(layout);
         exportForm.ShowDialog();
+    }
+
+    /// <summary>
+    /// Sauvegarde manuelle de la base de données vers SharePoint
+    /// </summary>
+    private void SaveToSharePoint()
+    {
+        if (!Data.Database.SyncManager.IsActive)
+        {
+            MessageBox.Show(
+                "Le mode SharePoint n'est pas actif.",
+                "Information",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+            return;
+        }
+
+        try
+        {
+            Data.Database.SyncManager.CopyToSharePoint();
+            MessageBox.Show(
+                "Base de données sauvegardée avec succès sur SharePoint.",
+                "Sauvegarde réussie",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+        }
+        catch (Data.SharePointSyncException ex)
+        {
+            MessageBox.Show(
+                $"Erreur lors de la sauvegarde vers SharePoint :\n\n{ex.Message}\n\nVos modifications locales sont conservées.",
+                "Erreur de sauvegarde",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+        }
+    }
+
+    /// <summary>
+    /// Gestionnaire de l'événement FormClosing pour confirmer la sauvegarde SharePoint
+    /// </summary>
+    private void OnFormClosing(object sender, FormClosingEventArgs e)
+    {
+        // Uniquement si SharePoint est actif
+        if (!Data.Database.SyncManager.IsActive)
+            return;
+
+        var result = MessageBox.Show(
+            "Voulez-vous sauvegarder les modifications vers SharePoint avant de quitter ?",
+            "Sauvegarder avant de quitter",
+            MessageBoxButtons.YesNoCancel,
+            MessageBoxIcon.Question
+        );
+
+        if (result == DialogResult.Cancel)
+        {
+            // Annuler la fermeture
+            e.Cancel = true;
+            return;
+        }
+
+        if (result == DialogResult.Yes)
+        {
+            try
+            {
+                // Sauvegarder vers SharePoint
+                Data.Database.SyncManager.CopyToSharePoint();
+            }
+            catch (Data.SharePointSyncException ex)
+            {
+                var retry = MessageBox.Show(
+                    $"Erreur lors de la sauvegarde :\n\n{ex.Message}\n\nVoulez-vous quitter quand même sans sauvegarder ?",
+                    "Erreur de sauvegarde",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Error
+                );
+
+                if (retry == DialogResult.No)
+                {
+                    // Annuler la fermeture pour réessayer
+                    e.Cancel = true;
+                    return;
+                }
+            }
+        }
+
+        // Si on arrive ici (Yes avec succès ou No), on peut fermer
+        // Le ApplicationExit fera le cleanup (suppression du lock)
     }
 }

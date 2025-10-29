@@ -54,11 +54,11 @@ Ce fichier est le **point d'entrée** de l'application. C'est comme la porte pri
 - Les outils pour créer des fenêtres graphiques (boutons, formulaires, etc.)
 - Sans ça, impossible de créer l'interface utilisateur
 
-### **Ligne 3 : `using GestiParc.Data;`**
+### **Ligne 3 : `using ProjetParc.Data;`**
 - Notre propre code pour gérer la base de données
-- Permet d'utiliser la classe `Database`
+- Permet d'utiliser la classe `Database` et `SharePointSyncManager` 🆕
 
-### **Ligne 4 : `using GestiParc.Views;`**
+### **Ligne 4 : `using ProjetParc.Views;`**
 - Notre propre code pour les écrans de l'application
 - Permet d'utiliser `WelcomePage`
 
@@ -161,9 +161,20 @@ Ce fichier est le **point d'entrée** de l'application. C'est comme la porte pri
 **Ce que ça fait :**
 1. Vérifie que le dossier `database` existe (le crée si besoin)
 2. Vérifie que le fichier de base de données existe (le crée si besoin)
-3. Prépare tout pour que l'application puisse lire/écrire des données
+3. **🆕 v1.1.0 :** Initialise la synchronisation SharePoint si détectée
+4. Prépare tout pour que l'application puisse lire/écrire des données
 
 💡 **Classe définie dans :** `Data/DataBase.cs`
+
+**🆕 Nouveauté v1.1.0 : Détection SharePoint**
+
+Si le chemin de la base contient "OneDrive" ou "SharePoint" :
+1. Vérifie si la base est déjà verrouillée (fichier `.lock`)
+2. Si verrouillée par quelqu'un d'autre → Affiche message d'erreur
+3. Si libre ou lock expiré → Crée une copie locale de travail
+4. Crée un nouveau fichier `.lock` pour réserver l'accès
+
+💡 **Voir la documentation complète :** `17_SharePointSync.md`
 
 ---
 

@@ -34,6 +34,14 @@ Chaque fichier est expliqué **ligne par ligne**, avec des analogies de la vie q
    - **Durée de lecture :** ~15 minutes
    - **Niveau :** Débutant
 
+2ter. **[SharePointSyncManager.cs](17_SharePointSync.md)** 🆕 v1.1.0
+   - Synchronisation multi-utilisateur SharePoint/OneDrive
+   - Système de verrouillage (lock files)
+   - Copie locale de travail pour performance
+   - Checkpoint WAL pour sauvegarde fiable
+   - **Durée de lecture :** ~25 minutes
+   - **Niveau :** Intermédiaire-Avancé
+
 ---
 
 ### 🖼️ Fichiers des vues (Interface graphique)
@@ -44,6 +52,8 @@ Chaque fichier est expliqué **ligne par ligne**, avec des analogies de la vie q
    - Les trois boutons principaux
    - Navigation entre les écrans
    - Barre d'outils avec export CSV 🆕
+   - Bouton de sauvegarde SharePoint 🆕 v1.1.0
+   - Confirmation de sauvegarde à la fermeture 🆕 v1.1.0
    - **Durée de lecture :** ~25 minutes
    - **Niveau :** Débutant
 
@@ -175,8 +185,14 @@ GestiParc/
 ├── 📁 Data/
 │   ├── 📄 DataBase.cs
 │   │   └─ Gestion de la base de données
-│   └── 📄 CsvExporter.cs
-│       └─ Export des données en fichiers CSV
+│   ├── 📄 CsvExporter.cs
+│   │   └─ Export des données en fichiers CSV
+│   ├── 📄 SharePointSyncManager.cs 🆕 v1.1.0
+│   │   └─ Synchronisation SharePoint/OneDrive
+│   ├── 📄 LockFile.cs 🆕 v1.1.0
+│   │   └─ Gestion des verrous multi-utilisateur
+│   └── 📄 AppConfig.cs
+│       └─ Configuration de l'application
 │
 ├── 📁 Views/
 │   ├── 📄 WelcomePage.cs
@@ -366,4 +382,29 @@ Pour toute question ou suggestion d'amélioration :
 
 **🚀 Bonne lecture et bon apprentissage !**
 
-*Dernière mise à jour : 24 octobre 2025*
+---
+
+## 📝 Historique des versions
+
+### **v1.1.0** - 29 octobre 2025 🆕
+- ✨ Synchronisation SharePoint/OneDrive multi-utilisateur
+- 🔒 Système de verrouillage avec fichiers .lock
+- 💾 Bouton de sauvegarde manuelle dans la barre d'outils
+- ✅ Confirmation de sauvegarde à la fermeture avec annulation
+- 🔧 Checkpoint WAL SQLite pour sauvegarde fiable
+- 📂 Copie locale de travail pour meilleures performances
+- ⏱️ Récupération automatique des verrous expirés (4h)
+
+### **v1.0.x** - Octobre 2025
+- 📊 Export CSV (Agents, Équipements, Prêts)
+- 🔄 Export complet avec dossier horodaté
+- 📋 Tri intelligent des colonnes ListView
+- 🎨 Interface graphique complète
+- 💾 Gestion complète de l'inventaire
+- 👥 Gestion des agents
+- 🖥️ Gestion des équipements
+- 📝 Système de prêts
+
+---
+
+*Dernière mise à jour : 29 octobre 2025*

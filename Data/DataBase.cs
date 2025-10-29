@@ -9,6 +9,12 @@ namespace ProjetParc.Data;
 public static class Database
 {
     private static string _dbPath = string.Empty;
+    private static SharePointSyncManager _syncManager = new SharePointSyncManager();
+
+    /// <summary>
+    /// Obtient le gestionnaire de synchronisation SharePoint
+    /// </summary>
+    public static SharePointSyncManager SyncManager => _syncManager;
 
     /// <summary>
     /// Initialise le chemin de la base de données depuis la configuration
@@ -41,14 +47,17 @@ public static class Database
             throw new InvalidOperationException("La base de données n'a pas été initialisée. Appelez Database.Initialize() d'abord.");
         }
 
+        // Si le mode SharePoint est actif, utiliser le chemin local
+        string actualDbPath = _syncManager.IsActive ? _syncManager.LocalWorkingPath : _dbPath;
+
         // Créer le répertoire si nécessaire
-        var directory = Path.GetDirectoryName(_dbPath);
+        var directory = Path.GetDirectoryName(actualDbPath);
         if (!string.IsNullOrEmpty(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
-        var connexion = new SqliteConnection($"Data Source={_dbPath};Cache=Shared;Foreign Keys=True;");
+        var connexion = new SqliteConnection($"Data Source={actualDbPath};Cache=Shared;Foreign Keys=True;");
         connexion.Open();
         using var pragma = connexion.CreateCommand();
         pragma.CommandText = "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=3000;";
@@ -66,7 +75,16 @@ public static class Database
             throw new InvalidOperationException("La base de données n'a pas été initialisée. Appelez Database.Initialize() d'abord.");
         }
 
-        var directory = Path.GetDirectoryName(_dbPath);
+        // Si c'est un chemin SharePoint, initialiser la synchronisation
+        if (SharePointSyncManager.IsSharePointPath(_dbPath))
+        {
+            _syncManager.Initialize(_dbPath);
+        }
+
+        // Utiliser le chemin approprié (local si SharePoint, sinon original)
+        string actualDbPath = _syncManager.IsActive ? _syncManager.LocalWorkingPath : _dbPath;
+
+        var directory = Path.GetDirectoryName(actualDbPath);
         if (!string.IsNullOrEmpty(directory))
         {
             Directory.CreateDirectory(directory);

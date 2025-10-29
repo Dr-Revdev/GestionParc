@@ -218,7 +218,23 @@ var btnExportTool = new ToolStripButton
 btnExportTool.Click += (s, e) => ShowExportMenu();
 
 toolStrip.Items.Add(btnExportTool);
+
+// 🆕 v1.1.0 : Bouton de sauvegarde SharePoint
+if (Data.Database.SyncManager.IsActive)
+{
+    var btnSaveTool = new ToolStripButton
+    {
+        Text = "💾 Sauvegarder",
+        DisplayStyle = ToolStripItemDisplayStyle.Text
+    };
+    btnSaveTool.Click += (s, e) => SaveToSharePoint();
+    toolStrip.Items.Add(btnSaveTool);
+}
+
 Controls.Add(toolStrip);
+
+// 🆕 v1.1.0 : Confirmation à la fermeture
+FormClosing += OnFormClosing;
 ```
 
 **Nouveauté : Barre d'outils en haut de la fenêtre**
@@ -228,12 +244,23 @@ Controls.Add(toolStrip);
 - **`Dock = DockStyle.Top`** - Positionnée tout en haut de la fenêtre
 - **`GripStyle = ToolStripGripStyle.Hidden`** - Pas de poignée de déplacement
 
-**`ToolStripButton`**
+**`ToolStripButton "Export CSV"`**
 - Bouton dans la barre d'outils
 - **Text = "Export CSV"** - Texte du bouton
 - **Click** → Appelle `ShowExportMenu()` qui affiche le menu d'export
 
-💡 **Utilité :** Accès rapide à l'export CSV depuis n'importe quelle page de l'application.
+**🆕 `ToolStripButton "� Sauvegarder"` (v1.1.0)**
+- **Visible uniquement si SharePoint est actif**
+- Permet de sauvegarder manuellement vers SharePoint
+- **Click** → Appelle `SaveToSharePoint()`
+- Toujours visible, accessible depuis toutes les pages
+
+**🆕 `FormClosing` (v1.1.0)**
+- Événement qui se déclenche avant la fermeture de la fenêtre
+- Permet d'afficher une confirmation de sauvegarde
+- **Peut annuler la fermeture** si l'utilisateur clique sur "Annuler"
+
+�💡 **Utilité :** Accès rapide aux fonctions importantes depuis n'importe quelle page de l'application.
 
 ---
 
@@ -252,8 +279,9 @@ ShowHome();
 **Ordre d'imbrication :**
 ```
 WelcomePage (Form)
-├─ toolStrip (ToolStrip) ← NOUVEAU
-│  └─ btnExportTool (ToolStripButton)
+├─ toolStrip (ToolStrip)
+│  ├─ btnExportTool (ToolStripButton)
+│  └─ btnSaveTool (ToolStripButton) 🆕 v1.1.0 (si SharePoint actif)
 └─ mainLayout (TableLayoutPanel)
    ├─ headerPanel [ligne 0]
    │  └─ title (Label)
@@ -539,11 +567,154 @@ exportForm.ShowDialog();
 
 ---
 
+## 💾 SaveToSharePoint() - Sauvegarde vers SharePoint 🆕 v1.1.0
+
+```csharp
+private void SaveToSharePoint()
+{
+    if (!Data.Database.SyncManager.IsActive)
+        return;
+
+    try
+    {
+        Data.Database.SyncManager.CopyToSharePoint();
+        MessageBox.Show(
+            "Sauvegarde vers SharePoint réussie !",
+            "Succès",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information
+        );
+    }
+    catch (Data.SharePointSyncException ex)
+    {
+        MessageBox.Show(
+            $"Erreur lors de la sauvegarde vers SharePoint :\n\n{ex.Message}\n\nVos modifications locales sont conservées.",
+            "Erreur de sauvegarde",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error
+        );
+    }
+}
+```
+
+**Nouveauté v1.1.0 : Sauvegarde manuelle**
+
+**Fonctionnement :**
+1. Vérifie que SharePoint est actif
+2. Appelle `SyncManager.CopyToSharePoint()` :
+   - Fait un **checkpoint WAL** (fusionne les modifications SQLite)
+   - Copie tous les fichiers de la base locale vers SharePoint
+3. Affiche un message de succès ou d'erreur
+
+**Gestion des erreurs :**
+- Si échec → Message d'erreur détaillé
+- **Rassure l'utilisateur :** "Vos modifications locales sont conservées"
+- Les données ne sont pas perdues, juste pas encore synchronisées
+
+💡 **Accessible via :** Bouton "💾 Sauvegarder" dans la barre d'outils
+
+---
+
+## 🚪 OnFormClosing() - Confirmation à la fermeture 🆕 v1.1.0
+
+```csharp
+private void OnFormClosing(object sender, FormClosingEventArgs e)
+{
+    if (!Data.Database.SyncManager.IsActive)
+        return;
+
+    var result = MessageBox.Show(
+        "Voulez-vous sauvegarder les modifications vers SharePoint avant de quitter ?",
+        "Sauvegarder avant de quitter",
+        MessageBoxButtons.YesNoCancel,
+        MessageBoxIcon.Question
+    );
+
+    if (result == DialogResult.Cancel)
+    {
+        // Annuler la fermeture
+        e.Cancel = true;
+        return;
+    }
+
+    if (result == DialogResult.Yes)
+    {
+        try
+        {
+            // Sauvegarder vers SharePoint
+            Data.Database.SyncManager.CopyToSharePoint();
+        }
+        catch (Data.SharePointSyncException ex)
+        {
+            var retry = MessageBox.Show(
+                $"Erreur lors de la sauvegarde :\n\n{ex.Message}\n\nVoulez-vous quitter quand même sans sauvegarder ?",
+                "Erreur de sauvegarde",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Error
+            );
+
+            if (retry == DialogResult.No)
+            {
+                // Annuler la fermeture pour réessayer
+                e.Cancel = true;
+                return;
+            }
+        }
+    }
+
+    // Si on arrive ici (Yes avec succès ou No), on peut fermer
+}
+```
+
+**Nouveauté v1.1.0 : Confirmation avant fermeture**
+
+**Déclenché quand :**
+- L'utilisateur clique sur le X de la fenêtre
+- L'utilisateur utilise Alt+F4
+- L'application se ferme pour une autre raison
+
+**Fonctionnement :**
+1. **Si SharePoint actif** → Affiche un dialogue de confirmation
+2. **3 choix possibles :**
+   - **Oui** → Sauvegarde puis ferme
+   - **Non** → Ferme sans sauvegarder
+   - **Annuler** → `e.Cancel = true` **empêche la fermeture** ✨
+
+**Gestion des erreurs de sauvegarde :**
+- Si la sauvegarde échoue → Demande "Quitter quand même ?"
+- **Non** → Reste ouvert, permet de réessayer
+- **Oui** → Ferme sans sauvegarder (modifications en local)
+
+💡 **Important :** C'est le seul endroit où le bouton "Annuler" **empêche réellement** la fermeture de l'application. `e.Cancel = true` est la clé !
+
+---
+
+**Scénario typique :**
+```
+1. Utilisateur travaille depuis 1h
+   ↓
+2. Clique sur X pour fermer
+   ↓
+3. Dialogue : "Sauvegarder avant de quitter ?"
+   ↓
+4. Clique sur "Annuler" → L'app reste ouverte ✅
+   OU
+   Clique sur "Oui" → Sauvegarde puis ferme ✅
+   OU
+   Clique sur "Non" → Ferme directement ✅
+```
+
+**Comportement Excel/Word :**
+C'est le même principe que Microsoft Office - toujours demander avant de fermer si modifications non sauvegardées !
+
+---
+
 ## 🎬 Scénario de navigation
 
 ```
 1. Démarrage
    → WelcomePage affiche 3 boutons + barre d'outils
+   → 🆕 Si SharePoint actif : Bouton "💾 Sauvegarder" visible
 
 2. Clic sur "Modification / Création"
    → ShowAdminMenu() remplace content par AdminMenuView
@@ -560,6 +731,14 @@ exportForm.ShowDialog();
 6. Clic sur "Export CSV" (barre d'outils)
    → ShowExportMenu() affiche une fenêtre popup
    → Choix entre 3 exports individuels ou 1 export complet
+
+7. 🆕 Clic sur "💾 Sauvegarder" (barre d'outils) - v1.1.0
+   → SaveToSharePoint() sauvegarde vers SharePoint
+   → Message de confirmation
+
+8. 🆕 Clic sur X pour fermer l'application - v1.1.0
+   → OnFormClosing() affiche dialogue de confirmation
+   → Options : Oui (sauvegarde), Non (ferme), Annuler (reste ouvert)
 ```
 
 ---
@@ -596,6 +775,16 @@ exportForm.ShowDialog();
 - Force l'utilisateur à choisir avant de continuer
 - Évite les erreurs de navigation
 
+### **7. Sauvegarde SharePoint manuelle** 🆕 v1.1.0
+- Bouton toujours visible dans la barre d'outils
+- Checkpoint WAL avant copie (garantit intégrité)
+- Messages clairs de succès/erreur
+
+### **8. Confirmation de fermeture cancellable** 🆕 v1.1.0
+- Événement `FormClosing` avant la fermeture
+- `e.Cancel = true` peut empêcher la fermeture
+- Comportement Excel/Word : toujours demander
+
 ---
 
 ## 💡 Questions fréquentes
@@ -617,6 +806,15 @@ exportForm.ShowDialog();
 
 **Q : Pourquoi 3 exports séparés + 1 export complet ?**
 - R : Flexibilité. Parfois on veut juste les agents, parfois tout. L'export complet regroupe les 3 fichiers dans un dossier daté.
+
+**Q : Le bouton "Sauvegarder" est-il toujours visible ?** 🆕 v1.1.0
+- R : Oui, mais uniquement si SharePoint/OneDrive est détecté. Sinon, il n'apparaît pas (mode local normal).
+
+**Q : Que se passe-t-il si je ferme sans sauvegarder ?** 🆕 v1.1.0
+- R : Les modifications restent en local. Au prochain démarrage, tu pourras les sauvegarder. Mais attention : d'autres utilisateurs ne verront pas tes modifications !
+
+**Q : Puis-je annuler la fermeture de l'application ?** 🆕 v1.1.0
+- R : Oui ! Clique sur "Annuler" dans le dialogue de confirmation. C'est la seule façon de vraiment empêcher la fermeture.
 
 ---
 
