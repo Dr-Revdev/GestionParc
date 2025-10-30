@@ -14,3 +14,6 @@ publish-portable/
 *.zip
 InstalllerGuide/
 installer-output/
+
+# Notes de travail
+.notes/

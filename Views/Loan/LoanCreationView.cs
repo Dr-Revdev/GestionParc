@@ -19,6 +19,7 @@ public class LoanCreationView : Form
     private Button btnAddEquipment;
     private Button btnValidate;
     private Button btnCancel;
+    private Button btnFeuilleRemise;
 
     private string selectedAgentId = string.Empty;
     private bool isEditMode = false;
@@ -76,12 +77,24 @@ public class LoanCreationView : Form
             {
                 lblAgentDisplay.Text = agent.DisplayName;
             }
+            
+            // Activer le bouton feuille de remise en mode édition
+            if (btnFeuilleRemise != null)
+            {
+                btnFeuilleRemise.Enabled = true;
+            }
         }
         else
         {
             Text = "Nouveau prêt";
             cmbAgent.Visible = true;
             lblAgentDisplay.Visible = false;
+            
+            // Désactiver le bouton feuille de remise en mode création
+            if (btnFeuilleRemise != null)
+            {
+                btnFeuilleRemise.Enabled = false;
+            }
         }
     }
 
@@ -228,14 +241,15 @@ public class LoanCreationView : Form
         TableLayoutPanel buttonPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 4,
+            ColumnCount = 5,
             RowCount = 1,
             BackColor = Theme.Colors.Background,
             ColumnStyles = {
-                new ColumnStyle(SizeType.Percent, 30),  // Add equipment
-                new ColumnStyle(SizeType.Percent, 30),  // Delete
-                new ColumnStyle(SizeType.Percent, 20),  // Validate
-                new ColumnStyle(SizeType.Percent, 20)   // Cancel
+                new ColumnStyle(SizeType.Percent, 25),  // Add equipment
+                new ColumnStyle(SizeType.Percent, 25),  // Delete
+                new ColumnStyle(SizeType.Percent, 25),  // Feuille remise
+                new ColumnStyle(SizeType.Percent, 12.5f),  // Validate
+                new ColumnStyle(SizeType.Percent, 12.5f)   // Cancel
             }
         };
         mainLayout.Controls.Add(buttonPanel, 0, 3);
@@ -261,6 +275,17 @@ public class LoanCreationView : Form
         btnDelete.Click += (_, _) => DeleteLoan();
         buttonPanel.Controls.Add(btnDelete, 1, 0);
 
+        btnFeuilleRemise = new Button
+        {
+            Text = "Feuille de remise",
+            Dock = DockStyle.Fill,
+            Margin = new Padding(10, 0, 10, 0),
+            Enabled = isEditMode  // Seulement activé en mode édition
+        };
+        Theme.StylePrimaryButton(btnFeuilleRemise);
+        btnFeuilleRemise.Click += (_, _) => GenerateFeuilleRemise();
+        buttonPanel.Controls.Add(btnFeuilleRemise, 2, 0);
+
         btnValidate = new Button
         {
             Text = "Valider",
@@ -269,7 +294,7 @@ public class LoanCreationView : Form
         };
         Theme.StyleSuccessButton(btnValidate);
         btnValidate.Click += (_, _) => ValidateLoan();
-        buttonPanel.Controls.Add(btnValidate, 2, 0);
+        buttonPanel.Controls.Add(btnValidate, 3, 0);
 
         btnCancel = new Button
         {
@@ -279,7 +304,7 @@ public class LoanCreationView : Form
         };
         Theme.StyleSecondaryButton(btnCancel);
         btnCancel.Click += (_, _) => Close();
-        buttonPanel.Controls.Add(btnCancel, 3, 0);
+        buttonPanel.Controls.Add(btnCancel, 4, 0);
 
         // Add first equipment control by default
         AddEquipmentControl();
@@ -464,6 +489,30 @@ public class LoanCreationView : Form
         {
             MessageBox.Show($"Erreur lors de l'enregistrement du prêt : {ex.Message}", "Erreur",
                           MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Génère une feuille de remise pour l'agent en cours d'édition
+    /// </summary>
+    private void GenerateFeuilleRemise()
+    {
+        if (!isEditMode || string.IsNullOrEmpty(selectedAgentId))
+        {
+            MessageBox.Show("La génération de feuille de remise n'est disponible qu'en mode édition.", 
+                          "Non disponible", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        try
+        {
+            var generator = new Data.FeuilleRemiseGenerator();
+            generator.GenerateFeuilleRemise(selectedAgentId);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la génération de la feuille de remise : {ex.Message}", 
+                          "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

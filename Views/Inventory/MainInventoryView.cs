@@ -127,6 +127,13 @@ public class MainInventoryView : UserControl
             
             lvEquipments.SelectedIndexChanged += LvEquipments_SelectedIndexChanged;
 
+            // Menu contextuel
+            var contextMenu = new ContextMenuStrip();
+            var menuItemFeuilleRemise = new ToolStripMenuItem("Générer feuille de remise");
+            menuItemFeuilleRemise.Click += OnContextMenu_FeuilleRemise;
+            contextMenu.Items.Add(menuItemFeuilleRemise);
+            lvEquipments.ContextMenuStrip = contextMenu;
+
             // TabControl pour les détails
             detailsTabControl = new TabControl
             {
@@ -675,6 +682,40 @@ public class MainInventoryView : UserControl
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur diagnostic DB: {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Génère une feuille de remise pour l'agent spécifié
+    /// </summary>
+    /// <param name="agentId">ID de l'agent</param>
+    private void GenerateFeuilleRemise(string agentId)
+    {
+        try
+        {
+            var generator = new FeuilleRemiseGenerator();
+            generator.GenerateFeuilleRemise(agentId);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la génération de la feuille de remise : {ex.Message}", 
+                          "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Gestionnaire du menu contextuel pour générer une feuille de remise
+    /// </summary>
+    private void OnContextMenu_FeuilleRemise(object sender, EventArgs e)
+    {
+        if (lvEquipments.SelectedItems.Count > 0 && lvEquipments.SelectedItems[0].Tag is string agentId)
+        {
+            GenerateFeuilleRemise(agentId);
+        }
+        else
+        {
+            MessageBox.Show("Veuillez sélectionner un prêt pour générer la feuille de remise.", 
+                          "Sélection requise", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 }
