@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Drawing;
 using System.Drawing.Printing;
+using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 
 namespace ProjetParc.Data;
 
@@ -147,18 +148,33 @@ public class FeuilleRemiseGenerator
 
         try
         {
-            using var connection = Database.Open();
-            
+            // Charger les données depuis les repositories
+            var agentRepo = new Repositories.MySQL.AgentMySqlRepository();
+            var equipmentRepo = new Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Repositories.MySQL.EquipmentTypeMySqlRepository();
+            var siteRepo = new Repositories.MySQL.SiteMySqlRepository();
+            var equipeRepo = new Repositories.MySQL.EquipeMySqlRepository();
+
+            var agent = agentRepo.GetById(_agentId);
+            var equipments = equipmentRepo.GetByAgent(_agentId).Where(e => e.EtatPret == 1).ToList();
+            var types = typeRepo.GetAll();
+            var sites = siteRepo.GetAll();
+            var equipes = equipeRepo.GetAll();
+
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
+
             // === EN-TÊTE ===
             currentY = DrawHeader(graphics, currentY, pageWidth);
             currentY += SECTION_SPACING;
 
             // === INFORMATIONS AGENT ===
-            currentY = DrawAgentInfo(graphics, connection, currentY, pageWidth);
+            currentY = DrawAgentInfo(graphics, agent, siteDict, equipeDict, currentY, pageWidth);
             currentY += SECTION_SPACING;
 
             // === LISTE DES ÉQUIPEMENTS ===
-            currentY = DrawEquipmentList(graphics, connection, currentY, pageWidth);
+            currentY = DrawEquipmentList(graphics, equipments, typeDict, currentY, pageWidth);
             currentY += SECTION_SPACING;
 
             // === SIGNATURES ===
@@ -203,7 +219,8 @@ public class FeuilleRemiseGenerator
     /// <summary>
     /// Dessine les informations de l'agent
     /// </summary>
-    private int DrawAgentInfo(Graphics graphics, SqliteConnection connection, int startY, int pageWidth)
+    private int DrawAgentInfo(Graphics graphics, DTOs.AgentDto agent, Dictionary<int, string> siteDict, 
+                             Dictionary<int, string> equipeDict, int startY, int pageWidth)
     {
         var currentY = startY;
 
@@ -211,31 +228,16 @@ public class FeuilleRemiseGenerator
         graphics.DrawString("INFORMATIONS AGENT", _headerFont, Brushes.Black, MARGIN_LEFT, currentY);
         currentY += (int)graphics.MeasureString("A", _headerFont).Height + 10;
 
-        // Récupérer les infos de l'agent
-        using var command = connection.CreateCommand();
-        command.CommandText = @"
-            SELECT 
-                a.nom, 
-                a.prenom, 
-                a.idrh, 
-                a.email,
-                s.name as site_name,
-                e.name as equipe_name
-            FROM Agents a
-            LEFT JOIN Sites s ON a.site_id = s.id
-            LEFT JOIN Equipes e ON a.equipe_id = e.id
-            WHERE a.idrh = $agentId";
-        command.Parameters.AddWithValue("$agentId", _agentId);
-
-        using var reader = command.ExecuteReader();
-        if (reader.Read())
+        if (agent != null)
         {
-            var nom = reader.IsDBNull(0) ? "" : reader.GetString(0);
-            var prenom = reader.IsDBNull(1) ? "" : reader.GetString(1);
-            var idrh = reader.IsDBNull(2) ? "" : reader.GetString(2);
-            var email = reader.IsDBNull(3) ? "" : reader.GetString(3);
-            var site = reader.IsDBNull(4) ? "Non assigné" : reader.GetString(4);
-            var equipe = reader.IsDBNull(5) ? "Non assignée" : reader.GetString(5);
+            var nom = agent.Nom ?? "";
+            var prenom = agent.Prenom ?? "";
+            var idrh = agent.Idrh ?? "";
+            var email = agent.Email ?? "";
+            var site = agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value) 
+                ? siteDict[agent.SiteId.Value] : "Non assigné";
+            var equipe = agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value)
+                ? equipeDict[agent.EquipeId.Value] : "Non assignée";
 
             // Afficher les informations
             currentY = DrawLabelValue(graphics, "Nom :", $"{nom} {prenom}", currentY);
@@ -251,7 +253,8 @@ public class FeuilleRemiseGenerator
     /// <summary>
     /// Dessine la liste des équipements en prêt
     /// </summary>
-    private int DrawEquipmentList(Graphics graphics, SqliteConnection connection, int startY, int pageWidth)
+    private int DrawEquipmentList(Graphics graphics, List<DTOs.EquipmentDto> equipments, 
+                                 Dictionary<int, string> typeDict, int startY, int pageWidth)
     {
         var currentY = startY;
 
@@ -271,29 +274,20 @@ public class FeuilleRemiseGenerator
         graphics.DrawLine(Pens.Black, MARGIN_LEFT, currentY, MARGIN_LEFT + pageWidth, currentY);
         currentY += 5;
 
-        // Récupérer les équipements
-        using var command = connection.CreateCommand();
-        command.CommandText = @"
-            SELECT 
-                t.name as type_equipement,
-                COALESCE(e.nom, e.code_parc, 'Sans nom') as nom_equipement,
-                COALESCE(e.numero_serie, 'N/A') as numero_serie,
-                COALESCE(e.marque, 'N/A') as marque
-            FROM Equipements e
-            JOIN equipment_type t ON t.id = e.type_id
-            WHERE e.idrh = $agentId AND e.etat_pret = 1
-            ORDER BY t.name, e.nom";
-        command.Parameters.AddWithValue("$agentId", _agentId);
+        // Trier les équipements par type puis nom
+        var sortedEquipments = equipments
+            .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+            .ThenBy(e => e.Nom ?? e.CodeParc ?? "")
+            .ToList();
 
-        using var reader = command.ExecuteReader();
         var equipmentCount = 0;
         
-        while (reader.Read())
+        foreach (var eq in sortedEquipments)
         {
-            var type = reader.GetString(0);
-            var nom = reader.GetString(1);
-            var serie = reader.GetString(2);
-            var marque = reader.GetString(3);
+            var type = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "";
+            var nom = eq.Nom ?? eq.CodeParc ?? "Sans nom";
+            var serie = eq.NumeroSerie ?? "N/A";
+            var marque = eq.Marque ?? "N/A";
 
             // Dessiner la ligne d'équipement
             graphics.DrawString(type, _bodyFont, Brushes.Black, MARGIN_LEFT, currentY);

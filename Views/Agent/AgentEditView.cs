@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 
 namespace ProjetParc.Views.Agent;
@@ -246,23 +246,19 @@ public class AgentEditView : UserControl
     /// <summary>Représentation d'une équipe (id, nom) utilisée par la ComboBox.</summary>
     private sealed class AgentTeamItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
 
-    /// <summary>Convertit une chaîne vide en <see cref="DBNull.Value"/>.</summary>
-    private static object ToDbNullable(string s) => string.IsNullOrWhiteSpace(s) ? DBNull.Value : s.Trim();
-    /// <summary>Convertit un bool en int (0/1).</summary>
-    private static int ToBit(bool b) => b ? 1 : 0;
-
     /// <summary>Charge la liste des sites depuis la table <c>Sites</c>.</summary>
     private void LoadAgentSite()
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = "SELECT id, name FROM Sites ORDER BY name;";
-            using var r = command.ExecuteReader();
+            var repo = new Data.Repositories.MySQL.SiteMySqlRepository();
+            var sites = repo.GetAll();
 
             var items = new List<AgentSiteItem>();
-            while (r.Read()) items.Add(new AgentSiteItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+            foreach (var site in sites)
+            {
+                items.Add(new AgentSiteItem { Id = site.Id, Name = site.Name });
+            }
 
             cbSite.DataSource = items;
             cbSite.DisplayMember = nameof(AgentSiteItem.Name);
@@ -280,13 +276,14 @@ public class AgentEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = "SELECT id, name FROM Equipes ORDER BY name;";
-            using var r = command.ExecuteReader();
+            var repo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+            var equipes = repo.GetAll();
 
             var items = new List<AgentTeamItem>();
-            while (r.Read()) items.Add(new AgentTeamItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+            foreach (var equipe in equipes)
+            {
+                items.Add(new AgentTeamItem { Id = equipe.Id, Name = equipe.Name });
+            }
 
             cbTeam.DataSource = items;
             cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
@@ -304,35 +301,40 @@ public class AgentEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"
-                SELECT 
-                    a.idrh, 
-                    TRIM(COALESCE(a.nom,'')) AS n, 
-                    TRIM(COALESCE(a.prenom,'')) AS p,
-                    COALESCE(e.name, '-') AS equipe,
-                    COALESCE(s.name, '-') AS site
-                FROM ""Agents"" a
-                LEFT JOIN ""Equipes"" e ON a.equipe_id = e.id
-                LEFT JOIN ""Sites"" s ON a.site_id = s.id
-                ORDER BY n, p, a.idrh;";
-            using var r = command.ExecuteReader();
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            var equipeRepo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+            var siteRepo = new Data.Repositories.MySQL.SiteMySqlRepository();
+
+            var agents = agentRepo.GetAll();
+            var equipes = equipeRepo.GetAll();
+            var sites = siteRepo.GetAll();
+
+            // Créer des dictionnaires pour les JOINs en mémoire
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
+            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
 
             lvAgents.Items.Clear();
-            while (r.Read())
+
+            // Trier par nom, prénom, idrh
+            var sortedAgents = agents
+                .OrderBy(a => a.Nom ?? "")
+                .ThenBy(a => a.Prenom ?? "")
+                .ThenBy(a => a.Idrh);
+
+            foreach (var agent in sortedAgents)
             {
-                var id = r.IsDBNull(0) ? "" : r.GetString(0);
-                var n = r.IsDBNull(1) ? "" : r.GetString(1);
-                var p = r.IsDBNull(2) ? "" : r.GetString(2);
-                var equipe = r.GetString(3);
-                var site = r.GetString(4);
+                var nom = agent.Nom?.Trim() ?? "";
+                var prenom = agent.Prenom?.Trim() ?? "";
+                var nomComplet = (nom, prenom) switch { ("", "") => "-", _ => $"{nom} {prenom}".Trim() };
                 
-                var nomComplet = (n, p) switch { ("", "") => "-", _ => $"{n} {p}".Trim() };
-                
-                var item = new ListViewItem(id);
-                item.SubItems.AddRange(new[] { nomComplet, equipe, site });
-                item.Tag = id;
+                var equipeName = (agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value)) 
+                    ? equipeDict[agent.EquipeId.Value] : "-";
+                var siteName = (agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value)) 
+                    ? siteDict[agent.SiteId.Value] : "-";
+
+                var item = new ListViewItem(agent.Idrh);
+                item.SubItems.AddRange(new[] { nomComplet, equipeName, siteName });
+                item.Tag = agent.Idrh;
                 lvAgents.Items.Add(item);
             }
         }
@@ -348,55 +350,53 @@ public class AgentEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            var equipeRepo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+            var siteRepo = new Data.Repositories.MySQL.SiteMySqlRepository();
 
-            if (string.IsNullOrWhiteSpace(query))
+            var agents = agentRepo.GetAll();
+            var equipes = equipeRepo.GetAll();
+            var sites = siteRepo.GetAll();
+
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
+            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
+
+            // Filtrer si une requête est fournie
+            IEnumerable<Data.DTOs.AgentDto> filteredAgents = agents;
+            
+            if (!string.IsNullOrWhiteSpace(query))
             {
-                command.CommandText = @"
-                    SELECT 
-                        a.idrh, 
-                        TRIM(COALESCE(a.nom,'')), 
-                        TRIM(COALESCE(a.prenom,'')),
-                        COALESCE(e.name, '-'),
-                        COALESCE(s.name, '-')
-                    FROM ""Agents"" a
-                    LEFT JOIN ""Equipes"" e ON a.equipe_id = e.id
-                    LEFT JOIN ""Sites"" s ON a.site_id = s.id
-                    ORDER BY 2, 3, 1;";
-            }
-            else
-            {
-                command.CommandText = @"
-                    SELECT 
-                        a.idrh, 
-                        TRIM(COALESCE(a.nom,'')), 
-                        TRIM(COALESCE(a.prenom,'')),
-                        COALESCE(e.name, '-'),
-                        COALESCE(s.name, '-')
-                    FROM ""Agents"" a
-                    LEFT JOIN ""Equipes"" e ON a.equipe_id = e.id
-                    LEFT JOIN ""Sites"" s ON a.site_id = s.id
-                    WHERE a.idrh LIKE $p OR a.nom LIKE $p OR a.prenom LIKE $p OR a.email LIKE $p
-                    ORDER BY 2, 3, 1;";
-                command.Parameters.AddWithValue("$p", $"%{query}%");
+                var q = query.ToLower();
+                filteredAgents = agents.Where(a =>
+                    (a.Idrh?.ToLower().Contains(q) ?? false) ||
+                    (a.Nom?.ToLower().Contains(q) ?? false) ||
+                    (a.Prenom?.ToLower().Contains(q) ?? false) ||
+                    (a.Email?.ToLower().Contains(q) ?? false)
+                );
             }
 
-            using var r = command.ExecuteReader();
+            // Trier
+            var sortedAgents = filteredAgents
+                .OrderBy(a => a.Nom ?? "")
+                .ThenBy(a => a.Prenom ?? "")
+                .ThenBy(a => a.Idrh);
+
             lvAgents.Items.Clear();
-            while (r.Read())
+
+            foreach (var agent in sortedAgents)
             {
-                var id = r.IsDBNull(0) ? "" : r.GetString(0);
-                var n = r.IsDBNull(1) ? "" : r.GetString(1);
-                var p = r.IsDBNull(2) ? "" : r.GetString(2);
-                var equipe = r.GetString(3);
-                var site = r.GetString(4);
+                var nom = agent.Nom?.Trim() ?? "";
+                var prenom = agent.Prenom?.Trim() ?? "";
+                var nomComplet = (nom, prenom) switch { ("", "") => "-", _ => $"{nom} {prenom}".Trim() };
                 
-                var nomComplet = (n, p) switch { ("", "") => "-", _ => $"{n} {p}".Trim() };
-                
-                var item = new ListViewItem(id);
-                item.SubItems.AddRange(new[] { nomComplet, equipe, site });
-                item.Tag = id;
+                var equipeName = (agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value)) 
+                    ? equipeDict[agent.EquipeId.Value] : "-";
+                var siteName = (agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value)) 
+                    ? siteDict[agent.SiteId.Value] : "-";
+
+                var item = new ListViewItem(agent.Idrh);
+                item.SubItems.AddRange(new[] { nomComplet, equipeName, siteName });
+                item.Tag = agent.Idrh;
                 lvAgents.Items.Add(item);
             }
         }
@@ -412,43 +412,35 @@ public class AgentEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"SELECT idrh, nom, prenom, email, equipe_id, heberge, commentaire, site_id
-                                    FROM ""Agents"" WHERE idrh = $IDRH;";
-            command.Parameters.AddWithValue("$IDRH", agentIDRH);
+            var repo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            var agent = repo.GetById(agentIDRH);
 
-            using var r = command.ExecuteReader();
-            if (!r.Read()) { MessageBox.Show("Agent introuvable."); return; }
+            tbIDRH.Text = agent.Idrh ?? "";
+            tbAgentName.Text = agent.Nom ?? "";
+            tbFirstName.Text = agent.Prenom ?? "";
+            tbEmail.Text = agent.Email ?? "";
+            tbComment.Text = agent.Commentaire ?? "";
+            cbxHeberge.Checked = agent.Heberge == 1;
 
-            tbIDRH.Text = r.IsDBNull(0) ? "" : r.GetString(0);
-            tbAgentName.Text = r.IsDBNull(1) ? "" : r.GetString(1);
-            tbFirstName.Text = r.IsDBNull(2) ? "" : r.GetString(2);
-            tbEmail.Text = r.IsDBNull(3) ? "" : r.GetString(3);
-
-            int? teamId = r.IsDBNull(4) ? null : r.GetInt32(4);
-            bool heberge = !r.IsDBNull(5) && r.GetInt32(5) == 1;
-            string comment = r.IsDBNull(6) ? "" : r.GetString(6);
-            int? siteId = r.IsDBNull(7) ? null : r.GetInt32(7);
-
-            tbComment.Text = comment;
-            cbxHeberge.Checked = heberge;
-
-            // select site by ID
-            if (siteId.HasValue)
+            // Sélectionner le site
+            for (int i = 0; i < cbSite.Items.Count; i++)
             {
-                for (int i = 0; i < cbSite.Items.Count; i++)
-                    if (cbSite.Items[i] is AgentSiteItem s && s.Id == siteId.Value) { cbSite.SelectedIndex = i; break; }
+                if (cbSite.Items[i] is AgentSiteItem s && s.Id == agent.SiteId)
+                {
+                    cbSite.SelectedIndex = i;
+                    break;
+                }
             }
-            else cbSite.SelectedIndex = -1;
 
-            // select team by ID
-            if (teamId.HasValue)
+            // Sélectionner l'équipe
+            for (int i = 0; i < cbTeam.Items.Count; i++)
             {
-                for (int i = 0; i < cbTeam.Items.Count; i++)
-                    if (cbTeam.Items[i] is AgentTeamItem t && t.Id == teamId.Value) { cbTeam.SelectedIndex = i; break; }
+                if (cbTeam.Items[i] is AgentTeamItem t && t.Id == agent.EquipeId)
+                {
+                    cbTeam.SelectedIndex = i;
+                    break;
+                }
             }
-            else cbTeam.SelectedIndex = -1;
         }
         catch (Exception ex)
         {
@@ -490,36 +482,33 @@ public class AgentEditView : UserControl
         int? teamId = (cbTeam.SelectedItem as AgentTeamItem)?.Id;
         int? siteId = (cbSite.SelectedItem as AgentSiteItem)?.Id;
 
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"UPDATE ""Agents"" 
-                                SET nom = $name, prenom = $firstName, email = $email,
-                                    equipe_id = $teamId, heberge = $heberge,
-                                    commentaire = $comment, site_id = $siteId
-                                WHERE idrh = $id;";
-
-        command.Parameters.AddWithValue("$id", tbIDRH.Text.Trim());
-        command.Parameters.AddWithValue("$name", tbAgentName.Text.Trim());
-        command.Parameters.AddWithValue("$firstName", tbFirstName.Text.Trim());
-        command.Parameters.AddWithValue("$email", tbEmail.Text.Trim());
-        command.Parameters.AddWithValue("$teamId", teamId is null ? (object)DBNull.Value : teamId.Value);
-        command.Parameters.AddWithValue("$heberge", ToBit(cbxHeberge.Checked));
-        command.Parameters.AddWithValue("$comment", ToDbNullable(tbComment.Text));
-        command.Parameters.AddWithValue("$siteId", siteId is null ? (object)DBNull.Value : siteId.Value);
-
         try
         {
-            var rows = command.ExecuteNonQuery();
-            if (rows == 0) { MessageBox.Show("Aucune modification (agent introuvable ?)."); return; }
+            // Créer un DTO avec les valeurs modifiées
+            var agent = new Data.DTOs.AgentDto(
+                Idrh: tbIDRH.Text.Trim(),
+                Nom: tbAgentName.Text.Trim(),
+                Prenom: tbFirstName.Text.Trim(),
+                Email: tbEmail.Text.Trim(),
+                EquipeId: teamId,
+                SiteId: siteId,
+                Heberge: cbxHeberge.Checked ? 1 : 0,
+                Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim()
+            );
+
+            // Appeler le repository pour la mise à jour
+            var repo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            repo.Update(agent);
 
             MessageBox.Show("Modifications enregistrées.");
 
             // Recharger la liste pour refléter les modifications
             LoadAgentList();
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            MessageBox.Show("Erreur SQL : " + ex.Message);
+            MessageBox.Show($"Erreur lors de la sauvegarde : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -542,22 +531,22 @@ public class AgentEditView : UserControl
 
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"DELETE FROM ""Agents"" WHERE idrh = $id;";
-            command.Parameters.AddWithValue("$id", agentId);
-            var rows = command.ExecuteNonQuery();
-
-            if (rows == 0) { MessageBox.Show("Agent introuvable."); return; }
+            var repo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            repo.Delete(agentId);
 
             LoadAgentListFiltered(tbSearch?.Text?.Trim() ?? "");
-            tbIDRH.Clear(); tbAgentName.Clear(); tbFirstName.Clear(); tbEmail.Clear(); tbComment.Clear();
+            tbIDRH.Clear(); 
+            tbAgentName.Clear(); 
+            tbFirstName.Clear(); 
+            tbEmail.Clear(); 
+            tbComment.Clear();
             cbxHeberge.Checked = false;
             MessageBox.Show("Agent supprimé.");
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            MessageBox.Show("Erreur SQL : " + ex.Message);
+            MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

@@ -167,20 +167,6 @@ public class WelcomePage : Form
         
         toolStrip.Items.Add(btnExportTool);
 
-        if (Data.Database.SyncManager.IsActive)
-        {
-            var btnSaveTool = new ToolStripButton
-            {
-                Text = "Sauvegarder",
-                DisplayStyle = ToolStripItemDisplayStyle.Text,
-                Font = Theme.Fonts.Button,
-                ForeColor = Theme.Colors.Primary
-            };
-            btnSaveTool.Click += (s, e) => SaveToSharePoint();
-            
-            toolStrip.Items.Add(btnSaveTool);
-        }
-
         Controls.Add(toolStrip);
 
         ShowHome();
@@ -382,84 +368,20 @@ public class WelcomePage : Form
     }
 
     /// <summary>
-    /// Sauvegarde manuelle vers SharePoint
-    /// </summary>
-    private void SaveToSharePoint()
-    {
-        if (!Data.Database.SyncManager.IsActive)
-        {
-            MessageBox.Show(
-                "Le mode SharePoint n'est pas actif.",
-                "Information",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
-            return;
-        }
-
-        try
-        {
-            Data.Database.SyncManager.CopyToSharePoint();
-            MessageBox.Show(
-                "Base de données sauvegardée avec succès sur SharePoint.",
-                "Sauvegarde réussie",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
-        }
-        catch (Data.SharePointSyncException ex)
-        {
-            MessageBox.Show(
-                $"Erreur lors de la sauvegarde vers SharePoint :\n\n{ex.Message}\n\nVos modifications locales sont conservées.",
-                "Erreur de sauvegarde",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error
-            );
-        }
-    }
-
-    /// <summary>
-    /// Demande confirmation avant fermeture et sauvegarde si nécessaire
+    /// Gestionnaire de fermeture de la fenêtre
     /// </summary>
     private void OnFormClosing(object sender, FormClosingEventArgs e)
     {
-        if (!Data.Database.SyncManager.IsActive)
-            return;
-
         var result = MessageBox.Show(
-            "Voulez-vous sauvegarder les modifications vers SharePoint avant de quitter ?",
-            "Sauvegarder avant de quitter",
-            MessageBoxButtons.YesNoCancel,
+            "Voulez-vous vraiment quitter l'application ?",
+            "Confirmation",
+            MessageBoxButtons.YesNo,
             MessageBoxIcon.Question
         );
 
-        if (result == DialogResult.Cancel)
+        if (result == DialogResult.No)
         {
             e.Cancel = true;
-            return;
-        }
-
-        if (result == DialogResult.Yes)
-        {
-            try
-            {
-                Data.Database.SyncManager.CopyToSharePoint();
-            }
-            catch (Data.SharePointSyncException ex)
-            {
-                var retry = MessageBox.Show(
-                    $"Erreur lors de la sauvegarde :\n\n{ex.Message}\n\nVoulez-vous quitter quand même sans sauvegarder ?",
-                    "Erreur de sauvegarde",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Error
-                );
-
-                if (retry == DialogResult.No)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-            }
         }
     }
 }

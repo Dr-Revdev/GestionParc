@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 
 namespace ProjetParc.Views.Agent;
@@ -178,13 +177,6 @@ public class AgentCreateView : UserControl
         
     }
 
-    /// <summary>Convertit un bool en int (0/1) pour stockage en base.</summary>
-    private static int ToBit(bool b) => b ? 1 : 0;
-
-    /// <summary>Convertit une chaîne vide en DBNull pour insertion SQL.</summary>
-    private static object ToDbNullable(string s) => string.IsNullOrWhiteSpace(s) ? DBNull.Value : s.Trim();
-
-    
     private sealed class AgentSiteItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
     private sealed class AgentTeamItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
 
@@ -193,14 +185,14 @@ public class AgentCreateView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = "SELECT id, name FROM Sites ORDER BY name;";
+            var repo = new Data.Repositories.MySQL.SiteMySqlRepository();
+            var sites = repo.GetAll();
 
-            using var reader = command.ExecuteReader();
             var items = new List<AgentSiteItem>();
-            while (reader.Read())
-                items.Add(new AgentSiteItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
+            foreach (var site in sites)
+            {
+                items.Add(new AgentSiteItem { Id = site.Id, Name = site.Name });
+            }
 
             cbSite.DataSource = items;
             cbSite.DisplayMember = nameof(AgentSiteItem.Name);
@@ -218,14 +210,14 @@ public class AgentCreateView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = "SELECT id, name FROM Equipes ORDER BY name;";
+            var repo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+            var equipes = repo.GetAll();
 
-            using var reader = command.ExecuteReader();
             var items = new List<AgentTeamItem>();
-            while (reader.Read())
-                items.Add(new AgentTeamItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
+            foreach (var equipe in equipes)
+            {
+                items.Add(new AgentTeamItem { Id = equipe.Id, Name = equipe.Name });
+            }
 
             cbTeam.DataSource = items;
             cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
@@ -257,58 +249,55 @@ public class AgentCreateView : UserControl
 
         var siteId = ((AgentSiteItem)cbSite.SelectedItem).Id;
         var teamId = ((AgentTeamItem)cbTeam.SelectedItem).Id;
-        var hebergeValue = ToBit(cbxHeberge.Checked);
-
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"
-            INSERT INTO ""Agents""
-                (idrh, nom, prenom, email, equipe_id, heberge, commentaire, site_id)
-            VALUES ($idrh, $nom, $prenom, $email, $equipeId, $heberge, $comment, $siteId);";
-
-        command.Parameters.AddWithValue("$idrh", tbIDRH.Text.Trim());
-        command.Parameters.AddWithValue("$nom", tbAgentName.Text.Trim());
-        command.Parameters.AddWithValue("$prenom", tbFirstName.Text.Trim());
-        command.Parameters.AddWithValue("$email", tbEmail.Text.Trim());
-        command.Parameters.AddWithValue("$equipeId", teamId);
-        command.Parameters.AddWithValue("$heberge", hebergeValue);
-        command.Parameters.AddWithValue("$comment", ToDbNullable(tbComment.Text));
-        command.Parameters.AddWithValue("$siteId", siteId);
+        var hebergeValue = cbxHeberge.Checked ? 1 : 0;
 
         try
         {
-            command.ExecuteNonQuery();
+            // Créer le DTO pour l'agent
+            var agent = new Data.DTOs.AgentDto(
+                Idrh: tbIDRH.Text.Trim(),
+                Nom: tbAgentName.Text.Trim(),
+                Prenom: tbFirstName.Text.Trim(),
+                Email: tbEmail.Text.Trim(),
+                EquipeId: teamId,
+                SiteId: siteId,
+                Heberge: hebergeValue,
+                Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim()
+            );
+
+            // Insérer l'agent via le repository
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            agentRepo.Insert(agent);
+
+            // Gérer la table Travail (relation agent-site)
+            var travailRepo = new Data.Repositories.MySQL.TravailMySqlRepository();
+            
+            // Supprimer les anciennes relations pour cet agent
+            travailRepo.DeleteByAgent(tbIDRH.Text.Trim());
+            
+            // Créer la nouvelle relation
+            var travail = new Data.DTOs.TravailDto(
+                Idrh: tbIDRH.Text.Trim(),
+                SiteId: siteId
+            );
+            travailRepo.Insert(travail);
+
             MessageBox.Show("Agent créé");
 
-            using (var tx = connexion.BeginTransaction())
-            {
-                using (var deleteCmd = connexion.CreateCommand())
-                {
-                    deleteCmd.Transaction = tx;
-                    deleteCmd.CommandText = @"DELETE FROM ""Travail"" WHERE idrh = $idrh;";
-                    deleteCmd.Parameters.AddWithValue("$idrh", tbIDRH.Text.Trim());
-                    deleteCmd.ExecuteNonQuery();
-                }
-                using (var insertCmd = connexion.CreateCommand())
-                {
-                    insertCmd.Transaction = tx;
-                    insertCmd.CommandText = @"INSERT INTO ""Travail"" (idrh, site_id) VALUES ($idrh, $site_id);";
-                    insertCmd.Parameters.AddWithValue("$idrh", tbIDRH.Text.Trim());
-                    insertCmd.Parameters.AddWithValue("$site_id", siteId);
-                    insertCmd.ExecuteNonQuery();
-                }
-                tx.Commit();
-            }
-
-            // reset UI
-            tbIDRH.Clear(); tbFirstName.Clear(); tbAgentName.Clear(); tbEmail.Clear(); tbComment.Clear();
+            // Reset UI
+            tbIDRH.Clear(); 
+            tbFirstName.Clear(); 
+            tbAgentName.Clear(); 
+            tbEmail.Clear(); 
+            tbComment.Clear();
             if (cbSite.Items.Count > 0) cbSite.SelectedIndex = 0;
             if (cbTeam.Items.Count > 0) cbTeam.SelectedIndex = 0;
             cbxHeberge.Checked = false;
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            MessageBox.Show("Erreur SQL : " + ex.Message);
+            MessageBox.Show($"Erreur lors de la création de l'agent : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

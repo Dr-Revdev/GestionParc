@@ -1,7 +1,7 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 using ProjetParc.Views.Loan.Models;
 
@@ -59,54 +59,52 @@ public class EquipmentSelectionControl : Panel
     {
         try
         {
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            // First, load available equipments (etat_pret = 0)
-            command.CommandText = @"
-                SELECT e.id_equipement, e.nom, e.code_parc, t.name as type
-                FROM Equipements e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE e.etat_pret = 0
-                ORDER BY t.name, e.nom";
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
 
-            using var reader = command.ExecuteReader();
+            var equipments = equipmentRepo.GetAll();
+            var types = typeRepo.GetAll();
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+
+            // Charger les équipements disponibles (etat_pret = 0)
+            var availableEquipments = equipments
+                .Where(e => e.EtatPret == 0)
+                .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                .ThenBy(e => e.Nom ?? "")
+                .ToList();
+
             var foundPreselect = false;
-            while (reader.Read())
+            foreach (var eq in availableEquipments)
             {
+                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
                 var item = new EquipmentItem
                 {
-                    Id = reader.GetString(0),
-                    DisplayName = $"{reader.GetString(3)} - {reader.GetString(1)} ({reader.GetString(2)})"
+                    Id = eq.IdEquipement,
+                    DisplayName = $"{typeName} - {eq.Nom ?? ""} ({eq.CodeParc ?? ""})"
                 };
                 if (preselectId != null && item.Id == preselectId) foundPreselect = true;
                 cmbEquipment.Items.Add(item);
             }
 
-            // If we have a preselect id that wasn't in available list, load it explicitly (it may be currently loaned to this agent)
+            // Si on a un ID présélectionné qui n'est pas dans la liste des disponibles, le charger explicitement
             if (preselectId != null && !foundPreselect)
             {
-                using var cmd2 = connection.CreateCommand();
-                cmd2.CommandText = @"
-                    SELECT e.id_equipement, e.nom, e.code_parc, t.name as type
-                    FROM Equipements e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE e.id_equipement = $id";
-                cmd2.Parameters.AddWithValue("$id", preselectId);
-                using var r2 = cmd2.ExecuteReader();
-                if (r2.Read())
+                var preselectedEq = equipmentRepo.GetById(preselectId);
+                if (preselectedEq != null)
                 {
+                    var typeName = typeDict.ContainsKey(preselectedEq.TypeId) ? typeDict[preselectedEq.TypeId] : "Inconnu";
                     var item = new EquipmentItem
                     {
-                        Id = r2.GetString(0),
-                        DisplayName = $"{r2.GetString(3)} - {r2.GetString(1)} ({r2.GetString(2)})"
+                        Id = preselectedEq.IdEquipement,
+                        DisplayName = $"{typeName} - {preselectedEq.Nom ?? ""} ({preselectedEq.CodeParc ?? ""})"
                     };
                     cmbEquipment.Items.Add(item);
-                    // select it after adding
+                    // Le sélectionner après l'avoir ajouté
                     cmbEquipment.SelectedIndex = cmbEquipment.Items.Count - 1;
                 }
             }
 
-            // If preselectId was available in the initial list, select it
+            // Si l'ID présélectionné était disponible dans la liste initiale, le sélectionner
             if (preselectId != null && !cmbEquipment.Items.IsReadOnly)
             {
                 for (int i = 0; i < cmbEquipment.Items.Count; i++)

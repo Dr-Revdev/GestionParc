@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 
 namespace ProjetParc.Data;
 
@@ -19,26 +19,36 @@ public static class CsvExporter
     {
         try
         {
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            
-            command.CommandText = @"
-                SELECT 
-                    a.idrh as 'IDRH',
-                    a.nom as 'Nom',
-                    a.prenom as 'Prénom',
-                    a.email as 'Email',
-                    e.name as 'Équipe',
-                    s.name as 'Site',
-                    CASE WHEN a.heberge = 1 THEN 'Oui' ELSE 'Non' END as 'Hébergé',
-                    a.commentaire as 'Commentaire'
-                FROM Agents a
-                LEFT JOIN Equipes e ON a.equipe_id = e.id
-                LEFT JOIN Sites s ON a.site_id = s.id
-                ORDER BY a.nom, a.prenom";
+            var agentRepo = new Repositories.MySQL.AgentMySqlRepository();
+            var equipeRepo = new Repositories.MySQL.EquipeMySqlRepository();
+            var siteRepo = new Repositories.MySQL.SiteMySqlRepository();
 
-            using var reader = command.ExecuteReader();
-            WriteCsv(filePath, reader);
+            var agents = agentRepo.GetAll();
+            var equipes = equipeRepo.GetAll();
+            var sites = siteRepo.GetAll();
+
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
+            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
+
+            var data = agents
+                .OrderBy(a => a.Nom)
+                .ThenBy(a => a.Prenom)
+                .Select(a => new Dictionary<string, object>
+                {
+                    ["IDRH"] = a.Idrh ?? "",
+                    ["Nom"] = a.Nom ?? "",
+                    ["Prénom"] = a.Prenom ?? "",
+                    ["Email"] = a.Email ?? "",
+                    ["Équipe"] = a.EquipeId.HasValue && equipeDict.ContainsKey(a.EquipeId.Value) 
+                        ? equipeDict[a.EquipeId.Value] : "",
+                    ["Site"] = a.SiteId.HasValue && siteDict.ContainsKey(a.SiteId.Value) 
+                        ? siteDict[a.SiteId.Value] : "",
+                    ["Hébergé"] = a.Heberge == 1 ? "Oui" : "Non",
+                    ["Commentaire"] = a.Commentaire ?? ""
+                })
+                .ToList();
+
+            WriteCsvFromDictionary(filePath, data);
             
             MessageBox.Show($"Export réussi !\n{filePath}", "Export Agents", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -57,32 +67,42 @@ public static class CsvExporter
     {
         try
         {
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            
-            command.CommandText = @"
-                SELECT 
-                    e.id_equipement as 'ID',
-                    t.name as 'Type',
-                    e.nom as 'Nom',
-                    e.code_parc as 'Code Parc',
-                    e.numero_serie as 'Numéro de série',
-                    e.marque as 'Marque',
-                    CASE 
-                        WHEN e.etat_pret = 0 THEN 'Disponible'
-                        WHEN e.etat_pret = 1 THEN 'En prêt'
-                        WHEN e.etat_pret = 2 THEN 'Rendu DSEM'
-                        ELSE 'Inconnu'
-                    END as 'État',
-                    COALESCE(a.nom || ' ' || a.prenom, '') as 'Agent',
-                    e.commentaire as 'Commentaire'
-                FROM Equipements e
-                JOIN equipment_type t ON t.id = e.type_id
-                LEFT JOIN Agents a ON a.idrh = e.idrh
-                ORDER BY t.name, e.nom";
+            var equipmentRepo = new Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Repositories.MySQL.EquipmentTypeMySqlRepository();
+            var agentRepo = new Repositories.MySQL.AgentMySqlRepository();
 
-            using var reader = command.ExecuteReader();
-            WriteCsv(filePath, reader);
+            var equipments = equipmentRepo.GetAll();
+            var types = typeRepo.GetAll();
+            var agents = agentRepo.GetAll();
+
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+            var agentDict = agents.ToDictionary(a => a.Idrh, a => $"{a.Nom} {a.Prenom}");
+
+            var data = equipments
+                .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                .ThenBy(e => e.Nom ?? "")
+                .Select(e => new Dictionary<string, object>
+                {
+                    ["ID"] = e.IdEquipement ?? "",
+                    ["Type"] = typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "",
+                    ["Nom"] = e.Nom ?? "",
+                    ["Code Parc"] = e.CodeParc ?? "",
+                    ["Numéro de série"] = e.NumeroSerie ?? "",
+                    ["Marque"] = e.Marque ?? "",
+                    ["État"] = e.EtatPret switch
+                    {
+                        0 => "Disponible",
+                        1 => "En prêt",
+                        2 => "Rendu DSEM",
+                        _ => "Inconnu"
+                    },
+                    ["Agent"] = !string.IsNullOrEmpty(e.Idrh) && agentDict.ContainsKey(e.Idrh) 
+                        ? agentDict[e.Idrh] : "",
+                    ["Commentaire"] = e.Commentaire ?? ""
+                })
+                .ToList();
+
+            WriteCsvFromDictionary(filePath, data);
             
             MessageBox.Show($"Export réussi !\n{filePath}", "Export Équipements", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -101,93 +121,77 @@ public static class CsvExporter
     {
         try
         {
-            using var connection = Database.Open();
-            
-            // Récupérer le nombre max d'équipements par agent
-            using var cmdMax = connection.CreateCommand();
-            cmdMax.CommandText = @"
-                SELECT MAX(cnt) FROM (
-                    SELECT COUNT(*) as cnt 
-                    FROM Equipements 
-                    WHERE etat_pret IN (1, 2) AND idrh IS NOT NULL 
-                    GROUP BY idrh
-                )";
-            var maxEquipments = Convert.ToInt32(cmdMax.ExecuteScalar() ?? 0);
+            var agentRepo = new Repositories.MySQL.AgentMySqlRepository();
+            var equipmentRepo = new Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Repositories.MySQL.EquipmentTypeMySqlRepository();
+            var equipeRepo = new Repositories.MySQL.EquipeMySqlRepository();
+            var siteRepo = new Repositories.MySQL.SiteMySqlRepository();
 
-            // Récupérer les agents qui ont des équipements
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT DISTINCT
-                    a.idrh,
-                    a.nom,
-                    a.prenom,
-                    a.email,
-                    e.name as equipe,
-                    s.name as site,
-                    a.heberge,
-                    a.commentaire
-                FROM Agents a
-                LEFT JOIN Equipes e ON a.equipe_id = e.id
-                LEFT JOIN Sites s ON a.site_id = s.id
-                WHERE EXISTS (
-                    SELECT 1 FROM Equipements eq 
-                    WHERE eq.idrh = a.idrh AND eq.etat_pret IN (1, 2)
-                )
-                ORDER BY a.nom, a.prenom";
+            var allAgents = agentRepo.GetAll();
+            var allEquipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 1 || e.EtatPret == 2).ToList();
+            var types = typeRepo.GetAll();
+            var equipes = equipeRepo.GetAll();
+            var sites = siteRepo.GetAll();
 
-            var agents = new List<Dictionary<string, object>>();
-            using (var reader = command.ExecuteReader())
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
+            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
+
+            // Grouper les équipements par agent
+            var equipmentsByAgent = allEquipments
+                .Where(e => !string.IsNullOrEmpty(e.Idrh))
+                .GroupBy(e => e.Idrh)
+                .ToDictionary(g => g.Key, g => g.OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                                                 .ThenBy(e => e.Nom ?? "")
+                                                 .ToList());
+
+            // Calculer le nombre max d'équipements par agent
+            var maxEquipments = equipmentsByAgent.Any() ? equipmentsByAgent.Max(kvp => kvp.Value.Count) : 0;
+
+            // Filtrer les agents qui ont des équipements
+            var agentsWithEquipments = allAgents
+                .Where(a => equipmentsByAgent.ContainsKey(a.Idrh))
+                .OrderBy(a => a.Nom)
+                .ThenBy(a => a.Prenom)
+                .ToList();
+
+            var agentsData = new List<Dictionary<string, object>>();
+
+            foreach (var agent in agentsWithEquipments)
             {
-                while (reader.Read())
+                var agentData = new Dictionary<string, object>
                 {
-                    var agent = new Dictionary<string, object>
-                    {
-                        ["IDRH Agent"] = reader["idrh"],
-                        ["Nom Agent"] = reader["nom"],
-                        ["Prénom Agent"] = reader["prenom"],
-                        ["Email Agent"] = reader.IsDBNull(3) ? "" : reader["email"],
-                        ["Équipe"] = reader.IsDBNull(4) ? "" : reader["equipe"],
-                        ["Site"] = reader.IsDBNull(5) ? "" : reader["site"],
-                        ["Hébergé"] = reader.GetInt32(6) == 1 ? "Oui" : "Non"
-                    };
-                    agents.Add(agent);
-                }
-            }
+                    ["IDRH Agent"] = agent.Idrh ?? "",
+                    ["Nom Agent"] = agent.Nom ?? "",
+                    ["Prénom Agent"] = agent.Prenom ?? "",
+                    ["Email Agent"] = agent.Email ?? "",
+                    ["Équipe"] = agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value) 
+                        ? equipeDict[agent.EquipeId.Value] : "",
+                    ["Site"] = agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value) 
+                        ? siteDict[agent.SiteId.Value] : "",
+                    ["Hébergé"] = agent.Heberge == 1 ? "Oui" : "Non"
+                };
 
-            // Pour chaque agent, récupérer ses équipements
-            foreach (var agent in agents)
-            {
-                using var cmdEq = connection.CreateCommand();
-                cmdEq.CommandText = @"
-                    SELECT 
-                        t.name as type,
-                        eq.nom,
-                        eq.code_parc,
-                        eq.numero_serie,
-                        eq.marque,
-                        eq.commentaire
-                    FROM Equipements eq
-                    JOIN equipment_type t ON t.id = eq.type_id
-                    WHERE eq.idrh = $idrh AND eq.etat_pret IN (1, 2)
-                    ORDER BY t.name, eq.nom";
-                cmdEq.Parameters.AddWithValue("$idrh", agent["IDRH Agent"]);
-
+                // Ajouter les équipements de l'agent
+                var agentEquipments = equipmentsByAgent[agent.Idrh];
                 int equipIndex = 1;
-                using var eqReader = cmdEq.ExecuteReader();
-                while (eqReader.Read())
+                foreach (var eq in agentEquipments)
                 {
-                    agent[$"Type Équipement {equipIndex}"] = eqReader.IsDBNull(0) ? "" : eqReader.GetString(0);
-                    agent[$"Nom Équipement {equipIndex}"] = eqReader.IsDBNull(1) ? "" : eqReader.GetString(1);
-                    agent[$"Code Parc {equipIndex}"] = eqReader.IsDBNull(2) ? "" : eqReader.GetString(2);
-                    agent[$"Numéro de série {equipIndex}"] = eqReader.IsDBNull(3) ? "" : eqReader.GetString(3);
-                    agent[$"Marque {equipIndex}"] = eqReader.IsDBNull(4) ? "" : eqReader.GetString(4);
-                    agent[$"Commentaire Équipement {equipIndex}"] = eqReader.IsDBNull(5) ? "" : eqReader.GetString(5);
+                    var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "";
+                    agentData[$"Type Équipement {equipIndex}"] = typeName;
+                    agentData[$"Nom Équipement {equipIndex}"] = eq.Nom ?? "";
+                    agentData[$"Code Parc {equipIndex}"] = eq.CodeParc ?? "";
+                    agentData[$"Numéro de série {equipIndex}"] = eq.NumeroSerie ?? "";
+                    agentData[$"Marque {equipIndex}"] = eq.Marque ?? "";
+                    agentData[$"Commentaire Équipement {equipIndex}"] = eq.Commentaire ?? "";
                     equipIndex++;
                 }
+
+                agentsData.Add(agentData);
             }
 
             // Écrire le CSV
-            WriteDynamicCsvForLoans(filePath, agents, maxEquipments);
+            WriteDynamicCsvForLoans(filePath, agentsData, maxEquipments);
             
             MessageBox.Show($"Export réussi !\n{filePath}", "Export Prêts", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -292,27 +296,25 @@ public static class CsvExporter
     }
 
     /// <summary>
-    /// Écrit les données d'un SqliteDataReader dans un fichier CSV
+    /// Écrit les données d'une liste de dictionnaires dans un fichier CSV
     /// </summary>
-    private static void WriteCsv(string filePath, SqliteDataReader reader)
+    private static void WriteCsvFromDictionary(string filePath, List<Dictionary<string, object>> data)
     {
         using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
         
+        if (data.Count == 0) return;
+
         // Écrire l'en-tête
-        var columnNames = new List<string>();
-        for (int i = 0; i < reader.FieldCount; i++)
-        {
-            columnNames.Add(reader.GetName(i));
-        }
-        writer.WriteLine(string.Join(";", columnNames));
+        var headers = data[0].Keys.ToList();
+        writer.WriteLine(string.Join(";", headers));
 
         // Écrire les données
-        while (reader.Read())
+        foreach (var row in data)
         {
             var values = new List<string>();
-            for (int i = 0; i < reader.FieldCount; i++)
+            foreach (var header in headers)
             {
-                var value = reader.IsDBNull(i) ? "" : reader.GetValue(i).ToString();
+                var value = row.ContainsKey(header) ? row[header]?.ToString() ?? "" : "";
                 // Échapper les guillemets et entourer de guillemets si contient ; ou "
                 if (value.Contains(";") || value.Contains("\"") || value.Contains("\n"))
                 {

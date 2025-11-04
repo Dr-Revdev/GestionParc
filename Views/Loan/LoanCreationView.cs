@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 using ProjetParc.Views.Loan.Models;
 
@@ -114,22 +113,21 @@ public class LoanCreationView : Form
     {
         try
         {
-            // Clear existing equipment controls
+            // Vider les contrôles d'équipements existants
             pnlEquipments.Controls.Clear();
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT e.id_equipement
-                FROM Equipements e
-                WHERE e.idrh = $idrh AND e.etat_pret = 1";
-            command.Parameters.AddWithValue("$idrh", agentId);
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var equipments = repo.GetByAgent(agentId);
+            
+            // Filtrer uniquement ceux en état prêt (etat_pret = 1)
+            var loanedEquipments = equipments.Where(e => e.EtatPret == 1);
+            
+            foreach (var equipment in loanedEquipments)
             {
-                var id = reader.GetString(0);
-                AddEquipmentControl(id);
+                AddEquipmentControl(equipment.IdEquipement);
             }
-            // Ensure at least one control exists
+            
+            // S'assurer qu'au moins un contrôle existe
             if (pnlEquipments.Controls.Count == 0) AddEquipmentControl();
         }
         catch (Exception ex)
@@ -314,22 +312,20 @@ public class LoanCreationView : Form
     {
         try
         {
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT idrh, nom, prenom 
-                FROM Agents 
-                ORDER BY nom, prenom";
-
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            var repo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            var agents = repo.GetAll();
+            
+            // Trier par nom, prénom
+            var sortedAgents = agents.OrderBy(a => a.Nom ?? "").ThenBy(a => a.Prenom ?? "");
+            
+            foreach (var agent in sortedAgents)
             {
-                var agent = new AgentItem
+                var agentItem = new AgentItem
                 {
-                    Idrh = reader.GetString(0),
-                    DisplayName = $"{reader.GetString(1)} {reader.GetString(2)}"
+                    Idrh = agent.Idrh,
+                    DisplayName = $"{agent.Nom} {agent.Prenom}"
                 };
-                cmbAgent.Items.Add(agent);
+                cmbAgent.Items.Add(agentItem);
             }
         }
         catch (Exception ex)
@@ -372,19 +368,23 @@ public class LoanCreationView : Form
 
         try
         {
-            using var connection = Database.Open();
-            using var transaction = connection.BeginTransaction();
-            using var command = connection.CreateCommand();
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
             
-            command.Transaction = transaction;
-            command.CommandText = @"
-                UPDATE Equipements 
-                SET idrh = NULL, etat_pret = 0 
-                WHERE idrh = $idrh AND etat_pret = 1";
-            command.Parameters.AddWithValue("$idrh", SelectedAgentId);
-            command.ExecuteNonQuery();
-
-            transaction.Commit();
+            // Récupérer tous les équipements prêtés à cet agent
+            var equipments = repo.GetByAgent(SelectedAgentId);
+            var loanedEquipments = equipments.Where(e => e.EtatPret == 1);
+            
+            // Mettre à jour chaque équipement pour le rendre disponible
+            foreach (var equipment in loanedEquipments)
+            {
+                var updatedEquipment = equipment with 
+                { 
+                    Idrh = null, 
+                    EtatPret = 0 
+                };
+                repo.Update(updatedEquipment);
+            }
+            
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -430,18 +430,17 @@ public class LoanCreationView : Form
                 agentId = agent.Idrh;
             }
             
-            using var connection = Database.Open();
-            using var transaction = connection.BeginTransaction();
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
 
-            // If editing an existing agent assignment, get previously assigned equipment ids
+            // En mode édition, récupérer les équipements précédemment assignés
             var previouslyAssigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(selectedAgentId))
             {
-                using var prevCmd = connection.CreateCommand();
-                prevCmd.CommandText = "SELECT id_equipement FROM Equipements WHERE idrh = $idrh";
-                prevCmd.Parameters.AddWithValue("$idrh", selectedAgentId);
-                using var prevR = prevCmd.ExecuteReader();
-                while (prevR.Read()) previouslyAssigned.Add(prevR.GetString(0));
+                var prevEquipments = repo.GetByAgent(selectedAgentId);
+                foreach (var eq in prevEquipments)
+                {
+                    previouslyAssigned.Add(eq.IdEquipement);
+                }
             }
 
             var newlySelected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -450,38 +449,35 @@ public class LoanCreationView : Form
                 var id = control.SelectedEquipment.Id;
                 newlySelected.Add(id);
 
-                using var command = connection.CreateCommand();
-                command.Transaction = transaction;
-                command.CommandText = @"
-                    UPDATE Equipements 
-                    SET idrh = $idrh, 
-                        etat_pret = CASE 
-                            WHEN etat_pret = 2 THEN 2  -- Garde l'état DSEM si c'était déjà DSEM
-                            ELSE 1                      -- Sinon met en état prêt
-                        END 
-                    WHERE id_equipement = $id";
-                command.Parameters.AddWithValue("$idrh", agentId);
-                command.Parameters.AddWithValue("$id", id);
-                command.ExecuteNonQuery();
+                // Récupérer l'équipement existant
+                var equipment = repo.GetById(id);
+                
+                // Mise à jour : garde l'état DSEM (2) si c'était déjà DSEM, sinon met en état prêt (1)
+                var newEtatPret = equipment.EtatPret == 2 ? 2 : 1;
+                
+                var updatedEquipment = equipment with 
+                { 
+                    Idrh = agentId, 
+                    EtatPret = newEtatPret 
+                };
+                repo.Update(updatedEquipment);
             }
 
-            // For any previously assigned equipment that is no longer selected, clear assignment
+            // Pour tout équipement précédemment assigné qui n'est plus sélectionné, retirer l'assignation
             foreach (var prevId in previouslyAssigned)
             {
                 if (!newlySelected.Contains(prevId))
                 {
-                    using var command = connection.CreateCommand();
-                    command.Transaction = transaction;
-                    command.CommandText = @"
-                        UPDATE Equipements
-                        SET idrh = NULL, etat_pret = 0
-                        WHERE id_equipement = $id";
-                    command.Parameters.AddWithValue("$id", prevId);
-                    command.ExecuteNonQuery();
+                    var equipment = repo.GetById(prevId);
+                    var updatedEquipment = equipment with 
+                    { 
+                        Idrh = null, 
+                        EtatPret = 0 
+                    };
+                    repo.Update(updatedEquipment);
                 }
             }
 
-            transaction.Commit();
             DialogResult = DialogResult.OK;
             Close();
         }

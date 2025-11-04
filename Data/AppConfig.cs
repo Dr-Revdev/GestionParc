@@ -5,7 +5,8 @@ using System.Text.Json;
 namespace ProjetParc.Data;
 
 /// <summary>
-/// Gère la configuration de l'application (notamment le chemin de la base de données)
+/// Gère la configuration de l'application (préférences utilisateur, paramètres d'affichage, etc.)
+/// La connexion MySQL est configurée dans App.config
 /// </summary>
 public class AppConfig
 {
@@ -15,18 +16,8 @@ public class AppConfig
     );
     private static readonly string ConfigPath = Path.Combine(ConfigDir, "config.json");
 
-    /// <summary>
-    /// Chemin vers la base de données
-    /// </summary>
-    public string DatabasePath { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Vérifie si c'est le premier lancement (pas de fichier de configuration)
-    /// </summary>
-    public static bool IsFirstRun()
-    {
-        return !File.Exists(ConfigPath);
-    }
+    // Réservé pour de futures options utilisateur
+    // Exemples : thème, langue, colonnes affichées, etc.
 
     /// <summary>
     /// Charge la configuration depuis le fichier JSON
@@ -70,7 +61,7 @@ public class AppConfig
     }
 
     /// <summary>
-    /// Supprime le fichier de configuration (utile pour les tests)
+    /// Supprime le fichier de configuration (utile pour les tests ou réinitialisation)
     /// </summary>
     public static void Reset()
     {

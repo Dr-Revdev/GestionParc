@@ -1,7 +1,6 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 
 namespace ProjetParc.Views.Equipment;
@@ -262,20 +261,17 @@ public class EquipementEditView : UserControl
 
     /// <summary>
     /// Charge les types d'équipement depuis la table <c>equipment_type</c> et renseigne la ComboBox.
-    /// Utilise une connexion SQLite via <see cref="Database.Open"/>.
     /// </summary>
     private void LoadEquipmentTypes()
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
+            var types = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository().GetAll();
 
-            using var reader = command.ExecuteReader();
-            var items = new List<EquipmentTypeItem>();
-            while (reader.Read())
-                items.Add(new EquipmentTypeItem { Id = reader.GetInt32(0), Name = reader.GetString(1) });
+            var items = types
+                .Select(t => new EquipmentTypeItem { Id = t.Id, Name = t.Name })
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
 
             cbType.DataSource = items;
             cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
@@ -283,8 +279,10 @@ public class EquipementEditView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des types d'équipement : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                $"Erreur lors du chargement des types d'équipement : {ex.Message}",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error
+            );
         }
     }
     /// <summary>
@@ -295,37 +293,32 @@ public class EquipementEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"
-                SELECT e.id_equipement,
-                    t.name AS typ,
-                    TRIM(COALESCE(e.code_parc, '-'))    AS c,
-                    TRIM(COALESCE(e.numero_serie, '-')) AS s,
-                    COALESCE(TRIM(e.nom), '(sans nom)') AS n
-                FROM Equipements e
-                JOIN equipment_type t ON t.id = e.type_id
-                ORDER BY typ COLLATE NOCASE, c COLLATE NOCASE, s COLLATE NOCASE;";
+            // Récupérer tous les équipements via le Repository
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var equipments = repo.GetAll();
 
-            using var reader = command.ExecuteReader();
+            // Récupérer les types pour afficher le nom du type
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
+            var types = typeRepo.GetAll().ToDictionary(t => t.Id, t => t.Name);
+
+            // Vider et remplir le ListView
             lvEquipment.Items.Clear();
-            while (reader.Read())
+            foreach (var equipment in equipments)
             {
-                var id = reader.GetString(0);
-                var type = reader.GetString(1);
-                var code = reader.GetString(2);
-                var serial = reader.GetString(3);
-                var nom = reader.GetString(4);
-                
-                var item = new ListViewItem(type);
-                item.SubItems.AddRange(new[] { code, serial, nom });
-                item.Tag = id;
+                var typeName = types.ContainsKey(equipment.TypeId) ? types[equipment.TypeId] : "Inconnu";
+                var codeParc = string.IsNullOrWhiteSpace(equipment.CodeParc) ? "-" : equipment.CodeParc.Trim();
+                var serial = string.IsNullOrWhiteSpace(equipment.NumeroSerie) ? "-" : equipment.NumeroSerie.Trim();
+                var nom = string.IsNullOrWhiteSpace(equipment.Nom) ? "(sans nom)" : equipment.Nom.Trim();
+
+                var item = new ListViewItem(typeName);
+                item.SubItems.AddRange(new[] { codeParc, serial, nom });
+                item.Tag = equipment.IdEquipement;
                 lvEquipment.Items.Add(item);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement de la liste d'équipements : {ex.Message}", "Erreur",
+            MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}", "Erreur",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
@@ -338,28 +331,20 @@ public class EquipementEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"SELECT type_id, nom, code_parc, numero_serie, marque, commentaire FROM ""Equipements"" WHERE id_equipement = $id;";
-            command.Parameters.AddWithValue("$id", equipmentId);
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var equipment = repo.GetById(equipmentId);
 
-            using var reader = command.ExecuteReader();
-            if (!reader.Read())
-            {
-                MessageBox.Show("Équipement introuvable.");
-                return;
-            }
+            // Remplir les champs (gérer les valeurs null)
+            tbName.Text = equipment.Nom ?? "";
+            tbCodeParc.Text = equipment.CodeParc ?? "";
+            tbSerialNumber.Text = equipment.NumeroSerie ?? "";
+            tbBrand.Text = equipment.Marque ?? "";
+            tbComment.Text = equipment.Commentaire ?? "";
 
-            var typeId = reader.GetInt32(0);
-            tbName.Text = reader.IsDBNull(1) ? "" : reader.GetString(1);
-            tbCodeParc.Text = reader.IsDBNull(2) ? "" : reader.GetString(2);
-            tbSerialNumber.Text = reader.IsDBNull(3) ? "" : reader.GetString(3);
-            tbBrand.Text = reader.IsDBNull(4) ? "" : reader.GetString(4);
-            tbComment.Text = reader.IsDBNull(5) ? "" : reader.GetString(5);
-
+            // Sélectionner le type correspondant dans la ComboBox
             for (int i = 0; i < cbType.Items.Count; i++)
             {
-                if (cbType.Items[i] is EquipmentTypeItem t && t.Id == typeId)
+                if (cbType.Items[i] is EquipmentTypeItem t && t.Id == equipment.TypeId)
                 {
                     cbType.SelectedIndex = i;
                     break;
@@ -435,44 +420,39 @@ public class EquipementEditView : UserControl
         var equipmentId = (string)selectedItem.Tag;
         var selectedType = (EquipmentTypeItem)cbType.SelectedItem;
 
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"
-        UPDATE ""Equipements""
-        SET type_id = $typeId,
-            nom = $name,
-            code_parc = $codeParc,
-            numero_serie = $serial,
-            marque = $brand,
-            commentaire = $comment
-        WHERE id_equipement = $id;";
-
-        command.Parameters.AddWithValue("$id", equipmentId);
-        command.Parameters.AddWithValue("$typeId", selectedType.Id);
-        command.Parameters.AddWithValue("$name", tbName.Text.Trim());
-        command.Parameters.AddWithValue("$codeParc", tbCodeParc.Text.Trim());
-        command.Parameters.AddWithValue("$serial", ToDbNullable(tbSerialNumber.Text));
-        command.Parameters.AddWithValue("$brand", ToDbNullable(tbBrand.Text));
-        command.Parameters.AddWithValue("$comment", ToDbNullable(tbComment.Text));
-
         try
         {
-            var rows = command.ExecuteNonQuery();
-            if (rows == 0)
-            {
-                MessageBox.Show("Aucune modification effectuée (équipement introuvable ?).");
-                return;
-            }
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            
+            // Charger l'équipement existant pour récupérer les champs non modifiables
+            var existingEquipment = repo.GetById(equipmentId);
+
+            // Créer un DTO avec les valeurs modifiées + les champs préservés
+            var equipment = new Data.DTOs.EquipmentDto(
+                IdEquipement: equipmentId,
+                TypeId: selectedType.Id,
+                Nom: tbName.Text.Trim(),
+                CodeParc: tbCodeParc.Text.Trim(),
+                NumeroSerie: string.IsNullOrWhiteSpace(tbSerialNumber.Text) ? null : tbSerialNumber.Text.Trim(),
+                Marque: string.IsNullOrWhiteSpace(tbBrand.Text) ? null : tbBrand.Text.Trim(),
+                Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim(),
+                EtatPret: existingEquipment.EtatPret,       // Préserver l'état de prêt
+                Idrh: existingEquipment.Idrh,               // Préserver l'agent
+                DateRenduDsem: existingEquipment.DateRenduDsem // Préserver la date de rendu
+            );
+
+            // Appeler le repository pour la mise à jour
+            repo.Update(equipment);
 
             MessageBox.Show("Modifications enregistrées.");
 
             // Recharger la liste pour refléter les modifications
             LoadEquipmentList();
-
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            MessageBox.Show("Erreur SQL : " + ex.Message);
+            MessageBox.Show($"Erreur lors de la sauvegarde : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -494,49 +474,47 @@ public class EquipementEditView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
 
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                command.CommandText = @"
-                    SELECT e.id_equipement,
-                        t.name,
-                        TRIM(COALESCE(e.code_parc, '-')),
-                        TRIM(COALESCE(e.numero_serie, '-')),
-                        COALESCE(TRIM(e.nom), '(sans nom)')
-                    FROM Equipements e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    ORDER BY 2 COLLATE NOCASE, 3 COLLATE NOCASE, 4 COLLATE NOCASE;";
-            }
-            else
-            {
-                command.CommandText = @"
-                    SELECT e.id_equipement,
-                        t.name,
-                        TRIM(COALESCE(e.code_parc, '-')),
-                        TRIM(COALESCE(e.numero_serie, '-')),
-                        COALESCE(TRIM(e.nom), '(sans nom)')
-                    FROM Equipements e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p
-                    ORDER BY 2 COLLATE NOCASE, 3 COLLATE NOCASE, 4 COLLATE NOCASE;";
-                command.Parameters.AddWithValue("$p", $"%{query}%");
-            }
+            // Charger les équipements et les types
+            var equipments = repo.GetAll();
+            var types = typeRepo.GetAll();
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
-            using var reader = command.ExecuteReader();
             lvEquipment.Items.Clear();
-            while (reader.Read())
+
+            // Filtrer les équipements si une requête est fournie
+            IEnumerable<Data.DTOs.EquipmentDto> filteredEquipments = equipments;
+            
+            if (!string.IsNullOrWhiteSpace(query))
             {
-                var id = reader.GetString(0);
-                var type = reader.GetString(1);
-                var code = reader.GetString(2);
-                var serial = reader.GetString(3);
-                var nom = reader.GetString(4);
-                
-                var item = new ListViewItem(type);
+                var q = query.ToLower();
+                filteredEquipments = equipments.Where(e =>
+                    (e.Nom?.ToLower().Contains(q) ?? false) ||
+                    (e.CodeParc?.ToLower().Contains(q) ?? false) ||
+                    (e.NumeroSerie?.ToLower().Contains(q) ?? false) ||
+                    (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(q))
+                );
+            }
+
+            // Trier par type, code_parc, numéro de série
+            var sortedEquipments = filteredEquipments
+                .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                .ThenBy(e => e.CodeParc ?? "")
+                .ThenBy(e => e.NumeroSerie ?? "");
+
+            // Remplir la ListView
+            foreach (var eq in sortedEquipments)
+            {
+                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
+                var code = string.IsNullOrWhiteSpace(eq.CodeParc) ? "-" : eq.CodeParc.Trim();
+                var serial = string.IsNullOrWhiteSpace(eq.NumeroSerie) ? "-" : eq.NumeroSerie.Trim();
+                var nom = string.IsNullOrWhiteSpace(eq.Nom) ? "(sans nom)" : eq.Nom.Trim();
+
+                var item = new ListViewItem(typeName);
                 item.SubItems.AddRange(new[] { code, serial, nom });
-                item.Tag = id;
+                item.Tag = eq.IdEquipement;
                 lvEquipment.Items.Add(item);
             }
         }
@@ -569,25 +547,17 @@ public class EquipementEditView : UserControl
 
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"DELETE FROM ""Equipements"" WHERE id_equipement = $id;";
-            command.Parameters.AddWithValue("$id", equipmentId);
-            var rows = command.ExecuteNonQuery();
-
-            if (rows == 0)
-            {
-                MessageBox.Show("Équipement introuvable.");
-                return;
-            }
+            var repo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            repo.Delete(equipmentId);
 
             LoadEquipmentListFiltered(tbSearch?.Text?.Trim() ?? "");
             tbName.Clear(); tbCodeParc.Clear(); tbSerialNumber.Clear(); tbBrand.Clear(); tbComment.Clear();
             MessageBox.Show("Équipement supprimé.");
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            MessageBox.Show("Erreur SQL : " + ex.Message);
+            MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

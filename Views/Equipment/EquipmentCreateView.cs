@@ -1,7 +1,8 @@
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
+using ProjetParc.Data.DTOs;
+using ProjetParc.Data.Repositories.MySQL;
 
 namespace ProjetParc.Views.Equipment;
 
@@ -71,7 +72,7 @@ public class EquipmentCreateView : UserControl
         btnBack.Click += (_, __) => _onBack?.Invoke();
         mainLayout.Controls.Add(btnBack, 0, 0);
 
-        // Panel du formulaire
+        // Panneau du formulaire
         TableLayoutPanel formLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -163,21 +164,12 @@ public class EquipmentCreateView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = "SELECT id, name FROM equipment_type ORDER BY name;";
+            var types = new ProjetParc.Data.Repositories.MySQL.EquipmentTypeMySqlRepository().GetAll();
 
-            using var reader = command.ExecuteReader();
-            var equipmentTypeItems = new List<EquipmentTypeItem>();
-            while (reader.Read())
-            {
-                var typeItem = new EquipmentTypeItem
-                {
-                    Id = reader.GetInt32(0),
-                    Name = reader.GetString(1)
-                };
-                equipmentTypeItems.Add(typeItem);
-            }
+            var equipmentTypeItems = types
+                .Select(t => new EquipmentTypeItem { Id = t.Id, Name = t.Name })
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
 
             cbType.DataSource = equipmentTypeItems;
             cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
@@ -185,8 +177,11 @@ public class EquipmentCreateView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des types d'équipement : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                $"Erreur lors du chargement des types d'équipement : {ex.Message}",
+                "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error
+            );
         }
     }
 
@@ -218,12 +213,6 @@ public class EquipmentCreateView : UserControl
         errorMessage = "";
         return true;
     }
-    /// <summary>
-    /// Convertit une chaîne en objet DBNull si elle est vide ou null
-    /// </summary>
-    /// <param name="s">La chaîne à convertir</param>
-    /// <returns>La chaîne nettoyée ou DBNull.Value si vide</returns>
-    private static object ToDbNullable(string s) => string.IsNullOrWhiteSpace(s) ? DBNull.Value : s.Trim();
 
     /// <summary>
     /// Génère un identifiant unique pour un nouvel équipement
@@ -242,27 +231,31 @@ public class EquipmentCreateView : UserControl
             return;
         }
 
-        var SelectedType = (EquipmentTypeItem)cbType.SelectedItem;
-        var newId = GenerateEquipmentId();
+        var selectedType = (EquipmentTypeItem)cbType.SelectedItem;
 
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
-        command.CommandText = @"INSERT INTO ""Equipements"" (id_equipement, type_id, nom, code_parc, numero_serie, marque, commentaire) VALUES ($id, $typeId, $name, $codeParc, $serial, $brand, $comment);";
-
-        command.Parameters.AddWithValue("$id", newId);
-        command.Parameters.AddWithValue("$typeId", SelectedType.Id);
-        command.Parameters.AddWithValue("$name",     ToDbNullable(tbName.Text));
-        command.Parameters.AddWithValue("$codeParc", ToDbNullable(tbCodeParc.Text));
-
-        command.Parameters.AddWithValue("$serial",   ToDbNullable(tbSerial.Text));
-        command.Parameters.AddWithValue("$brand",    ToDbNullable(tbBrand.Text));
-        command.Parameters.AddWithValue("$comment",  ToDbNullable(tbComment.Text));
+        // Créer le DTO avec les données du formulaire
+        var equipment = new EquipmentDto(
+            IdEquipement: GenerateEquipmentId(),
+            TypeId: selectedType.Id,
+            Nom: string.IsNullOrWhiteSpace(tbName.Text) ? null : tbName.Text.Trim(),
+            CodeParc: string.IsNullOrWhiteSpace(tbCodeParc.Text) ? null : tbCodeParc.Text.Trim(),
+            NumeroSerie: string.IsNullOrWhiteSpace(tbSerial.Text) ? null : tbSerial.Text.Trim(),
+            Marque: string.IsNullOrWhiteSpace(tbBrand.Text) ? null : tbBrand.Text.Trim(),
+            Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim(),
+            EtatPret: 0,  // Disponible par défaut
+            Idrh: null,   // Pas encore assigné
+            DateRenduDsem: null
+        );
 
         try
         {
-            command.ExecuteNonQuery();
+            // Utiliser le Repository pour l'insertion
+            var repo = new EquipmentMySqlRepository();
+            repo.Insert(equipment);
+
             MessageBox.Show("Équipement créé.");
 
+            // Réinitialiser le formulaire
             tbSerial.Clear();
             tbName.Clear();
             tbBrand.Clear();
@@ -270,9 +263,9 @@ public class EquipmentCreateView : UserControl
             tbComment.Clear();
             if (cbType.Items.Count > 0) cbType.SelectedIndex = 0;
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
-            MessageBox.Show("Erreur SQL : " + ex.Message);
+            MessageBox.Show($"Erreur lors de la création : {ex.Message}");
         }
     }
 

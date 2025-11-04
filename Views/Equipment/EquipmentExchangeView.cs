@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 using ProjetParc.Views.Loan.Models;
 
@@ -239,35 +238,29 @@ public class EquipmentExchangeView : Form
     {
         try
         {
-            var agents = new List<AgentItem>();
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            var equipeRepo = new Data.Repositories.MySQL.EquipeMySqlRepository();
 
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT a.idrh, a.nom, a.prenom, e.name as equipe
-                FROM Agents a
-                LEFT JOIN Equipes e ON a.equipe_id = e.id
-                ORDER BY a.nom, a.prenom";
+            var agents = agentRepo.GetAll().OrderBy(a => a.Nom).ThenBy(a => a.Prenom).ToList();
+            var equipes = equipeRepo.GetAll();
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            var agentItems = agents.Select(a =>
             {
-                var idrh = reader.GetString(0);
-                var nom = reader.GetString(1);
-                var prenom = reader.GetString(2);
-                var equipe = reader.IsDBNull(3) ? "" : $" ({reader.GetString(3)})";
-
-                agents.Add(new AgentItem
+                var equipe = a.EquipeId.HasValue && equipeDict.ContainsKey(a.EquipeId.Value)
+                    ? $" ({equipeDict[a.EquipeId.Value]})"
+                    : "";
+                return new AgentItem
                 {
-                    Idrh = idrh,
-                    DisplayName = $"{nom} {prenom}{equipe}"
-                });
-            }
+                    Idrh = a.Idrh,
+                    DisplayName = $"{a.Nom} {a.Prenom}{equipe}"
+                };
+            }).ToList();
 
             cbAgent1.Items.Clear();
             cbAgent2.Items.Clear();
 
-            foreach (var agent in agents)
+            foreach (var agent in agentItems)
             {
                 cbAgent1.Items.Add(agent);
                 cbAgent2.Items.Add(agent);
@@ -311,23 +304,24 @@ public class EquipmentExchangeView : Form
 
         try
         {
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT e.id_equipement, t.name, e.nom, e.code_parc, e.numero_serie
-                FROM Equipements e
-                JOIN equipment_type t ON e.type_id = t.id
-                WHERE e.idrh = $idrh AND e.etat_pret = 1
-                ORDER BY t.name, e.nom";
-            command.Parameters.AddWithValue("$idrh", agent.Idrh);
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            var equipments = equipmentRepo.GetByAgent(agent.Idrh).Where(e => e.EtatPret == 1).ToList();
+            var types = typeRepo.GetAll();
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+
+            var sortedEquipments = equipments
+                .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                .ThenBy(e => e.Nom ?? "");
+
+            foreach (var eq in sortedEquipments)
             {
+                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
                 var equipmentItem = new EquipmentItem
                 {
-                    Id = reader.GetString(0),
-                    DisplayName = $"{reader.GetString(1)} - {reader.GetString(2)} ({reader.GetString(3)})"
+                    Id = eq.IdEquipement,
+                    DisplayName = $"{typeName} - {eq.Nom ?? ""} ({eq.CodeParc ?? ""})"
                 };
                 listBox.Items.Add(equipmentItem);
             }
@@ -418,30 +412,29 @@ public class EquipmentExchangeView : Form
         // Exécution de l'échange
         try
         {
-            using var connection = Database.Open();
-            using var transaction = connection.BeginTransaction();
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
 
             // Transférer les équipements de Agent1 vers Agent2
             foreach (var equipment in agent1Equipments)
             {
-                using var command = connection.CreateCommand();
-                command.CommandText = "UPDATE Equipements SET idrh = $newIdrh WHERE id_equipement = $id";
-                command.Parameters.AddWithValue("$newIdrh", agent2.Idrh);
-                command.Parameters.AddWithValue("$id", equipment.Id);
-                command.ExecuteNonQuery();
+                var eq = equipmentRepo.GetById(equipment.Id);
+                if (eq != null)
+                {
+                    var updatedEq = eq with { Idrh = agent2.Idrh };
+                    equipmentRepo.Update(updatedEq);
+                }
             }
 
             // Transférer les équipements de Agent2 vers Agent1
             foreach (var equipment in agent2Equipments)
             {
-                using var command = connection.CreateCommand();
-                command.CommandText = "UPDATE Equipements SET idrh = $newIdrh WHERE id_equipement = $id";
-                command.Parameters.AddWithValue("$newIdrh", agent1.Idrh);
-                command.Parameters.AddWithValue("$id", equipment.Id);
-                command.ExecuteNonQuery();
+                var eq = equipmentRepo.GetById(equipment.Id);
+                if (eq != null)
+                {
+                    var updatedEq = eq with { Idrh = agent1.Idrh };
+                    equipmentRepo.Update(updatedEq);
+                }
             }
-
-            transaction.Commit();
 
             MessageBox.Show("Échange effectué avec succès !", "Succès", 
                           MessageBoxButtons.OK, MessageBoxIcon.Information);

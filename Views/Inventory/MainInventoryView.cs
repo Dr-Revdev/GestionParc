@@ -1,6 +1,6 @@
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
+using System.Linq;
 using ProjetParc.Data;
 using ProjetParc.Views.Loan;
 
@@ -219,68 +219,63 @@ public class MainInventoryView : UserControl
         try
         {
             lvEquipments.Items.Clear();
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
+            
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
 
-            if (string.IsNullOrWhiteSpace(searchFilter))
+            var equipments = equipmentRepo.GetAll();
+            var types = typeRepo.GetAll();
+            var agents = agentRepo.GetAll();
+
+            // Créer des dictionnaires pour les JOINs
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+            var agentDict = agents.ToDictionary(a => a.Idrh, a => $"{a.Nom} {a.Prenom}");
+
+            // Filtrer les équipements (pas en état prêt = 1)
+            var filteredEquipments = equipments.Where(e => e.EtatPret != 1);
+
+            // Appliquer le filtre de recherche si fourni
+            if (!string.IsNullOrWhiteSpace(searchFilter))
             {
-                command.CommandText = @"
-                    SELECT e.type_id, t.name, 
-                           COALESCE(e.nom, '') as nom, 
-                           COALESCE(e.code_parc, '') as code_parc, 
-                           COALESCE(e.numero_serie, '') as numero_serie, 
-                           COALESCE(e.marque, '') as marque, 
-                           e.etat_pret, e.idrh, 
-                           a.nom || ' ' || a.prenom as agent_name
-                    FROM Equipements e
-                    LEFT JOIN Agents a ON a.idrh = e.idrh
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE e.etat_pret != 1
-                    ORDER BY t.name, e.nom";
-            }
-            else
-            {
-                     command.CommandText = @"
-                          SELECT e.type_id, t.name, 
-                                 COALESCE(e.nom, '') as nom, 
-                                 COALESCE(e.code_parc, '') as code_parc, 
-                                 COALESCE(e.numero_serie, '') as numero_serie, 
-                                 COALESCE(e.marque, '') as marque, 
-                                 e.etat_pret, e.idrh, 
-                                 a.nom || ' ' || a.prenom as agent_name
-                          FROM Equipements e
-                          LEFT JOIN Agents a ON a.idrh = e.idrh
-                          JOIN equipment_type t ON t.id = e.type_id
-                          WHERE t.name LIKE $search 
-                              OR e.nom LIKE $search
-                              OR e.code_parc LIKE $search
-                              OR e.numero_serie LIKE $search
-                              OR e.marque LIKE $search
-                          ORDER BY t.name, e.nom";
-                command.Parameters.AddWithValue("$search", $"%{searchFilter}%");
+                var q = searchFilter.ToLower();
+                filteredEquipments = filteredEquipments.Where(e =>
+                    (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(q)) ||
+                    (e.Nom?.ToLower().Contains(q) ?? false) ||
+                    (e.CodeParc?.ToLower().Contains(q) ?? false) ||
+                    (e.NumeroSerie?.ToLower().Contains(q) ?? false) ||
+                    (e.Marque?.ToLower().Contains(q) ?? false)
+                );
             }
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+            // Trier par type, puis nom
+            var sortedEquipments = filteredEquipments
+                .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                .ThenBy(e => e.Nom ?? "");
+
+            foreach (var eq in sortedEquipments)
             {
-                var item = new ListViewItem(reader.GetString(1)); // Type
-                var etat = reader.GetInt32(6);
-                string etatLabel = etat switch
+                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
+                string etatLabel = eq.EtatPret switch
                 {
                     0 => "Disponible",
                     1 => "Prêt",
                     2 => "DSEM",
                     _ => "Inconnu"
                 };
-                var agentName = reader.IsDBNull(8) ? string.Empty : reader.GetString(8);
+                var agentName = string.IsNullOrEmpty(eq.Idrh) || !agentDict.ContainsKey(eq.Idrh) 
+                    ? string.Empty 
+                    : agentDict[eq.Idrh];
+
+                var item = new ListViewItem(typeName);
                 item.SubItems.AddRange(new[]
                 {
-                    reader.GetString(2),  // Nom
-                    reader.GetString(3),  // Code Parc
-                    reader.GetString(4),  // N° Série
-                    reader.GetString(5),  // Marque
-                    agentName,             // Agent
-                    etatLabel              // État
+                    eq.Nom ?? "",
+                    eq.CodeParc ?? "",
+                    eq.NumeroSerie ?? "",
+                    eq.Marque ?? "",
+                    agentName,
+                    etatLabel
                 });
                 lvEquipments.Items.Add(item);
             }
@@ -316,75 +311,54 @@ public class MainInventoryView : UserControl
             lvEquipments.Items.Clear();
             lvEquipments.Columns.Clear();
 
-            using var connection = Database.Open();
-            
-            // Première passe : déterminer le nombre maximum d'équipements par agent
-            using (var countCommand = connection.CreateCommand())
-            {
-                countCommand.CommandText = @"
-                    SELECT COALESCE(MAX(equipment_count), 0)
-                    FROM (
-                        SELECT COUNT(*) as equipment_count
-                        FROM Equipements e
-                        WHERE e.etat_pret = 1 AND e.idrh IS NOT NULL
-                        GROUP BY e.idrh
-                    )";
-                var result = countCommand.ExecuteScalar();
-                var maxEquipments = result == DBNull.Value ? 0 : Convert.ToInt32(result);
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
 
-                // Configurer les colonnes
-                lvEquipments.Columns.Add(new ColumnHeader { Text = "Agent", Width = 200 });
-                for (int i = 1; i <= maxEquipments; i++)
-                {
-                    lvEquipments.Columns.Add(new ColumnHeader { Text = $"Équipement {i}", Width = 250 });
-                }
+            var equipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 1 && !string.IsNullOrEmpty(e.Idrh)).ToList();
+            var types = typeRepo.GetAll();
+            var agents = agentRepo.GetAll();
+
+            // Dictionnaire pour les types
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+            
+            // Grouper les équipements par agent
+            var equipmentsByAgent = equipments.GroupBy(e => e.Idrh).ToList();
+            
+            // Déterminer le nombre maximum d'équipements par agent
+            var maxEquipments = equipmentsByAgent.Any() ? equipmentsByAgent.Max(g => g.Count()) : 0;
+
+            // Configurer les colonnes
+            lvEquipments.Columns.Add(new ColumnHeader { Text = "Agent", Width = 200 });
+            for (int i = 1; i <= maxEquipments; i++)
+            {
+                lvEquipments.Columns.Add(new ColumnHeader { Text = $"Équipement {i}", Width = 250 });
             }
 
-            // Deuxième passe : charger les agents qui ont des prêts
-            using var agentCommand = connection.CreateCommand();
-            agentCommand.CommandText = @"
-                SELECT DISTINCT
-                    a.idrh,
-                    a.nom || ' ' || a.prenom as agent_name
-                FROM Equipements e
-                JOIN Agents a ON a.idrh = e.idrh
-                WHERE e.etat_pret = 1
-                ORDER BY a.nom, a.prenom";
+            // Créer un dictionnaire des agents
+            var agentDict = agents.ToDictionary(a => a.Idrh, a => $"{a.Nom} {a.Prenom}");
 
-            using var agentReader = agentCommand.ExecuteReader();
-            var agents = new System.Collections.Generic.List<(string idrh, string name)>();
-            
-            while (agentReader.Read())
-            {
-                agents.Add((
-                    agentReader.GetString(0),
-                    agentReader.GetString(1)
-                ));
-            }
-            agentReader.Close();
+            // Charger les agents qui ont des prêts
+            var agentsWithLoans = equipmentsByAgent
+                .Select(g => new { 
+                    Idrh = g.Key, 
+                    Name = agentDict.ContainsKey(g.Key) ? agentDict[g.Key] : g.Key,
+                    Equipments = g.OrderBy(e => e.IdEquipement).ToList()
+                })
+                .OrderBy(a => a.Name)
+                .ToList();
 
             // Pour chaque agent, charger ses équipements dans l'ordre
-            foreach (var agent in agents)
+            foreach (var agent in agentsWithLoans)
             {
-                var item = new ListViewItem(agent.name) { Tag = agent.idrh };
+                var item = new ListViewItem(agent.Name) { Tag = agent.Idrh };
 
-                using var equipCommand = connection.CreateCommand();
-                equipCommand.CommandText = @"
-                    SELECT 
-                        e.id_equipement,
-                        t.name || ' - ' || COALESCE(e.nom, e.code_parc, e.numero_serie, 'Sans nom') || 
-                        ' (' || COALESCE(e.code_parc, 'N/A') || ')' as equipment_display
-                    FROM Equipements e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE e.etat_pret = 1 AND e.idrh = $idrh
-                    ORDER BY e.id_equipement";
-                
-                equipCommand.Parameters.AddWithValue("$idrh", agent.idrh);
-
-                using var equipReader = equipCommand.ExecuteReader();
-                while (equipReader.Read())
+                foreach (var eq in agent.Equipments)
                 {
-                    item.SubItems.Add(equipReader.GetString(1));
+                    var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
+                    var equipmentName = eq.Nom ?? eq.CodeParc ?? eq.NumeroSerie ?? "Sans nom";
+                    var equipmentDisplay = $"{typeName} - {equipmentName} ({eq.CodeParc ?? "N/A"})";
+                    item.SubItems.Add(equipmentDisplay);
                 }
 
                 // Remplir les colonnes restantes avec des cellules vides
@@ -460,7 +434,28 @@ public class MainInventoryView : UserControl
 
         try
         {
-            using var connection = Database.Open();
+            var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var siteRepo = new Data.Repositories.MySQL.SiteMySqlRepository();
+            var equipeRepo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
+
+            // Récupérer l'agent
+            var agent = agentRepo.GetById(agentId);
+            if (agent == null)
+            {
+                MessageBox.Show("Agent introuvable.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Récupérer les données liées
+            var sites = siteRepo.GetAll();
+            var equipes = equipeRepo.GetAll();
+            var types = typeRepo.GetAll();
+
+            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
+            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             // === ONGLET AGENT ===
             var agentTab = new TabPage("Agent")
@@ -488,131 +483,84 @@ public class MainInventoryView : UserControl
                 agentPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
             }
 
-            // Requête pour récupérer les infos de l'agent
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = @"
-                    SELECT 
-                        a.nom, 
-                        a.prenom, 
-                        a.idrh, 
-                        a.email,
-                        s.name as site_name,
-                        e.name as equipe_name,
-                        a.heberge,
-                        a.commentaire
-                    FROM Agents a
-                    LEFT JOIN Sites s ON a.site_id = s.id
-                    LEFT JOIN Equipes e ON a.equipe_id = e.id
-                    WHERE a.idrh = $agentId";
-                command.Parameters.AddWithValue("$agentId", agentId);
+            var siteName = agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value) 
+                ? siteDict[agent.SiteId.Value] 
+                : "Non assigné";
+            var equipeName = agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value)
+                ? equipeDict[agent.EquipeId.Value]
+                : "Non assignée";
 
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
-                {
-                    var nom = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                    var prenom = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    var idrh = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                    var email = reader.IsDBNull(3) ? "" : reader.GetString(3);
-                    var site = reader.IsDBNull(4) ? "Non assigné" : reader.GetString(4);
-                    var equipe = reader.IsDBNull(5) ? "Non assignée" : reader.GetString(5);
-                    var heberge = reader.GetInt32(6);
-                    var commentaire = reader.IsDBNull(7) ? "" : reader.GetString(7);
-
-                    AddDetailRow(agentPanel, 0, "Nom :", nom);
-                    AddDetailRow(agentPanel, 1, "Prénom :", prenom);
-                    AddDetailRow(agentPanel, 2, "IDRH :", idrh);
-                    AddDetailRow(agentPanel, 3, "Email :", email);
-                    AddDetailRow(agentPanel, 4, "Site :", site);
-                    AddDetailRow(agentPanel, 5, "Équipe :", equipe);
-                }
-            }
+            AddDetailRow(agentPanel, 0, "Nom :", agent.Nom ?? "");
+            AddDetailRow(agentPanel, 1, "Prénom :", agent.Prenom ?? "");
+            AddDetailRow(agentPanel, 2, "IDRH :", agent.Idrh ?? "");
+            AddDetailRow(agentPanel, 3, "Email :", agent.Email ?? "");
+            AddDetailRow(agentPanel, 4, "Site :", siteName);
+            AddDetailRow(agentPanel, 5, "Équipe :", equipeName);
 
             agentTab.Controls.Add(agentPanel);
             detailsTabControl.TabPages.Add(agentTab);
 
             // === ONGLETS ÉQUIPEMENTS ===
-            using (var command = connection.CreateCommand())
+            var agentEquipments = equipmentRepo.GetByAgent(agentId)
+                .Where(e => e.EtatPret == 1)
+                .OrderBy(e => e.IdEquipement)
+                .ToList();
+
+            int equipmentIndex = 1;
+            foreach (var eq in agentEquipments)
             {
-                command.CommandText = @"
-                    SELECT 
-                        COALESCE(e.code_parc, '') as code_parc,
-                        t.name as type_equipement,
-                        COALESCE(e.nom, '') as nom,
-                        COALESCE(e.numero_serie, '') as numero_serie,
-                        COALESCE(e.marque, '') as marque,
-                        e.etat_pret,
-                        e.date_rendu_dsem
-                    FROM Equipements e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE e.idrh = $agentId AND e.etat_pret = 1
-                    ORDER BY e.id_equipement";
-                command.Parameters.AddWithValue("$agentId", agentId);
+                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
 
-                using var reader = command.ExecuteReader();
-                int equipmentIndex = 1;
-
-                while (reader.Read())
+                var equipTab = new TabPage($"Équipement {equipmentIndex}")
                 {
-                    var codeparc = reader.GetString(0);
-                    var type = reader.GetString(1);
-                    var nom = reader.GetString(2);
-                    var numeroSerie = reader.GetString(3);
-                    var marque = reader.GetString(4);
-                    var etat = reader.GetInt32(5);
-                    var dateRenduDsem = reader.IsDBNull(6) ? "" : reader.GetString(6);
+                    BackColor = Theme.Colors.Surface,
+                    Padding = new Padding(Theme.Spacing.Medium)
+                };
 
-                    var equipTab = new TabPage($"Équipement {equipmentIndex}")
-                    {
-                        BackColor = Theme.Colors.Surface,
-                        Padding = new Padding(Theme.Spacing.Medium)
-                    };
+                var equipPanel = new TableLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    ColumnCount = 2,
+                    RowCount = 7,
+                    AutoSize = true,
+                    BackColor = Theme.Colors.Surface
+                };
 
-                    var equipPanel = new TableLayoutPanel
-                    {
-                        Dock = DockStyle.Fill,
-                        ColumnCount = 2,
-                        RowCount = 7,
-                        AutoSize = true,
-                        BackColor = Theme.Colors.Surface
-                    };
+                // Configuration des colonnes
+                equipPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150)); // Labels
+                equipPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Valeurs
 
-                    // Configuration des colonnes
-                    equipPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150)); // Labels
-                    equipPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // Valeurs
-
-                    // Configuration des lignes
-                    for (int i = 0; i < 7; i++)
-                    {
-                        equipPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
-                    }
-
-                    string etatLabel = etat switch
-                    {
-                        0 => "Disponible",
-                        1 => "En prêt",
-                        2 => "Rendu DSEM",
-                        _ => "Inconnu"
-                    };
-
-                    AddDetailRow(equipPanel, 0, "Type :", type);
-                    AddDetailRow(equipPanel, 1, "Nom :", nom);
-                    AddDetailRow(equipPanel, 2, "Code Parc :", codeparc);
-                    AddDetailRow(equipPanel, 3, "N° Série :", numeroSerie);
-                    AddDetailRow(equipPanel, 4, "Marque :", marque);
-                    AddDetailRow(equipPanel, 5, "État :", etatLabel);
-                    
-                    // Afficher la date de rendu DSEM si elle existe
-                    if (etat == 2 && !string.IsNullOrEmpty(dateRenduDsem))
-                    {
-                        AddDetailRow(equipPanel, 6, "Date rendu DSEM :", dateRenduDsem);
-                    }
-
-                    equipTab.Controls.Add(equipPanel);
-                    detailsTabControl.TabPages.Add(equipTab);
-
-                    equipmentIndex++;
+                // Configuration des lignes
+                for (int i = 0; i < 7; i++)
+                {
+                    equipPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));
                 }
+
+                string etatLabel = eq.EtatPret switch
+                {
+                    0 => "Disponible",
+                    1 => "En prêt",
+                    2 => "Rendu DSEM",
+                    _ => "Inconnu"
+                };
+
+                AddDetailRow(equipPanel, 0, "Type :", typeName);
+                AddDetailRow(equipPanel, 1, "Nom :", eq.Nom ?? "");
+                AddDetailRow(equipPanel, 2, "Code Parc :", eq.CodeParc ?? "");
+                AddDetailRow(equipPanel, 3, "N° Série :", eq.NumeroSerie ?? "");
+                AddDetailRow(equipPanel, 4, "Marque :", eq.Marque ?? "");
+                AddDetailRow(equipPanel, 5, "État :", etatLabel);
+                
+                // Afficher la date de rendu DSEM si elle existe
+                if (eq.EtatPret == 2 && !string.IsNullOrEmpty(eq.DateRenduDsem))
+                {
+                    AddDetailRow(equipPanel, 6, "Date rendu DSEM :", eq.DateRenduDsem);
+                }
+
+                equipTab.Controls.Add(equipPanel);
+                detailsTabControl.TabPages.Add(equipTab);
+
+                equipmentIndex++;
             }
         }
         catch (Exception ex)
@@ -659,25 +607,15 @@ public class MainInventoryView : UserControl
     {
         try
         {
-            using var connection = Database.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = @"
-                SELECT
-                  SUM(CASE WHEN etat_pret = 0 THEN 1 ELSE 0 END) as available,
-                  SUM(CASE WHEN etat_pret = 1 THEN 1 ELSE 0 END) as loaned,
-                  SUM(CASE WHEN etat_pret = 2 THEN 1 ELSE 0 END) as dsem,
-                  COUNT(*) as total
-                FROM Equipements";
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var equipments = equipmentRepo.GetAll();
 
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var available = reader.GetInt32(0);
-                var loaned = reader.GetInt32(1);
-                var dsem = reader.GetInt32(2);
-                var total = reader.GetInt32(3);
-                MessageBox.Show($"Equipements: total={total}\nDisponible={available}\nPrêt={loaned}\nDSEM={dsem}", "Diagnostic DB");
-            }
+            var available = equipments.Count(e => e.EtatPret == 0);
+            var loaned = equipments.Count(e => e.EtatPret == 1);
+            var dsem = equipments.Count(e => e.EtatPret == 2);
+            var total = equipments.Count();
+
+            MessageBox.Show($"Equipements: total={total}\nDisponible={available}\nPrêt={loaned}\nDSEM={dsem}", "Diagnostic DB");
         }
         catch (Exception ex)
         {

@@ -1,7 +1,7 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 
 namespace ProjetParc.Views.Settings;
 
@@ -295,17 +295,31 @@ internal class ParameterManagerControl : UserControl
     private void LoadData()
     {
         _listView.Items.Clear();
-        using var connection = Data.Database.Open();
-        using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT id, name FROM {_tableName} ORDER BY id";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        
+        // Charger depuis le repository approprié selon la table
+        var items = _tableName switch
         {
-            var item = new ListViewItem(reader.GetInt32(0).ToString());
-            item.SubItems.Add(reader.GetString(1));
-            item.Tag = reader.GetInt32(0);
-            _listView.Items.Add(item);
+            "Equipes" => new Data.Repositories.MySQL.EquipeMySqlRepository().GetAll()
+                .OrderBy(e => e.Id)
+                .Select(e => (Id: e.Id, Name: e.Name))
+                .ToList(),
+            "Sites" => new Data.Repositories.MySQL.SiteMySqlRepository().GetAll()
+                .OrderBy(s => s.Id)
+                .Select(s => (Id: s.Id, Name: s.Name))
+                .ToList(),
+            "equipment_type" => new Data.Repositories.MySQL.EquipmentTypeMySqlRepository().GetAll()
+                .OrderBy(t => t.Id)
+                .Select(t => (Id: t.Id, Name: t.Name))
+                .ToList(),
+            _ => new System.Collections.Generic.List<(int Id, string Name)>()
+        };
+
+        foreach (var item in items)
+        {
+            var listItem = new ListViewItem(item.Id.ToString());
+            listItem.SubItems.Add(item.Name);
+            listItem.Tag = item.Id;
+            _listView.Items.Add(listItem);
         }
     }
 
@@ -350,39 +364,70 @@ internal class ParameterManagerControl : UserControl
 
         try
         {
-            using var connection = Data.Database.Open();
+            // Vérifier si le nom existe déjà (sauf pour l'élément actuel) et modifier selon la table
+            bool updated = false;
             
-            // Vérifier si le nom existe déjà (sauf pour l'élément actuel)
-            using (var checkCommand = connection.CreateCommand())
+            switch (_tableName)
             {
-                checkCommand.CommandText = $"SELECT COUNT(*) FROM {_tableName} WHERE name = $name AND id != $id";
-                checkCommand.Parameters.AddWithValue("$name", name);
-                checkCommand.Parameters.AddWithValue("$id", _selectedId.Value);
-                var count = Convert.ToInt32(checkCommand.ExecuteScalar());
-                
-                if (count > 0)
-                {
-                    MessageBox.Show(
-                        $"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
-                        "Nom existant", 
-                        MessageBoxButtons.OK, 
-                        MessageBoxIcon.Warning
-                    );
-                    return;
-                }
+                case "Equipes":
+                    var equipeRepo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+                    var equipes = equipeRepo.GetAll();
+                    if (equipes.Any(e => e.Name == name && e.Id != _selectedId.Value))
+                    {
+                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
+                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    var equipe = equipes.FirstOrDefault(e => e.Id == _selectedId.Value);
+                    if (equipe != null)
+                    {
+                        equipeRepo.Update(equipe with { Name = name });
+                        updated = true;
+                    }
+                    break;
+                    
+                case "Sites":
+                    var siteRepo = new Data.Repositories.MySQL.SiteMySqlRepository();
+                    var sites = siteRepo.GetAll();
+                    if (sites.Any(s => s.Name == name && s.Id != _selectedId.Value))
+                    {
+                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
+                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    var site = sites.FirstOrDefault(s => s.Id == _selectedId.Value);
+                    if (site != null)
+                    {
+                        siteRepo.Update(site with { Name = name });
+                        updated = true;
+                    }
+                    break;
+                    
+                case "equipment_type":
+                    var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
+                    var types = typeRepo.GetAll();
+                    if (types.Any(t => t.Name == name && t.Id != _selectedId.Value))
+                    {
+                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
+                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    var type = types.FirstOrDefault(t => t.Id == _selectedId.Value);
+                    if (type != null)
+                    {
+                        typeRepo.Update(type with { Name = name });
+                        updated = true;
+                    }
+                    break;
             }
-            
-            // Modifier l'élément
-            using var command = connection.CreateCommand();
-            command.CommandText = $"UPDATE {_tableName} SET name = $name WHERE id = $id";
-            command.Parameters.AddWithValue("$name", name);
-            command.Parameters.AddWithValue("$id", _selectedId.Value);
-            command.ExecuteNonQuery();
 
-            MessageBox.Show("Élément modifié avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            LoadData();
+            if (updated)
+            {
+                MessageBox.Show("Élément modifié avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadData();
+            }
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de la modification : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -415,18 +460,25 @@ internal class ParameterManagerControl : UserControl
 
         try
         {
-            using var connection = Data.Database.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = $"DELETE FROM {_tableName} WHERE id = $id";
-            command.Parameters.AddWithValue("$id", _selectedId.Value);
-            command.ExecuteNonQuery();
+            switch (_tableName)
+            {
+                case "Equipes":
+                    new Data.Repositories.MySQL.EquipeMySqlRepository().Delete(_selectedId.Value);
+                    break;
+                case "Sites":
+                    new Data.Repositories.MySQL.SiteMySqlRepository().Delete(_selectedId.Value);
+                    break;
+                case "equipment_type":
+                    new Data.Repositories.MySQL.EquipmentTypeMySqlRepository().Delete(_selectedId.Value);
+                    break;
+            }
 
             MessageBox.Show("Élément supprimé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
             _txtName.Clear();
             _selectedId = null;
             LoadData();
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
@@ -434,28 +486,22 @@ internal class ParameterManagerControl : UserControl
 
     private bool IsInUse(int id)
     {
-        using var connection = Data.Database.Open();
-        using var command = connection.CreateCommand();
-
         // Vérifier selon le type de table
-        switch (_tableName)
+        return _tableName switch
         {
-            case "Equipes":
-                command.CommandText = "SELECT COUNT(*) FROM Agents WHERE equipe_id = $id";
-                break;
-            case "Sites":
-                command.CommandText = "SELECT COUNT(*) FROM Agents WHERE site_id = $id";
-                break;
-            case "equipment_type":
-                command.CommandText = "SELECT COUNT(*) FROM Equipements WHERE type_id = $id";
-                break;
-            default:
-                return false;
-        }
+            "Equipes" => new Data.Repositories.MySQL.EquipeMySqlRepository().IsInUse(id),
+            "Sites" => new Data.Repositories.MySQL.SiteMySqlRepository().IsInUse(id),
+            "equipment_type" => CheckEquipmentTypeInUse(id),
+            _ => false
+        };
+    }
 
-        command.Parameters.AddWithValue("$id", id);
-        var count = Convert.ToInt32(command.ExecuteScalar());
-        return count > 0;
+    private bool CheckEquipmentTypeInUse(int id)
+    {
+        // Vérifier si le type d'équipement est utilisé par des équipements
+        var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+        var equipments = equipmentRepo.GetAll();
+        return equipments.Any(e => e.TypeId == id);
     }
 }
 
@@ -569,38 +615,56 @@ internal class AddParameterDialog : Form
 
         try
         {
-            using var connection = Data.Database.Open();
+            bool inserted = false;
 
-            // Vérifier si le nom existe déjà
-            using (var checkCommand = connection.CreateCommand())
+            switch (_tableName)
             {
-                checkCommand.CommandText = $"SELECT COUNT(*) FROM {_tableName} WHERE name = $name";
-                checkCommand.Parameters.AddWithValue("$name", name);
-                var count = Convert.ToInt32(checkCommand.ExecuteScalar());
-
-                if (count > 0)
-                {
-                    MessageBox.Show(
-                        $"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
-                        "Nom existant",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning
-                    );
-                    return;
-                }
+                case "Equipes":
+                    var equipeRepo = new Data.Repositories.MySQL.EquipeMySqlRepository();
+                    if (equipeRepo.ExistsByName(name))
+                    {
+                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
+                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    equipeRepo.Insert(name);
+                    inserted = true;
+                    break;
+                    
+                case "Sites":
+                    var siteRepo = new Data.Repositories.MySQL.SiteMySqlRepository();
+                    if (siteRepo.ExistsByName(name))
+                    {
+                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
+                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    siteRepo.Insert(name);
+                    inserted = true;
+                    break;
+                    
+                case "equipment_type":
+                    var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
+                    var types = typeRepo.GetAll();
+                    if (types.Any(t => t.Name == name))
+                    {
+                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
+                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    typeRepo.Insert(name);
+                    inserted = true;
+                    break;
             }
 
-            // Ajouter l'élément
-            using var command = connection.CreateCommand();
-            command.CommandText = $"INSERT INTO {_tableName} (name) VALUES ($name)";
-            command.Parameters.AddWithValue("$name", name);
-            command.ExecuteNonQuery();
-
-            MessageBox.Show("Élément ajouté avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            DialogResult = DialogResult.OK;
-            Close();
+            if (inserted)
+            {
+                MessageBox.Show("Élément ajouté avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                DialogResult = DialogResult.OK;
+                Close();
+            }
         }
-        catch (SqliteException ex)
+        catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de l'ajout : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }

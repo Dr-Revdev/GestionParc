@@ -1,7 +1,7 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
-using Microsoft.Data.Sqlite;
 using ProjetParc.Data;
 
 namespace ProjetParc.Views.Equipment;
@@ -406,60 +406,49 @@ public class FreeEquipmentView : UserControl
     /// </summary>
     private void LoadAvailable(string filter = null)
     {
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
+        var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+        var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
 
-        if (string.IsNullOrWhiteSpace(filter))
+        var equipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 0).ToList();
+        var types = typeRepo.GetAll();
+        var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+
+        // Appliquer le filtre si fourni
+        if (!string.IsNullOrWhiteSpace(filter))
         {
-            command.CommandText = @"
-                SELECT e.id_equipement,
-                        t.name AS type,
-                        COALESCE(TRIM(e.code_parc),'') AS code_parc,
-                        COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
-                        COALESCE(TRIM(e.nom),'(sans nom)') AS nom
-                FROM ""Equipements"" e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE COALESCE(e.etat_pret,0) = 0
-                ORDER BY t.name, e.nom;";
-        }
-        else
-        {
-            command.CommandText = @"
-                SELECT e.id_equipement,
-                        t.name AS type,
-                        COALESCE(TRIM(e.code_parc),'') AS code_parc,
-                        COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
-                        COALESCE(TRIM(e.nom),'(sans nom)') AS nom
-                FROM ""Equipements"" e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE COALESCE(e.etat_pret,0) = 0
-                    AND (e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p)
-                ORDER BY t.name, e.nom;";
-            command.Parameters.AddWithValue("$p", $"%{filter.Trim()}%");
+            var f = filter.Trim().ToLower();
+            equipments = equipments.Where(e =>
+                (e.Nom?.ToLower().Contains(f) ?? false) ||
+                (e.CodeParc?.ToLower().Contains(f) ?? false) ||
+                (e.NumeroSerie?.ToLower().Contains(f) ?? false) ||
+                (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(f))
+            ).ToList();
         }
 
-        using var r = command.ExecuteReader();
-        
+        // Trier par type puis nom
+        var sortedEquipments = equipments
+            .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+            .ThenBy(e => e.Nom ?? "");
+
         lvAvailable.SelectedIndexChanged -= LbAvailable_Selected;
         lvAvailable.Items.Clear();
-        
-        while (r.Read())
+
+        foreach (var eq in sortedEquipments)
         {
-            var id = r.GetString(0);
-            var type = r.GetString(1);
-            var codeParc = r.GetString(2);
-            var numeroSerie = r.GetString(3);
-            var nom = r.GetString(4);
-            
-            var item = new ListViewItem(type);
+            var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "";
+            var codeParc = string.IsNullOrWhiteSpace(eq.CodeParc) ? "" : eq.CodeParc.Trim();
+            var numeroSerie = string.IsNullOrWhiteSpace(eq.NumeroSerie) ? "" : eq.NumeroSerie.Trim();
+            var nom = string.IsNullOrWhiteSpace(eq.Nom) ? "(sans nom)" : eq.Nom.Trim();
+
+            var item = new ListViewItem(typeName);
             item.SubItems.Add(codeParc);
             item.SubItems.Add(numeroSerie);
             item.SubItems.Add(nom);
-            item.Tag = id;
-            
+            item.Tag = eq.IdEquipement;
+
             lvAvailable.Items.Add(item);
         }
-        
+
         lvAvailable.SelectedIndexChanged += LbAvailable_Selected;
     }
 
@@ -471,60 +460,49 @@ public class FreeEquipmentView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
 
-            if (string.IsNullOrWhiteSpace(filter))
-                {
-                    command.CommandText = @"
-                    SELECT e.id_equipement,
-                            t.name AS type,
-                            COALESCE(TRIM(e.code_parc),'') AS code_parc,
-                            COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
-                            COALESCE(TRIM(e.nom),'(sans nom)') AS nom
-                    FROM ""Equipements"" e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
-                    ORDER BY t.name, e.nom;";
-            }
-            else
+            var equipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 2).ToList();
+            var types = typeRepo.GetAll();
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+
+            // Appliquer le filtre si fourni
+            if (!string.IsNullOrWhiteSpace(filter))
             {
-                command.CommandText = @"
-                    SELECT e.id_equipement,
-                            t.name AS type,
-                            COALESCE(TRIM(e.code_parc),'') AS code_parc,
-                            COALESCE(TRIM(e.numero_serie),'') AS numero_serie,
-                            COALESCE(TRIM(e.nom),'(sans nom)') AS nom
-                    FROM ""Equipements"" e
-                    JOIN equipment_type t ON t.id = e.type_id
-                    WHERE COALESCE(e.etat_pret,0) = 2  -- DSEM uniquement
-                        AND (e.nom LIKE $p OR e.code_parc LIKE $p OR e.numero_serie LIKE $p OR t.name LIKE $p)
-                    ORDER BY t.name, e.nom;";
-                command.Parameters.AddWithValue("$p", $"%{filter.Trim()}%");
+                var f = filter.Trim().ToLower();
+                equipments = equipments.Where(e =>
+                    (e.Nom?.ToLower().Contains(f) ?? false) ||
+                    (e.CodeParc?.ToLower().Contains(f) ?? false) ||
+                    (e.NumeroSerie?.ToLower().Contains(f) ?? false) ||
+                    (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(f))
+                ).ToList();
             }
 
-            using var r = command.ExecuteReader();
-            
+            // Trier par type puis nom
+            var sortedEquipments = equipments
+                .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
+                .ThenBy(e => e.Nom ?? "");
+
             lvReturned.SelectedIndexChanged -= LbReturned_Selected;
             lvReturned.Items.Clear();
-            
-            while (r.Read())
+
+            foreach (var eq in sortedEquipments)
             {
-                var id = r.GetString(0);
-                var type = r.GetString(1);
-                var codeParc = r.GetString(2);
-                var numeroSerie = r.GetString(3);
-                var nom = r.GetString(4);
-                
-                var item = new ListViewItem(type);
+                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "";
+                var codeParc = string.IsNullOrWhiteSpace(eq.CodeParc) ? "" : eq.CodeParc.Trim();
+                var numeroSerie = string.IsNullOrWhiteSpace(eq.NumeroSerie) ? "" : eq.NumeroSerie.Trim();
+                var nom = string.IsNullOrWhiteSpace(eq.Nom) ? "(sans nom)" : eq.Nom.Trim();
+
+                var item = new ListViewItem(typeName);
                 item.SubItems.Add(codeParc);
                 item.SubItems.Add(numeroSerie);
                 item.SubItems.Add(nom);
-                item.Tag = id;
-                
+                item.Tag = eq.IdEquipement;
+
                 lvReturned.Items.Add(item);
             }
-            
+
             lvReturned.SelectedIndexChanged += LbReturned_Selected;
         }
         catch (Exception ex)
@@ -543,37 +521,36 @@ public class FreeEquipmentView : UserControl
     {
         try
         {
-            using var connexion = Database.Open();
-            using var command = connexion.CreateCommand();
-            command.CommandText = @"
-                SELECT e.type_id, t.name, e.nom, e.code_parc, e.numero_serie, e.marque, e.commentaire, 
-                       COALESCE(e.etat_pret,0), e.date_rendu_dsem
-                FROM ""Equipements"" e
-                JOIN equipment_type t ON t.id = e.type_id
-                WHERE e.id_equipement = $id;";
-            command.Parameters.AddWithValue("$id", equipmentId);
+            var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+            var typeRepo = new Data.Repositories.MySQL.EquipmentTypeMySqlRepository();
 
-            using var r = command.ExecuteReader();
-            if (!r.Read()) { MessageBox.Show("Équipement introuvable."); return; }
+            var equipment = equipmentRepo.GetById(equipmentId);
+            if (equipment == null)
+            {
+                MessageBox.Show("Équipement introuvable.");
+                return;
+            }
 
-            tbType.Text = r.IsDBNull(1) ? "" : r.GetString(1);
-            tbName.Text = r.IsDBNull(2) ? "" : r.GetString(2);
-            tbCodeParc.Text = r.IsDBNull(3) ? "" : r.GetString(3);
-            tbSerial.Text = r.IsDBNull(4) ? "" : r.GetString(4);
-            tbBrand.Text = r.IsDBNull(5) ? "" : r.GetString(5);
-            tbComment.Text = r.IsDBNull(6) ? "" : r.GetString(6);
+            var types = typeRepo.GetAll();
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+            var typeName = typeDict.ContainsKey(equipment.TypeId) ? typeDict[equipment.TypeId] : "";
+
+            tbType.Text = typeName;
+            tbName.Text = equipment.Nom ?? "";
+            tbCodeParc.Text = equipment.CodeParc ?? "";
+            tbSerial.Text = equipment.NumeroSerie ?? "";
+            tbBrand.Text = equipment.Marque ?? "";
+            tbComment.Text = equipment.Commentaire ?? "";
             cbxRenduDsem.Tag = equipmentId;
 
             // Gérer la checkbox et afficher la date si DSEM
             cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
-            var etatPret = r.GetInt32(7);
-            cbxRenduDsem.Checked = etatPret == 2;
+            cbxRenduDsem.Checked = equipment.EtatPret == 2;
             
             // Afficher la date dans un label séparé si DSEM
-            if (etatPret == 2 && !r.IsDBNull(8))
+            if (equipment.EtatPret == 2 && !string.IsNullOrEmpty(equipment.DateRenduDsem))
             {
-                var dateRendu = r.GetString(8);
-                lblDateRenduDsem.Text = $"(Date: {dateRendu})";
+                lblDateRenduDsem.Text = $"(Date: {equipment.DateRenduDsem})";
                 lblDateRenduDsem.Visible = true;
             }
             else
@@ -599,8 +576,9 @@ public class FreeEquipmentView : UserControl
     {
         if (cbxRenduDsem.Tag is not string id) return;
 
-        using var connexion = Database.Open();
-        using var command = connexion.CreateCommand();
+        var equipmentRepo = new Data.Repositories.MySQL.EquipmentMySqlRepository();
+        var equipment = equipmentRepo.GetById(id);
+        if (equipment == null) return;
 
         if (cbxRenduDsem.Checked)
         {
@@ -679,14 +657,16 @@ public class FreeEquipmentView : UserControl
             if (dateDialog.ShowDialog() == DialogResult.OK)
             {
                 // Mettre à jour avec la date
-                command.CommandText = @"UPDATE ""Equipements"" SET etat_pret = $v, date_rendu_dsem = $date WHERE id_equipement = $id;";
-                command.Parameters.AddWithValue("$v", 2); // 2 pour DSEM
-                command.Parameters.AddWithValue("$date", datePicker.Value.ToString("yyyy-MM-dd"));
-                command.Parameters.AddWithValue("$id", id);
-                command.ExecuteNonQuery();
+                var dateRendu = datePicker.Value.ToString("yyyy-MM-dd");
+                var updatedEquipment = equipment with 
+                { 
+                    EtatPret = 2, 
+                    DateRenduDsem = dateRendu 
+                };
+                equipmentRepo.Update(updatedEquipment);
                 
                 // Afficher la date dans le label
-                lblDateRenduDsem.Text = $"(Date: {datePicker.Value:yyyy-MM-dd})";
+                lblDateRenduDsem.Text = $"(Date: {dateRendu})";
                 lblDateRenduDsem.Visible = true;
             }
             else
@@ -701,10 +681,12 @@ public class FreeEquipmentView : UserControl
         else
         {
             // Décocher = remettre disponible et enlever la date
-            command.CommandText = @"UPDATE ""Equipements"" SET etat_pret = $v, date_rendu_dsem = NULL WHERE id_equipement = $id;";
-            command.Parameters.AddWithValue("$v", 0); // 0 pour disponible
-            command.Parameters.AddWithValue("$id", id);
-            command.ExecuteNonQuery();
+            var updatedEquipment = equipment with 
+            { 
+                EtatPret = 0, 
+                DateRenduDsem = null 
+            };
+            equipmentRepo.Update(updatedEquipment);
             
             // Cacher le label de date
             lblDateRenduDsem.Visible = false;
