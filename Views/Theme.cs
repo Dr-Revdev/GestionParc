@@ -4,8 +4,8 @@ using System.Windows.Forms;
 namespace ProjetParc.Views;
 
 /// <summary>
-/// Classe statique contenant tous les éléments de style et de thème de l'application
-/// Version nettoyée : ne contient que les éléments réellement utilisés
+/// Gère tout le style de l'appli (couleurs, polices, etc.)
+/// J'ai gardé que ce qui est vraiment utilisé pour pas surcharger
 /// </summary>
 public static class Theme
 {
@@ -92,7 +92,8 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style de bouton primaire avec effets hover (sans modifier la hauteur)
+    /// Style de bouton principal (bleu foncé) avec effet au survol
+    /// Le paramètre setHeight permet de garder la hauteur actuelle si besoin
     /// </summary>
     public static Button StylePrimaryButton(Button button, string text = null, bool setHeight = true)
     {
@@ -129,7 +130,7 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style de bouton secondaire (sans modifier la hauteur si demandé)
+    /// Style bouton secondaire (gris/bleu) - moins important que le primaire
     /// </summary>
     public static Button StyleSecondaryButton(Button button, string text = null, bool setHeight = true)
     {
@@ -165,7 +166,8 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style de bouton avec contour (outline)
+    /// Bouton avec juste le contour coloré (style "outline")
+    /// Utile pour les actions secondaires
     /// </summary>
     public static Button StyleOutlineButton(Button button, string text = null, bool setHeight = true)
     {
@@ -204,7 +206,7 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style de bouton de succès (vert)
+    /// Bouton vert pour les actions positives (valider, sauvegarder, etc)
     /// </summary>
     public static Button StyleSuccessButton(Button button, string text = null, bool setHeight = true)
     {
@@ -240,7 +242,7 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style de bouton de danger (rouge)
+    /// Bouton rouge pour les actions risquées (supprimer, annuler)
     /// </summary>
     public static Button StyleDangerButton(Button button, string text = null, bool setHeight = true)
     {
@@ -276,7 +278,7 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style à un TextBox
+    /// Style pour les champs de texte - police et bordures
     /// </summary>
     public static TextBox StyleTextBox(TextBox textBox)
     {
@@ -289,7 +291,7 @@ public static class Theme
     }
     
     /// <summary>
-    /// Applique le style à un ComboBox
+    /// Style pour les listes déroulantes
     /// </summary>
     public static ComboBox StyleComboBox(ComboBox comboBox)
     {

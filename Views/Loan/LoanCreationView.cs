@@ -8,7 +8,8 @@ using ProjetParc.Views.Loan.Models;
 namespace ProjetParc.Views.Loan;
 
 /// <summary>
-/// Fenêtre de création d'un nouveau prêt d'équipement
+/// Fenêtre pour créer/modifier un prêt - choix de l'agent et ajout/suppression d'équipements
+/// Peut aussi générer une feuille de remise en mode édition
 /// </summary>
 public class LoanCreationView : Form
 {
@@ -49,7 +50,7 @@ public class LoanCreationView : Form
 
     public LoanCreationView()
     {
-        InitializeComponent();
+        BuildUi();
         LoadAgents();
     }
 
@@ -136,7 +137,7 @@ public class LoanCreationView : Form
         }
     }
 
-    private void InitializeComponent()
+    private void BuildUi()
     {
         Text = "Nouveau prêt";
         MinimumSize = new Size(600, 500);
@@ -489,7 +490,7 @@ public class LoanCreationView : Form
     }
 
     /// <summary>
-    /// Génère une feuille de remise pour l'agent en cours d'édition
+    /// Génère le PDF de feuille de remise (seulement disponible en mode édition)
     /// </summary>
     private void GenerateFeuilleRemise()
     {

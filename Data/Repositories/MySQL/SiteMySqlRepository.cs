@@ -4,11 +4,10 @@ using ProjetParc.Data.Repositories.Contracts;
 
 namespace ProjetParc.Data.Repositories.MySQL;
 
-/// <summary>
-/// Implémentation MySQL du repository pour la gestion des sites
-/// </summary>
+// Repository MySQL pour les sites - CRUD simple (Insert, Update, Delete, GetAll)
 public sealed class SiteMySqlRepository : ISiteRepository
 {
+    // Crée un nouveau site et retourne son ID
     public int Insert(string name)
     {
         using var connection = DbFactory.Create();
@@ -19,6 +18,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
+    // Modifie le nom d'un site
     public void Update(SiteDto site)
     {
         using var connection = DbFactory.Create();
@@ -30,6 +30,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
         command.ExecuteNonQuery();
     }
 
+    // Supprime un site par son ID
     public void Delete(int id)
     {
         using var connection = DbFactory.Create();
@@ -40,6 +41,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
         command.ExecuteNonQuery();
     }
 
+    // Récupère un site par son ID
     public SiteDto GetById(int id)
     {
         using var connection = DbFactory.Create();
@@ -55,6 +57,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
         return new SiteDto(reader.GetInt32(0), reader.GetString(1));
     }
 
+    // Récupère tous les sites triés par nom
     public List<SiteDto> GetAll()
     {
         var list = new List<SiteDto>();
@@ -70,6 +73,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
         return list;
     }
 
+    // Vérifie si un site existe déjà avec ce nom (pour éviter les doublons)
     public bool ExistsByName(string name)
     {
         using var connection = DbFactory.Create();
@@ -80,6 +84,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
+    // Vérifie si le site est utilisé par des agents (pour bloquer la suppression)
     public bool IsInUse(int id)
     {
         using var connection = DbFactory.Create();

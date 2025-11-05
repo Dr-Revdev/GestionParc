@@ -8,9 +8,7 @@ using System.Windows.Forms;
 
 namespace ProjetParc.Data;
 
-/// <summary>
-/// Générateur de feuilles de remise pour les prêts d'équipement
-/// </summary>
+// Classe pour générer des PDFs de feuilles de remise (liste équipements + signatures)
 public class FeuilleRemiseGenerator
 {
     private string _agentId;
@@ -26,10 +24,7 @@ public class FeuilleRemiseGenerator
     private const int LINE_HEIGHT = 20;
     private const int SECTION_SPACING = 30;
 
-    /// <summary>
-    /// Génère une feuille de remise pour un agent donné
-    /// </summary>
-    /// <param name="agentId">ID de l'agent</param>
+    // Génère un PDF de feuille de remise pour un agent - liste des équipements + zones de signature
     public void GenerateFeuilleRemise(string agentId)
     {
         _agentId = agentId;
@@ -94,9 +89,7 @@ public class FeuilleRemiseGenerator
         }
     }
 
-    /// <summary>
-    /// Sauvegarde la feuille de remise en PDF
-    /// </summary>
+    // Sauvegarde le document en PDF dans Documents/GestiParc/FeuillesRemise
     private void SaveToPdf()
     {
         try
@@ -137,9 +130,7 @@ public class FeuilleRemiseGenerator
         }
     }
 
-    /// <summary>
-    /// Gestionnaire d'événement pour l'impression de la page
-    /// </summary>
+    // Event handler appelé quand le PrintDocument dessine la page
     private void PrintDocument_PrintPage(object sender, PrintPageEventArgs e)
     {
         var graphics = e.Graphics;
@@ -188,9 +179,7 @@ public class FeuilleRemiseGenerator
         }
     }
 
-    /// <summary>
-    /// Dessine l'en-tête du document
-    /// </summary>
+    // Dessine le header du PDF (titre + date + infos agent)
     private int DrawHeader(Graphics graphics, int startY, int pageWidth)
     {
         var currentY = startY;

@@ -6,7 +6,7 @@ using ProjetParc.Data;
 namespace ProjetParc.Views.Equipment;
 
 /// <summary>
-/// Vue permettant la modification et la suppression des équipements existants
+/// Écran de modification/suppression des équipements. Liste à gauche avec recherche, formulaire à droite
 /// </summary>
 public class EquipementEditView : UserControl
 {
@@ -22,10 +22,9 @@ public class EquipementEditView : UserControl
     private readonly Action _onBack;
 
     /// <summary>
-    /// Initialise la vue d'édition d'équipement.
-    /// Charge l'interface graphique, les types et la liste d'équipements.
+    /// Constructeur - monte l'UI, charge les types et la liste des équipements
     /// </summary>
-    /// <param name="onBack">Callback exécuté lorsqu'on demande le retour à la vue précédente.</param>
+    /// <param name="onBack">Callback retour</param>
     public EquipementEditView(Action onBack)
     {
         _onBack = onBack;
@@ -40,8 +39,7 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Construit et positionne les contrôles UI pour la vue d'édition.
-    /// Cette méthode ne touche pas à la logique métier, elle agencement uniquement.
+    /// Monte toute l'interface - split 30/70 (liste à gauche, formulaire à droite)
     /// </summary>
     private void BuildUi()
     {
@@ -174,27 +172,11 @@ public class EquipementEditView : UserControl
         Theme.StyleTextBox(tbComment);
 
         // Ajout des labels et contrôles au panneau droit
-        void AddFormRow(string label, Control control, int col, int labelRow)
-        {
-            var labelControl = new Label 
-            { 
-                Text = label, 
-                Dock = DockStyle.Fill,
-                Font = Theme.Fonts.Label,
-                ForeColor = Theme.Colors.TextSecondary,
-                Padding = new Padding(5, 0, 0, 5),
-                Margin = new Padding(5, 0, 15, 0)
-            };
-            control.Margin = new Padding(5, 0, 15, 15);
-            rightPanel.Controls.Add(labelControl, col, labelRow);
-            rightPanel.Controls.Add(control, col, labelRow + 1);
-        }
-
-        AddFormRow("Type", cbType, 0, 0);
-        AddFormRow("Nom", tbName, 1, 0);
-        AddFormRow("Code parc", tbCodeParc, 2, 0);
-        AddFormRow("Numéro de série", tbSerialNumber, 0, 2);
-        AddFormRow("Marque", tbBrand, 1, 2);
+        AddFormRow(rightPanel, 0, "Type", cbType, 0);
+        AddFormRow(rightPanel, 0, "Nom", tbName, 1);
+        AddFormRow(rightPanel, 0, "Code parc", tbCodeParc, 2);
+        AddFormRow(rightPanel, 2, "Numéro de série", tbSerialNumber, 0);
+        AddFormRow(rightPanel, 2, "Marque", tbBrand, 1);
 
         var commentLabel = new Label 
         { 
@@ -243,7 +225,7 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Représentation minimale d'un type d'équipement (pour les ComboBox).
+    /// Item pour la combobox des types
     /// </summary>
     private sealed class EquipmentTypeItem
     {
@@ -253,14 +235,7 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Convertit une chaîne vide en <see cref="DBNull.Value"/> pour insertion en base.
-    /// </summary>
-    /// <param name="s">Chaîne source.</param>
-    /// <returns>Chaîne trimée ou <see cref="DBNull.Value"/> si vide.</returns>
-    private static object ToDbNullable(string s) => string.IsNullOrWhiteSpace(s) ? DBNull.Value : s.Trim();
-
-    /// <summary>
-    /// Charge les types d'équipement depuis la table <c>equipment_type</c> et renseigne la ComboBox.
+    /// Remplit la combobox des types (PC, Ecran, etc.)
     /// </summary>
     private void LoadEquipmentTypes()
     {
@@ -286,8 +261,7 @@ public class EquipementEditView : UserControl
         }
     }
     /// <summary>
-    /// Charge la liste complète des équipements depuis la base et alimente le ListView.
-    /// Utilise un tri insensible à la casse pour l'affichage.
+    /// Charge tous les équipements et les affiche dans la liste
     /// </summary>
     private void LoadEquipmentList()
     {
@@ -323,10 +297,8 @@ public class EquipementEditView : UserControl
         }
     }
     /// <summary>
-    /// Charge les détails d'un équipement identifié par <paramref name="equipmentId"/>
-    /// et renseigne les champs du formulaire de modification.
+    /// Récupère un équipement depuis la base et remplit tous les champs du formulaire
     /// </summary>
-    /// <param name="equipmentId">Identifiant (id_equipement) de l'équipement à charger.</param>
     private void LoadEquipmentById(string equipmentId)
     {
         try
@@ -359,8 +331,7 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Événement déclenché lors du changement de sélection dans la ListBox.
-    /// Charge les détails de l'élément sélectionné.
+    /// Quand on clique sur un équipement dans la liste, on charge ses infos
     /// </summary>
     private void lbEquipment_SelectedIndexChanged(object sender, EventArgs e)
     {
@@ -373,10 +344,8 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Valide les champs obligatoires du formulaire d'édition.
+    /// Vérifie que le nom, le type et le code parc sont bien remplis
     /// </summary>
-    /// <param name="errorMessage">Retourne un message d'erreur en cas d'échec.</param>
-    /// <returns>True si le formulaire est valide, false sinon.</returns>
     private bool ValidateEquipmentForm(out string errorMessage)
     {
         if (string.IsNullOrWhiteSpace(tbName.Text))
@@ -400,8 +369,7 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Enregistre les modifications effectuées sur l'équipement sélectionné en base.
-    /// Effectue la validation avant mise à jour et affiche des messages d'erreur en cas de problème.
+    /// Sauvegarde les modifs en base (UPDATE). Garde l'état de prêt et l'agent actuel tel quel
     /// </summary>
     private void SaveEquipmentChanges()
     {
@@ -458,7 +426,7 @@ public class EquipementEditView : UserControl
 
 
     /// <summary>
-    /// Gestionnaire du clic sur le bouton recherche : lance le filtrage de la liste.
+    /// Handler du bouton recherche - applique le filtre
     /// </summary>
     private void btnSearch_Click(object sender, EventArgs e)
     {
@@ -467,9 +435,8 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Charge la liste des équipements en appliquant un filtre facultatif sur le nom, code, numéro de série et type.
+    /// Charge les équipements avec un filtre de recherche (cherche dans nom, code parc, n° série, type)
     /// </summary>
-    /// <param name="query">Texte de recherche (peut être null ou vide).</param>
     private void LoadEquipmentListFiltered(string query)
     {
         try
@@ -526,8 +493,7 @@ public class EquipementEditView : UserControl
     }
 
     /// <summary>
-    /// Supprime l'équipement sélectionné après confirmation utilisateur.
-    /// Met à jour l'affichage et vide les champs du formulaire.
+    /// Supprime l'équipement (demande confirmation avant)
     /// </summary>
     private void DeleteSelectedEquipment()
     {
@@ -558,6 +524,31 @@ public class EquipementEditView : UserControl
         {
             MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>
+    /// Helper pour ajouter un champ dans le formulaire (label + contrôle)
+    /// </summary>
+    private void AddFormRow(TableLayoutPanel panel, int row, string labelText, Control control, int col = 0, int colSpan = 1)
+    {
+        var label = new Label 
+        { 
+            Text = labelText, 
+            Dock = DockStyle.Fill,
+            Font = Theme.Fonts.Label,
+            ForeColor = Theme.Colors.TextSecondary,
+            Padding = new Padding(5, 0, 0, 5),
+            Margin = new Padding(5, 0, 15, 0)
+        };
+        panel.Controls.Add(label, col, row);
+
+        control.Dock = DockStyle.Fill;
+        control.Margin = new Padding(5, 0, 15, 15);
+        panel.Controls.Add(control, col, row + 1);
+        if (colSpan > 1)
+        {
+            panel.SetColumnSpan(control, colSpan);
         }
     }
 

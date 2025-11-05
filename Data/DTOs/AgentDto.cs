@@ -1,8 +1,6 @@
 namespace ProjetParc.Data.DTOs;
 
-/// <summary>
-/// DTO représentant un agent
-/// </summary>
+// DTO pour un agent (Idrh, Nom, Prenom, Email, EquipeId, SiteId...)
 public sealed record AgentDto(
     string Idrh,
     string Nom,

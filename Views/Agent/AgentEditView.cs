@@ -8,8 +8,8 @@ using ProjetParc.Data;
 namespace ProjetParc.Views.Agent;
 
 /// <summary>
-/// Vue d'édition des agents : recherche, modification et suppression.
-/// Présente une liste d'agents et un formulaire pour éditer les champs sélectionnés.
+/// Écran de modification/suppression des agents. À gauche une liste avec recherche,
+/// à droite le formulaire pour modifier les champs. On peut aussi supprimer un agent.
 /// </summary>
 public class AgentEditView : UserControl
 {
@@ -26,9 +26,9 @@ public class AgentEditView : UserControl
     private readonly Action _onBack;
 
     /// <summary>
-    /// Initialise la vue d'édition des agents et charge les données initiales.
+    /// Constructeur - monte l'UI et charge toutes les données (sites, équipes, liste agents)
     /// </summary>
-    /// <param name="onBack">Callback pour revenir à la vue précédente.</param>
+    /// <param name="onBack">Callback retour</param>
     public AgentEditView(Action onBack)
     {
         _onBack = onBack;
@@ -44,7 +44,8 @@ public class AgentEditView : UserControl
     }
 
     /// <summary>
-    /// Construit l'interface utilisateur (liste, champs, boutons) pour l'édition d'agent.
+    /// Monte toute l'interface - split en 2 parties (30% liste / 70% formulaire)
+    /// avec une barre de recherche au-dessus de la liste
     /// </summary>
     private void BuildUi()
     {
@@ -241,12 +242,12 @@ public class AgentEditView : UserControl
         ResumeLayout(false);
     }
 
-    /// <summary>Représentation d'un site (id, nom) utilisée par la ComboBox.</summary>
+    /// <summary>Classe pour les items des listes déroulantes Site</summary>
     private sealed class AgentSiteItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
-    /// <summary>Représentation d'une équipe (id, nom) utilisée par la ComboBox.</summary>
+    /// <summary>Classe pour les items des listes déroulantes Equipe</summary>
     private sealed class AgentTeamItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
 
-    /// <summary>Charge la liste des sites depuis la table <c>Sites</c>.</summary>
+    /// <summary>Remplit la combobox des sites</summary>
     private void LoadAgentSite()
     {
         try
@@ -271,7 +272,7 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Charge la liste des équipes depuis la table <c>Equipes</c>.</summary>
+    /// <summary>Remplit la combobox des équipes</summary>
     private void LoadAgentTeam()
     {
         try
@@ -296,7 +297,7 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Charge la liste complète des agents et l'affiche dans le ListView.</summary>
+    /// <summary>Charge tous les agents et les affiche dans la liste (triés par nom/prénom)</summary>
     private void LoadAgentList()
     {
         try
@@ -345,7 +346,7 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Charge la liste des agents en appliquant un filtre optionnel.</summary>
+    /// <summary>Charge les agents avec un filtre de recherche (cherche dans IDRH, nom, prénom, email)</summary>
     private void LoadAgentListFiltered(string query)
     {
         try
@@ -407,7 +408,7 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Charge les détails d'un agent identifié par son IDRH et renseigne le formulaire.</summary>
+    /// <summary>Récupère un agent depuis la base et remplit tous les champs du formulaire</summary>
     private void LoadAgentById(string agentIDRH)
     {
         try
@@ -449,11 +450,11 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Gestionnaire du bouton recherche : filtre la liste des agents.</summary>
+    /// <summary>Handler du bouton de recherche - applique le filtre</summary>
     private void btnSearch_Click(object sender, EventArgs e)
         => LoadAgentListFiltered((tbSearch?.Text ?? "").Trim());
 
-    /// <summary>Quand l'utilisateur change la sélection, charge les détails de l'agent sélectionné.</summary>
+    /// <summary>Quand on clique sur un agent dans la liste, on charge ses infos dans le formulaire</summary>
     private void lbAgents_SelectedIndexChanged(object sender, EventArgs e)
     {
         if (lvAgents.SelectedItems.Count > 0)
@@ -464,7 +465,7 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Valide le formulaire d'édition pour s'assurer des champs minimaux requis.</summary>
+    /// <summary>Vérifie que l'IDRH, nom et prénom sont bien remplis</summary>
     private bool ValidateAgentForm(out string errorMessage)
     {
         if (string.IsNullOrWhiteSpace(tbIDRH.Text)) { errorMessage = "L'IDRH est obligatoire."; return false; }
@@ -473,7 +474,7 @@ public class AgentEditView : UserControl
         errorMessage = ""; return true;
     }
 
-    /// <summary>Enregistre les modifications de l'agent dans la base.</summary>
+    /// <summary>Sauvegarde les modifs de l'agent en base (UPDATE)</summary>
     private void SaveAgentChanges()
     {
         if (lvAgents.SelectedItems.Count == 0) { MessageBox.Show("Choisir d'abord un agent."); return; }
@@ -512,7 +513,7 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Supprime l'agent sélectionné après confirmation utilisateur.</summary>
+    /// <summary>Supprime l'agent (demande confirmation avant)</summary>
     private void DeleteSelectedAgent()
     {
         if (lvAgents.SelectedItems.Count == 0)
@@ -551,7 +552,7 @@ public class AgentEditView : UserControl
     }
 
     /// <summary>
-    /// Ajoute une ligne de formulaire avec un label et un contrôle dans le TableLayoutPanel
+    /// Helper pour ajouter un champ dans le formulaire (label + contrôle)
     /// </summary>
     private void AddFormRow(TableLayoutPanel panel, int row, string labelText, Control control, int col = 0, int colSpan = 1)
     {

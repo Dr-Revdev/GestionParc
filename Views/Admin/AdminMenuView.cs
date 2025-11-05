@@ -4,8 +4,8 @@ using System.Windows.Forms;
 
 namespace ProjetParc.Views.Admin;
     /// <summary>
-    /// Vue du menu d'administration permettant d'accéder aux fonctionnalités de création et modification
-    /// des équipements et des agents
+    /// Menu d'administration - 4 gros boutons pour créer/modifier agents et équipements
+    /// + un bouton pour faire des échanges d'équipement entre agents
     /// </summary>
     public class AdminMenuView : UserControl
     {
@@ -23,14 +23,14 @@ namespace ProjetParc.Views.Admin;
         private Button btnSettings;
 
         /// <summary>
-        /// Initialise une nouvelle instance du menu d'administration
+        /// Constructeur - prend en paramètre toutes les callbacks pour naviguer
         /// </summary>
-        /// <param name="onBack">Action à exécuter pour revenir à la vue précédente</param>
-        /// <param name="onCreateEquipment">Action à exécuter pour créer un équipement</param>
-        /// <param name="onCreateAgent">Action à exécuter pour créer un agent</param>
-        /// <param name="onEditAgent">Action à exécuter pour modifier un agent</param>
-        /// <param name="onEditEquipment">Action à exécuter pour modifier un équipement</param>
-        /// <param name="onSettings">Action à exécuter pour accéder aux paramètres</param>
+        /// <param name="onBack">Callback pour retourner à l'accueil</param>
+        /// <param name="onCreateEquipment">Callback pour aller vers la création d'équipement</param>
+        /// <param name="onCreateAgent">Callback création agent</param>
+        /// <param name="onEditAgent">Callback modification agent</param>
+        /// <param name="onEditEquipment">Callback modification équipement</param>
+        /// <param name="onSettings">Callback vers les paramètres (sites, équipes, types)</param>
         public AdminMenuView(Action onBack, Action onCreateEquipment, Action onCreateAgent, Action onEditAgent, Action onEditEquipment, Action onSettings)
         {
             _onBack = onBack;
@@ -191,7 +191,7 @@ namespace ProjetParc.Views.Admin;
         }
 
         /// <summary>
-        /// Affiche le dialogue d'échange d'équipements entre agents
+        /// Ouvre la fenêtre pour échanger des équipements entre 2 agents
         /// </summary>
         private void ShowExchangeDialog()
         {

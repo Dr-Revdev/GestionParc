@@ -7,8 +7,8 @@ using ProjetParc.Data;
 namespace ProjetParc.Views.Agent;
 
 /// <summary>
-/// Vue de création d'un agent. Permet de saisir les informations personnelles,
-/// sélectionner le site et l'équipe, puis d'insérer l'agent en base.
+/// Formulaire pour créer un nouvel agent. On remplit tous les champs (IDRH, nom, prénom, email...)
+/// et on sauvegarde dans la base MySQL (tables Agents + Travail pour le lien avec le site)
 /// </summary>
 public class AgentCreateView : UserControl
 {
@@ -24,9 +24,9 @@ public class AgentCreateView : UserControl
     private Button btnCreate;
 
     /// <summary>
-    /// Constructeur : initialise l'UI et charge les listes (sites, équipes).
+    /// Constructeur : monte toute l'interface et charge les listes déroulantes (sites et équipes)
     /// </summary>
-    /// <param name="onBack">Callback pour revenir à la vue précédente.</param>
+    /// <param name="onBack">Callback pour retourner à l'écran précédent</param>
     public AgentCreateView(Action onBack)
     {
         _onBack = onBack;
@@ -38,7 +38,8 @@ public class AgentCreateView : UserControl
     }
 
     /// <summary>
-    /// Construit l'interface utilisateur (champs, labels, boutons) pour la création d'agent.
+    /// Construit toute l'interface - bouton retour en haut, formulaire au milieu avec 3 colonnes,
+    /// bouton Créer en bas. Le formulaire a 8 champs (IDRH, nom, prénom, email, équipe, hébergé, commentaire, site)
     /// </summary>
     private void BuildUi()
     {
@@ -180,7 +181,7 @@ public class AgentCreateView : UserControl
     private sealed class AgentSiteItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
     private sealed class AgentTeamItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
 
-    /// <summary>Charge la liste des sites depuis la table <c>Sites</c>.</summary>
+    /// <summary>Remplit la liste déroulante des sites à partir de la table Sites</summary>
     private void LoadAgentSite()
     {
         try
@@ -205,7 +206,7 @@ public class AgentCreateView : UserControl
         }
     }
 
-    /// <summary>Charge la liste des équipes depuis la table <c>Equipes</c>.</summary>
+    /// <summary>Remplit la liste déroulante des équipes à partir de la table Equipes</summary>
     private void LoadAgentTeam()
     {
         try
@@ -230,7 +231,7 @@ public class AgentCreateView : UserControl
         }
     }
 
-    /// <summary>Valide le formulaire de création d'agent (champs obligatoires).</summary>
+    /// <summary>Vérifie que tous les champs obligatoires sont bien remplis avant de créer l'agent</summary>
     private bool ValidateTeamForm(out string errorMessage)
     {
         if (string.IsNullOrWhiteSpace(tbAgentName.Text)) { errorMessage = "Le nom de l'agent est obligatoire."; return false; }
@@ -242,7 +243,10 @@ public class AgentCreateView : UserControl
         errorMessage = ""; return true;
     }
 
-    /// <summary>Insère l'agent dans la base et effectue les insert/delete nécessaires pour la table Travail.</summary>
+    /// <summary>
+    /// Sauvegarde l'agent en base de données. Fait 2 opérations : 
+    /// 1) Insert dans Agents, 2) Mise à jour de Travail (relation agent-site)
+    /// </summary>
     private void InsertAgent()
     {
         if (!ValidateTeamForm(out var errorMessage)) { MessageBox.Show(errorMessage); return; }
@@ -301,11 +305,11 @@ public class AgentCreateView : UserControl
         }
     }
 
-    /// <summary>Gestionnaire du clic sur le bouton Créer : délègue vers <see cref="InsertAgent"/>.</summary>
+    /// <summary>Handler du bouton Créer - appelle InsertAgent()</summary>
     private void btnCreate_Click(object sender, EventArgs e) => InsertAgent();
 
     /// <summary>
-    /// Ajoute une ligne de formulaire avec un label et un contrôle dans le TableLayoutPanel
+    /// Méthode utilitaire pour ajouter un champ dans le formulaire (label + contrôle)
     /// </summary>
     private void AddFormRow(TableLayoutPanel panel, int row, string labelText, Control control, int col = 0, int colSpan = 1)
     {

@@ -8,7 +8,8 @@ using ProjetParc.Views.Loan.Models;
 namespace ProjetParc.Views.Loan;
 
 /// <summary>
-/// Contrôle permettant de sélectionner un équipement avec un bouton de suppression
+/// Petit contrôle réutilisable : une combobox d'équipements + un bouton X pour supprimer
+/// Utilisé dans LoanCreationView pour ajouter plusieurs équipements dynamiquement
 /// </summary>
 public class EquipmentSelectionControl : Panel
 {
@@ -24,11 +25,11 @@ public class EquipmentSelectionControl : Panel
     public EquipmentSelectionControl(string preselectedEquipmentId)
     {
         preselectId = preselectedEquipmentId;
-        InitializeComponent();
+        BuildUi();
         LoadEquipments();
     }
 
-    private void InitializeComponent()
+    private void BuildUi()
     {
         Size = new Size(520, 40);
         Margin = new Padding(0, 0, 0, 10);

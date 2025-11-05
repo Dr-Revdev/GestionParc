@@ -7,7 +7,8 @@ using ProjetParc.Views.Loan;
 namespace ProjetParc.Views.Inventory;
 
 /// <summary>
-/// Vue principale de l'inventaire permettant de gérer et visualiser tous les équipements et les prêts
+/// Vue principale de l'inventaire - affiche tous les agents avec leurs équipements prêtés
+/// Permet de créer de nouveaux prêts, voir le diagnostic DB, générer des feuilles de remise
 /// </summary>
 public class MainInventoryView : UserControl
 {
@@ -19,21 +20,19 @@ public class MainInventoryView : UserControl
     private TabControl detailsTabControl;
 
     /// <summary>
-    /// Initialise une nouvelle instance de la vue d'inventaire principal
+    /// Constructeur - monte l'UI, charge les équipements et les prêts
     /// </summary>
-    /// <param name="onBack">Action à exécuter lors du retour à la vue précédente</param>
+    /// <param name="onBack">Callback retour</param>
     public MainInventoryView(Action onBack)
     {
         _onBack = onBack;
-        InitializeComponent();
+        BuildUi();
         LoadEquipments();
         LoadLoans();
     }
 
-    /// <summary>
-    /// Initialise les composants de l'interface utilisateur
-    /// </summary>
-    private void InitializeComponent()
+    // Monte toute l'interface - ListView en haut (60%), TabControl en bas (40%), boutons tout en bas
+    private void BuildUi()
     {
         try
         {
@@ -125,7 +124,7 @@ public class MainInventoryView : UserControl
                 lvEquipments.Sort();
             };
             
-            lvEquipments.SelectedIndexChanged += LvEquipments_SelectedIndexChanged;
+            lvEquipments.SelectedIndexChanged += lvEquipments_SelectedIndexChanged;
 
             // Menu contextuel
             var contextMenu = new ContextMenuStrip();
@@ -212,7 +211,7 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Charge tous les équipements depuis la base de données
+    /// Charge tous les équipements (hors état prêt=1) et les affiche dans le ListView
     /// </summary>
     private void LoadEquipments(string searchFilter = null)
     {
@@ -289,7 +288,7 @@ public class MainInventoryView : UserControl
     
 
     /// <summary>
-    /// Affiche la fenêtre de création d'un nouveau prêt
+    /// Ouvre la fenêtre de création de prêt (LoanCreationView)
     /// </summary>
     private void ShowLoanCreationDialog()
     {
@@ -302,7 +301,7 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Charge la liste des prêts en cours depuis la base de données
+    /// Charge tous les agents qui ont des équipements prêtés et les affiche dans la liste
     /// </summary>
     private void LoadLoans()
     {
@@ -412,9 +411,9 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Gère la sélection d'une ligne dans le ListView pour afficher les détails
+    /// Quand on clique sur une ligne, on affiche les détails en bas : 1 onglet agent + 1 onglet par équipement
     /// </summary>
-    private void LvEquipments_SelectedIndexChanged(object sender, EventArgs e)
+    private void lvEquipments_SelectedIndexChanged(object sender, EventArgs e)
     {
         if (lvEquipments.SelectedItems.Count == 0)
         {
@@ -571,7 +570,7 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Ajoute une ligne de détail (label + valeur) dans un TableLayoutPanel
+    /// Helper pour ajouter une ligne dans les onglets de détail (label à gauche, valeur à droite)
     /// </summary>
     private void AddDetailRow(TableLayoutPanel panel, int row, string labelText, string valueText)
     {
@@ -601,7 +600,7 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Affiche un diagnostic rapide de la base (counts par état)
+    /// Affiche une MessageBox avec le nombre d'équipements par état (disponible/prêt/DSEM)
     /// </summary>
     private void ShowDbDiagnostic()
     {
@@ -624,9 +623,8 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Génère une feuille de remise pour l'agent spécifié
+    /// Génère le PDF de feuille de remise pour un agent
     /// </summary>
-    /// <param name="agentId">ID de l'agent</param>
     private void GenerateFeuilleRemise(string agentId)
     {
         try
@@ -642,7 +640,7 @@ public class MainInventoryView : UserControl
     }
 
     /// <summary>
-    /// Gestionnaire du menu contextuel pour générer une feuille de remise
+    /// Handler du menu contextuel (clic droit) - génère la feuille de remise
     /// </summary>
     private void OnContextMenu_FeuilleRemise(object sender, EventArgs e)
     {

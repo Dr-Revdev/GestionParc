@@ -6,7 +6,8 @@ using System.Windows.Forms;
 namespace ProjetParc.Views.Settings;
 
 /// <summary>
-/// Vue de gestion des paramètres de l'application : Équipes, Sites et Types d'équipement
+/// Écran de gestion des paramètres - 3 onglets (Équipes, Sites, Types d'équipement)
+/// Chaque onglet permet d'ajouter/modifier/supprimer les entrées dans ces tables référentielles
 /// </summary>
 public class SettingsView : UserControl
 {
@@ -113,7 +114,8 @@ public class SettingsView : UserControl
 }
 
 /// <summary>
-/// Contrôle de gestion d'un paramètre (CRUD avec protection)
+/// Contrôle réutilisable pour gérer une table référentielle (liste + form modification)
+/// Utilisé pour Équipes, Sites et Types d'équipement
 /// </summary>
 internal class ParameterManagerControl : UserControl
 {
@@ -506,7 +508,7 @@ internal class ParameterManagerControl : UserControl
 }
 
 /// <summary>
-/// Fenêtre modale pour ajouter un nouveau paramètre
+/// Popup pour ajouter un nouveau paramètre (équipe, site ou type équipement)
 /// </summary>
 internal class AddParameterDialog : Form
 {

@@ -4,14 +4,10 @@ using ProjetParc.Data.DTOs;
 
 namespace ProjetParc.Data.Repositories.MySQL;
 
-/// <summary>
-/// Repository pour la gestion de la table Travail (relations Agent-Site) en MySQL
-/// </summary>
+// Repository pour la table Travail (relation many-to-many Agent-Site)
 public class TravailMySqlRepository
 {
-    /// <summary>
-    /// Insère une nouvelle relation agent-site
-    /// </summary>
+    // Insère une nouvelle relation agent-site
     public void Insert(TravailDto travail)
     {
         using var connection = DbFactory.Create();
@@ -28,9 +24,7 @@ public class TravailMySqlRepository
         command.ExecuteNonQuery();
     }
 
-    /// <summary>
-    /// Supprime toutes les relations d'un agent spécifique
-    /// </summary>
+    // Supprime toutes les relations d'un agent
     public void DeleteByAgent(string idrh)
     {
         using var connection = DbFactory.Create();
@@ -43,9 +37,7 @@ public class TravailMySqlRepository
         command.ExecuteNonQuery();
     }
 
-    /// <summary>
-    /// Récupère toutes les relations agent-site d'un agent
-    /// </summary>
+    // Récupère toutes les relations pour un agent
     public List<TravailDto> GetByAgent(string idrh)
     {
         using var connection = DbFactory.Create();
@@ -66,9 +58,7 @@ public class TravailMySqlRepository
         return travails;
     }
 
-    /// <summary>
-    /// Récupère toutes les relations agent-site
-    /// </summary>
+    // Récupère toutes les relations agent-site
     public List<TravailDto> GetAll()
     {
         using var connection = DbFactory.Create();
@@ -88,6 +78,7 @@ public class TravailMySqlRepository
         return travails;
     }
 
+    // Convertit une ligne SQL en TravailDto
     private static TravailDto MapToDto(IDataReader reader)
     {
         return new TravailDto(

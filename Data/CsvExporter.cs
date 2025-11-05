@@ -7,14 +7,10 @@ using System.Windows.Forms;
 
 namespace ProjetParc.Data;
 
-/// <summary>
-/// Classe utilitaire pour exporter les données en fichiers CSV
-/// </summary>
+// Helper pour générer des fichiers CSV - agents, équipements, prêts ou export complet
 public static class CsvExporter
 {
-    /// <summary>
-    /// Exporte tous les agents vers un fichier CSV
-    /// </summary>
+    // Exporte tous les agents dans un CSV (nom, prénom, équipe, site...)
     public static void ExportAgents(string filePath)
     {
         try
@@ -60,9 +56,7 @@ public static class CsvExporter
         }
     }
 
-    /// <summary>
-    /// Exporte tous les équipements vers un fichier CSV
-    /// </summary>
+    // Exporte tous les équipements dans un CSV (code parc, type, agent affecté...)
     public static void ExportEquipements(string filePath)
     {
         try
@@ -114,9 +108,7 @@ public static class CsvExporter
         }
     }
 
-    /// <summary>
-    /// Exporte tous les prêts actifs vers un fichier CSV (une ligne par agent, équipements en colonnes)
-    /// </summary>
+    // Exporte les prêts actifs - une ligne par agent, chaque équipement prend une colonne
     public static void ExportPrets(string filePath)
     {
         try
@@ -203,9 +195,7 @@ public static class CsvExporter
         }
     }
 
-    /// <summary>
-    /// Écrit un CSV avec colonnes dynamiques pour les prêts
-    /// </summary>
+    // Méthode interne pour écrire un CSV avec colonnes dynamiques (nombre d'équipements variable selon les agents)
     private static void WriteDynamicCsvForLoans(string filePath, List<Dictionary<string, object>> data, int maxEquipments)
     {
         using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
@@ -250,9 +240,7 @@ public static class CsvExporter
 
     
 
-    /// <summary>
-    /// Exporte tout en plusieurs fichiers dans un même dossier
-    /// </summary>
+    // Exporte tout en un seul coup - crée un dossier avec 3 CSV (agents, équipements, prêts)
     public static void ExportComplet(string folderPath)
     {
         try

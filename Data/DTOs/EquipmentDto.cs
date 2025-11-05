@@ -1,8 +1,6 @@
 namespace ProjetParc.Data.DTOs;
 
-/// <summary>
-/// DTO représentant un équipement
-/// </summary>
+// DTO pour un équipement (IdEquipement, TypeId, Nom, CodeParc, NumeroSerie...)
 public sealed record EquipmentDto(
     string IdEquipement,
     int TypeId,

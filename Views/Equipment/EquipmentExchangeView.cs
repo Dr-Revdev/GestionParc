@@ -9,7 +9,7 @@ using ProjetParc.Views.Loan.Models;
 namespace ProjetParc.Views.Equipment;
 
 /// <summary>
-/// Vue permettant d'échanger des équipements entre deux agents
+/// Fenêtre pour échanger des équipements entre 2 agents - chaque agent a sa liste cochable d'équipements
 /// </summary>
 public class EquipmentExchangeView : Form
 {
@@ -24,11 +24,11 @@ public class EquipmentExchangeView : Form
 
     public EquipmentExchangeView()
     {
-        InitializeComponent();
+        BuildUi();
         LoadAgents();
     }
 
-    private void InitializeComponent()
+    private void BuildUi()
     {
         Text = "Échange d'équipements entre agents";
         Size = new Size(900, 600);
@@ -128,7 +128,7 @@ public class EquipmentExchangeView : Form
             Width = 150
         };
         Theme.StylePrimaryButton(btnExchange);
-        btnExchange.Click += BtnExchange_Click;
+        btnExchange.Click += btnExchange_Click;
 
         // Centrer le bouton
         exchangeButtonPanel.Resize += (s, e) =>
@@ -168,7 +168,7 @@ public class EquipmentExchangeView : Form
     }
 
     /// <summary>
-    /// Crée un panel pour un agent avec ComboBox et CheckedListBox
+    /// Helper qui crée un panel avec combobox (choix agent) + liste à cocher (ses équipements)
     /// </summary>
     private Panel CreateAgentPanel(string title, out ComboBox comboBox, out CheckedListBox checkedListBox, out Label countLabel)
     {
@@ -232,7 +232,7 @@ public class EquipmentExchangeView : Form
     }
 
     /// <summary>
-    /// Charge la liste des agents dans les deux ComboBox
+    /// Remplit les 2 combobox avec la liste de tous les agents
     /// </summary>
     private void LoadAgents()
     {
@@ -273,24 +273,20 @@ public class EquipmentExchangeView : Form
         }
     }
 
-    /// <summary>
-    /// Charge les équipements de l'agent 1
-    /// </summary>
+    /// <summary>Charge les équipements de l'agent 1</summary>
     private void LoadAgent1Equipment()
     {
         LoadAgentEquipment(cbAgent1, clbAgent1Equipment, lblAgent1Count);
     }
 
-    /// <summary>
-    /// Charge les équipements de l'agent 2
-    /// </summary>
+    /// <summary>Charge les équipements de l'agent 2</summary>
     private void LoadAgent2Equipment()
     {
         LoadAgentEquipment(cbAgent2, clbAgent2Equipment, lblAgent2Count);
     }
 
     /// <summary>
-    /// Charge les équipements d'un agent dans une CheckedListBox
+    /// Charge les équipements prêtés d'un agent dans sa CheckedListBox
     /// </summary>
     private void LoadAgentEquipment(ComboBox comboBox, CheckedListBox listBox, Label countLabel)
     {
@@ -334,7 +330,7 @@ public class EquipmentExchangeView : Form
     }
 
     /// <summary>
-    /// Met à jour le compteur de sélection
+    /// Met à jour le label "Sélectionnés : X"
     /// </summary>
     private void UpdateSelectionCount(CheckedListBox listBox, Label countLabel)
     {
@@ -343,9 +339,9 @@ public class EquipmentExchangeView : Form
     }
 
     /// <summary>
-    /// Gère le clic sur le bouton Échanger
+    /// Handler du bouton Échanger - fait la permutation des équipements cochés entre les 2 agents
     /// </summary>
-    private void BtnExchange_Click(object sender, EventArgs e)
+    private void btnExchange_Click(object sender, EventArgs e)
     {
         // Validation
         if (cbAgent1.SelectedItem is not AgentItem agent1)

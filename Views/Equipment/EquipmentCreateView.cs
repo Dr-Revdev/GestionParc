@@ -7,7 +7,7 @@ using ProjetParc.Data.Repositories.MySQL;
 namespace ProjetParc.Views.Equipment;
 
 /// <summary>
-/// Vue permettant la création d'un nouvel équipement dans le système
+/// Formulaire de création d'équipement - remplit type, nom, code parc, n° série, marque, commentaire
 /// </summary>
 public class EquipmentCreateView : UserControl
 {
@@ -22,9 +22,9 @@ public class EquipmentCreateView : UserControl
     private Button btnCreate;
 
     /// <summary>
-    /// Initialise une nouvelle instance de la vue de création d'équipement
+    /// Constructeur - monte l'UI et charge les types d'équipement
     /// </summary>
-    /// <param name="onBack">Action à exécuter pour revenir à la vue précédente</param>
+    /// <param name="onBack">Callback retour</param>
     public EquipmentCreateView(Action onBack)
     {
         _onBack = onBack;
@@ -34,7 +34,7 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Construit l'interface utilisateur de la vue de création d'équipement
+    /// Monte toute l'interface - formulaire avec 6 champs sur 3 colonnes
     /// </summary>
     private void BuildUi()
     {
@@ -148,7 +148,7 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Classe représentant un type d'équipement dans la liste déroulante
+    /// Item pour la combobox des types d'équipement
     /// </summary>
     private sealed class EquipmentTypeItem
     {
@@ -158,7 +158,7 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Charge la liste des types d'équipement depuis la base de données
+    /// Remplit la liste déroulante des types (PC, Ecran, etc.)
     /// </summary>
     private void LoadEquipmentTypes()
     {
@@ -186,10 +186,10 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Valide les données du formulaire de création d'équipement
+    /// Vérifie que le formulaire est correct - le type est obligatoire + au moins 1 champ parmi nom/code parc/n°série
     /// </summary>
-    /// <param name="errorMessage">Message d'erreur en cas de validation échouée</param>
-    /// <returns>true si la validation est réussie, false sinon</returns>
+    /// <param name="errorMessage">Message d'erreur si y'a un souci</param>
+    /// <returns>true si tout est bon</returns>
     private bool ValidateEquipmentForm(out string errorMessage)
     {
         // Type obligatoire (toujours nécessaire pour identifier l'équipement)
@@ -215,13 +215,12 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Génère un identifiant unique pour un nouvel équipement
+    /// Génère un ID unique pour l'équipement (GUID sans tirets)
     /// </summary>
-    /// <returns>Un identifiant unique au format string</returns>
     private static string GenerateEquipmentId() => Guid.NewGuid().ToString("N");
 
     /// <summary>
-    /// Insère un nouvel équipement dans la base de données avec les valeurs du formulaire
+    /// Sauvegarde le nouvel équipement en base (INSERT dans Equipements)
     /// </summary>
     private void InsertEquipment()
     {
@@ -270,7 +269,7 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Gestionnaire d'événement pour le clic sur le bouton de création
+    /// Handler du bouton Créer
     /// </summary>
     private void btnCreate_Click(object sender, EventArgs e)
     {
@@ -278,7 +277,7 @@ public class EquipmentCreateView : UserControl
     }
 
     /// <summary>
-    /// Ajoute une ligne de formulaire avec un label et un contrôle dans le TableLayoutPanel
+    /// Helper pour ajouter un champ au formulaire
     /// </summary>
     private void AddFormRow(TableLayoutPanel panel, int row, string labelText, Control control, int col = 0, int colSpan = 1)
     {

@@ -11,7 +11,8 @@ using ProjetParc.Views.Settings;
 namespace ProjetParc.Views;
 
 /// <summary>
-/// Page d'accueil principale avec navigation vers les différentes fonctionnalités
+/// Page d'accueil de l'application - permet d'accéder aux différentes sections
+/// (inventaire, équipements dispo, admin)
 /// </summary>
 public class WelcomePage : Form
 {
@@ -173,7 +174,7 @@ public class WelcomePage : Form
     }
 
     /// <summary>
-    /// Affiche l'écran d'accueil avec les trois tuiles principales
+    /// Retour à l'écran d'accueil - affiche les 3 gros boutons principaux
     /// </summary>
     private void ShowHome()
     {
@@ -368,7 +369,7 @@ public class WelcomePage : Form
     }
 
     /// <summary>
-    /// Gestionnaire de fermeture de la fenêtre
+    /// Demande confirmation avant de fermer l'appli
     /// </summary>
     private void OnFormClosing(object sender, FormClosingEventArgs e)
     {

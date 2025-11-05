@@ -4,11 +4,10 @@ using ProjetParc.Data.Repositories.Contracts;
 
 namespace ProjetParc.Data.Repositories.MySQL;
 
-/// <summary>
-/// Implémentation MySQL du repository pour la gestion des équipes
-/// </summary>
+// Repository MySQL pour les équipes - CRUD simple (Insert, Update, Delete, GetAll)
 public sealed class EquipeMySqlRepository : IEquipeRepository
 {
+    // Crée une nouvelle équipe et retourne son ID
     public int Insert(string name)
     {
         using var connection = DbFactory.Create();
@@ -19,6 +18,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
+    // Modifie le nom d'une équipe
     public void Update(EquipeDto equipe)
     {
         using var connection = DbFactory.Create();
@@ -30,6 +30,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
         command.ExecuteNonQuery();
     }
 
+    // Supprime une équipe par son ID
     public void Delete(int id)
     {
         using var connection = DbFactory.Create();
@@ -40,6 +41,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
         command.ExecuteNonQuery();
     }
 
+    // Récupère une équipe par son ID
     public EquipeDto GetById(int id)
     {
         using var connection = DbFactory.Create();
@@ -55,6 +57,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
         return new EquipeDto(reader.GetInt32(0), reader.GetString(1));
     }
 
+    // Récupère toutes les équipes triées par nom
     public List<EquipeDto> GetAll()
     {
         var list = new List<EquipeDto>();
@@ -70,6 +73,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
         return list;
     }
 
+    // Vérifie si une équipe existe déjà avec ce nom (pour éviter les doublons)
     public bool ExistsByName(string name)
     {
         using var connection = DbFactory.Create();
@@ -80,6 +84,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
+    // Vérifie si l'équipe est utilisée par des agents (pour bloquer la suppression)
     public bool IsInUse(int id)
     {
         using var connection = DbFactory.Create();

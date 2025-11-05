@@ -4,8 +4,8 @@ using System.Windows.Forms;
 namespace ProjetParc.Views;
 
 /// <summary>
-/// Classe permettant de trier les colonnes d'un ListView par ordre alphabétique ou numérique.
-/// Supporte le tri croissant et décroissant en cliquant sur l'en-tête de colonne.
+/// Permet de trier les colonnes des ListView quand on clique sur l'en-tête
+/// Gère le tri alphabétique et numérique (détecte automatiquement)
 /// </summary>
 public class ListViewColumnSorter : IComparer
 {
@@ -13,7 +13,7 @@ public class ListViewColumnSorter : IComparer
     private SortOrder _orderOfSort;
 
     /// <summary>
-    /// Initialise un nouveau trieur avec tri croissant sur la première colonne.
+    /// Constructeur - par défaut pas de tri au départ
     /// </summary>
     public ListViewColumnSorter()
     {
@@ -22,7 +22,8 @@ public class ListViewColumnSorter : IComparer
     }
 
     /// <summary>
-    /// Compare deux éléments ListViewItem selon la colonne et l'ordre définis.
+    /// Compare deux lignes du ListView - c'est la méthode appelée automatiquement pour le tri
+    /// Essaie d'abord en numérique, sinon en alphabétique
     /// </summary>
     public int Compare(object x, object y)
     {
@@ -58,9 +59,9 @@ public class ListViewColumnSorter : IComparer
     }
 
     /// <summary>
-    /// Définit la colonne à trier et inverse l'ordre si on clique sur la même colonne.
+    /// Change la colonne de tri - si on clique 2 fois sur la même, ça inverse l'ordre
     /// </summary>
-    /// <param name="column">Index de la colonne à trier.</param>
+    /// <param name="column">Numéro de la colonne (0 = première)</param>
     public void SetSortColumn(int column)
     {
         if (column == _columnToSort)
@@ -79,7 +80,7 @@ public class ListViewColumnSorter : IComparer
     }
 
     /// <summary>
-    /// Obtient ou définit l'ordre de tri actuel.
+    /// L'ordre de tri actuel (Ascending/Descending/None)
     /// </summary>
     public SortOrder Order
     {
@@ -88,7 +89,7 @@ public class ListViewColumnSorter : IComparer
     }
 
     /// <summary>
-    /// Obtient ou définit la colonne actuellement triée.
+    /// Numéro de la colonne qu'on est en train de trier
     /// </summary>
     public int SortColumn
     {

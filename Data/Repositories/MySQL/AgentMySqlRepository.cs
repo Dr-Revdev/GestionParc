@@ -4,11 +4,10 @@ using ProjetParc.Data.Repositories.Contracts;
 
 namespace ProjetParc.Data.Repositories.MySQL;
 
-/// <summary>
-/// Implémentation MySQL du repository pour la gestion des agents
-/// </summary>
+// Repository MySQL pour les agents - Insert, Update, Delete, GetAll, GetById
 public sealed class AgentMySqlRepository : IAgentRepository
 {
+    // Ajoute un nouvel agent dans la table agents
     public void Insert(AgentDto agent)
     {
         using var connection = DbFactory.Create();
@@ -30,6 +29,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         command.ExecuteNonQuery();
     }
 
+    // Modifie les infos d'un agent existant (nom, prenom, email, equipe, site...)
     public void Update(AgentDto agent)
     {
         using var connection = DbFactory.Create();
@@ -54,6 +54,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         command.ExecuteNonQuery();
     }
 
+    // Supprime un agent par son IDRH
     public void Delete(string idrh)
     {
         using var connection = DbFactory.Create();
@@ -64,6 +65,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         command.ExecuteNonQuery();
     }
 
+    // Récupère un agent par son IDRH (lance une exception si introuvable)
     public AgentDto GetById(string idrh)
     {
         using var connection = DbFactory.Create();
@@ -82,6 +84,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         return MapToDto(reader);
     }
 
+    // Récupère tous les agents triés par nom/prenom
     public List<AgentDto> GetAll()
     {
         var list = new List<AgentDto>();
@@ -100,6 +103,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         return list;
     }
 
+    // Récupère tous les agents d'une équipe
     public List<AgentDto> GetByEquipe(int equipeId)
     {
         var list = new List<AgentDto>();
@@ -120,6 +124,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         return list;
     }
 
+    // Récupère tous les agents d'un site
     public List<AgentDto> GetBySite(int siteId)
     {
         var list = new List<AgentDto>();
@@ -140,6 +145,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         return list;
     }
 
+    // Vérifie si un agent existe avec cet IDRH
     public bool Exists(string idrh)
     {
         using var connection = DbFactory.Create();
@@ -150,6 +156,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
+    // Convertit une ligne SQL en AgentDto
     private static AgentDto MapToDto(IDataReader reader)
     {
         return new AgentDto(
@@ -164,6 +171,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
         );
     }
 
+    // Helper pour créer un paramètre SQL (gère les null avec DBNull.Value)
     private static IDbDataParameter CreateParameter(IDbCommand command, string name, object value)
     {
         var param = command.CreateParameter();

@@ -4,11 +4,10 @@ using ProjetParc.Data.Repositories.Contracts;
 
 namespace ProjetParc.Data.Repositories.MySQL;
 
-/// <summary>
-/// Implémentation MySQL du repository pour la gestion des équipements
-/// </summary>
+// Repository MySQL pour les équipements - Insert, Update, Delete, GetAll, GetById, GetByAgent
 public sealed class EquipmentMySqlRepository : IEquipmentRepository
 {
+    // Ajoute un nouvel équipement dans la table equipements
     public void Insert(EquipmentDto equipment)
     {
         using var connection = DbFactory.Create();
@@ -32,6 +31,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         command.ExecuteNonQuery();
     }
 
+    // Modifie les infos d'un équipement (type, nom, code parc, état prêt, agent affecté...)
     public void Update(EquipmentDto equipment)
     {
         using var connection = DbFactory.Create();
@@ -58,6 +58,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         command.ExecuteNonQuery();
     }
 
+    // Supprime un équipement par son ID
     public void Delete(string idEquipement)
     {
         using var connection = DbFactory.Create();
@@ -68,6 +69,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         command.ExecuteNonQuery();
     }
 
+    // Récupère un équipement par son ID (lance une exception si introuvable)
     public EquipmentDto GetById(string idEquipement)
     {
         using var connection = DbFactory.Create();
@@ -86,6 +88,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return MapToDto(reader);
     }
 
+    // Récupère tous les équipements triés par nom/code parc
     public List<EquipmentDto> GetAll()
     {
         var list = new List<EquipmentDto>();
@@ -104,6 +107,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return list;
     }
 
+    // Récupère tous les équipements affectés à un agent (par son IDRH)
     public List<EquipmentDto> GetByAgent(string idrh)
     {
         var list = new List<EquipmentDto>();
@@ -124,6 +128,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return list;
     }
 
+    // Récupère tous les équipements libres (etat_pret = 0)
     public List<EquipmentDto> GetFreeEquipments()
     {
         var list = new List<EquipmentDto>();
@@ -143,6 +148,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return list;
     }
 
+    // Récupère tous les équipements prêtés (etat_pret = 1)
     public List<EquipmentDto> GetLoanedEquipments()
     {
         var list = new List<EquipmentDto>();
@@ -162,6 +168,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return list;
     }
 
+    // Récupère tous les équipements d'un type donné (ex: tous les PC portables)
     public List<EquipmentDto> GetByType(int typeId)
     {
         var list = new List<EquipmentDto>();
@@ -182,6 +189,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return list;
     }
 
+    // Vérifie si un équipement existe avec cet ID
     public bool Exists(string idEquipement)
     {
         using var connection = DbFactory.Create();
@@ -192,6 +200,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
+    // Convertit une ligne SQL en EquipmentDto
     private static EquipmentDto MapToDto(IDataReader reader)
     {
         return new EquipmentDto(
@@ -208,6 +217,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         );
     }
 
+    // Helper pour créer un paramètre SQL (gère les null avec DBNull.Value)
     private static IDbDataParameter CreateParameter(IDbCommand command, string name, object value)
     {
         var param = command.CreateParameter();

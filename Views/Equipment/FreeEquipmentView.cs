@@ -7,8 +7,8 @@ using ProjetParc.Data;
 namespace ProjetParc.Views.Equipment;
 
 /// <summary>
-/// Vue affichant les équipements "libres" (disponibles) et ceux "rendus" (prêts).
-/// Fournit des filtres de recherche, l'affichage des détails et la bascule "Rendre DSEM".
+/// Écran avec 3 colonnes : équipements disponibles (gauche), rendus DSEM (milieu), détails (droite)
+/// Permet de marquer un équipement comme "rendu DSEM" avec une date
 /// </summary>
 public class FreeEquipmentView : UserControl
 {
@@ -34,10 +34,9 @@ public class FreeEquipmentView : UserControl
 
 
     /// <summary>
-    /// Initialise la vue des équipements disponibles et rendus.
-    /// Charge l'UI, initialise les listes et attache les gestionnaires d'événements.
+    /// Constructeur - monte l'UI, charge les 2 listes, branche tous les événements
     /// </summary>
-    /// <param name="onBack">Callback pour revenir à la vue précédente.</param>
+    /// <param name="onBack">Callback retour</param>
     public FreeEquipmentView(Action onBack)
     {
         _onBack = onBack;
@@ -52,12 +51,12 @@ public class FreeEquipmentView : UserControl
         btnSearchReturned.Click += (_, __) => LoadReturned(tbSearchReturned.Text);
 
         // Chargement du panneau droit quand sélection d'un item
-        lvAvailable.SelectedIndexChanged += LbAvailable_Selected;
-        lvReturned.SelectedIndexChanged += LbReturned_Selected;
+        lvAvailable.SelectedIndexChanged += lvAvailable_Selected;
+        lvReturned.SelectedIndexChanged += lvReturned_Selected;
 
         // Maj et rafraichisement des 2 listes
 
-        cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
+        cbxRenduDsem.CheckedChanged += cbxRenduDsem_CheckedChanged;
 
         // Mise à zéro de la sélection
         lvAvailable.Enter += (_, __) => lvReturned.SelectedItems.Clear();
@@ -65,7 +64,7 @@ public class FreeEquipmentView : UserControl
     }
 
     /// <summary>
-    /// Construit et positionne les contrôles de l'interface utilisateur (colonnes gauche/milieu/droite).
+    /// Monte toute l'interface - 3 colonnes (disponible 33%, DSEM 33%, détails 34%)
     /// </summary>
     private void BuildUi()
     {
@@ -395,14 +394,11 @@ public class FreeEquipmentView : UserControl
 
         ResumeLayout(false);
     }
-    /// <summary>
-    /// Gestionnaire d'événement pour le CheckBox "Rendu DSEM" qui délègue vers <see cref="UpdateRenduDsem"/>.
-    /// </summary>
-    private void CbxRenduDsem_CheckedChanged(object sender, EventArgs e) => UpdateRenduDsem();
+    /// <summary>Handler de la checkbox "Rendu DSEM" - appelle UpdateRenduDsem()</summary>
+    private void cbxRenduDsem_CheckedChanged(object sender, EventArgs e) => UpdateRenduDsem();
 
     /// <summary>
-    /// Charge et remplit la colonne des équipements disponibles (non prêtés).
-    /// Accepte un filtre optionnel pour la recherche texte.
+    /// Charge les équipements disponibles (etat_pret = 0) dans la liste de gauche. Filtre optionnel pour la recherche
     /// </summary>
     private void LoadAvailable(string filter = null)
     {
@@ -430,7 +426,7 @@ public class FreeEquipmentView : UserControl
             .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
             .ThenBy(e => e.Nom ?? "");
 
-        lvAvailable.SelectedIndexChanged -= LbAvailable_Selected;
+        lvAvailable.SelectedIndexChanged -= lvAvailable_Selected;
         lvAvailable.Items.Clear();
 
         foreach (var eq in sortedEquipments)
@@ -449,12 +445,11 @@ public class FreeEquipmentView : UserControl
             lvAvailable.Items.Add(item);
         }
 
-        lvAvailable.SelectedIndexChanged += LbAvailable_Selected;
+        lvAvailable.SelectedIndexChanged += lvAvailable_Selected;
     }
 
     /// <summary>
-    /// Charge et remplit la colonne des équipements rendus (prêts).
-    /// Accepte un filtre optionnel pour la recherche texte.
+    /// Charge les équipements rendus DSEM (etat_pret = 2) dans la liste du milieu. Filtre optionnel
     /// </summary>
     private void LoadReturned(string filter = null)
     {
@@ -484,7 +479,7 @@ public class FreeEquipmentView : UserControl
                 .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
                 .ThenBy(e => e.Nom ?? "");
 
-            lvReturned.SelectedIndexChanged -= LbReturned_Selected;
+            lvReturned.SelectedIndexChanged -= lvReturned_Selected;
             lvReturned.Items.Clear();
 
             foreach (var eq in sortedEquipments)
@@ -503,7 +498,7 @@ public class FreeEquipmentView : UserControl
                 lvReturned.Items.Add(item);
             }
 
-            lvReturned.SelectedIndexChanged += LbReturned_Selected;
+            lvReturned.SelectedIndexChanged += lvReturned_Selected;
         }
         catch (Exception ex)
         {
@@ -513,10 +508,8 @@ public class FreeEquipmentView : UserControl
     }
 
     /// <summary>
-    /// Charge les détails d'un équipement (type, nom, code parc, série, marque, commentaire)
-    /// et met à jour les champs d'affichage à droite.
+    /// Récupère un équipement et affiche tous ses détails dans le panneau de droite
     /// </summary>
-    /// <param name="equipmentId">Identifiant de l'équipement à afficher.</param>
     private void LoadDetails(string equipmentId)
     {
         try
@@ -544,7 +537,7 @@ public class FreeEquipmentView : UserControl
             cbxRenduDsem.Tag = equipmentId;
 
             // Gérer la checkbox et afficher la date si DSEM
-            cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
+            cbxRenduDsem.CheckedChanged -= cbxRenduDsem_CheckedChanged;
             cbxRenduDsem.Checked = equipment.EtatPret == 2;
             
             // Afficher la date dans un label séparé si DSEM
@@ -558,7 +551,7 @@ public class FreeEquipmentView : UserControl
                 lblDateRenduDsem.Visible = false;
             }
             
-            cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
+            cbxRenduDsem.CheckedChanged += cbxRenduDsem_CheckedChanged;
         }
         catch (Exception ex)
         {
@@ -568,9 +561,8 @@ public class FreeEquipmentView : UserControl
     }
 
     /// <summary>
-    /// Bascule l'état "Rendu DSEM" d'un équipement sélectionné et met à jour la base.
-    /// Demande la date de rendu si on coche DSEM.
-    /// Rafraîchit ensuite les deux listes (disponible / rendu).
+    /// Bascule l'état DSEM (coché = rendu DSEM avec date, décoché = disponible sans date)
+    /// Ouvre une popup pour demander la date si on coche. Rafraîchit les 2 listes après
     /// </summary>
     private void UpdateRenduDsem()
     {
@@ -672,9 +664,9 @@ public class FreeEquipmentView : UserControl
             else
             {
                 // Annulé, décocher la case
-                cbxRenduDsem.CheckedChanged -= CbxRenduDsem_CheckedChanged;
+                cbxRenduDsem.CheckedChanged -= cbxRenduDsem_CheckedChanged;
                 cbxRenduDsem.Checked = false;
-                cbxRenduDsem.CheckedChanged += CbxRenduDsem_CheckedChanged;
+                cbxRenduDsem.CheckedChanged += cbxRenduDsem_CheckedChanged;
                 return;
             }
         }
@@ -697,7 +689,7 @@ public class FreeEquipmentView : UserControl
         LoadReturned(tbSearchReturned.Text);
     }
 
-    private void LbAvailable_Selected(object s, EventArgs e)
+    private void lvAvailable_Selected(object s, EventArgs e)
     {
         if (lvAvailable.SelectedItems.Count > 0)
         {
@@ -710,7 +702,7 @@ public class FreeEquipmentView : UserControl
         }
     }
 
-    private void LbReturned_Selected(object s, EventArgs e)
+    private void lvReturned_Selected(object s, EventArgs e)
     {
         if (lvReturned.SelectedItems.Count > 0)
         {
@@ -724,7 +716,7 @@ public class FreeEquipmentView : UserControl
     }
 
     /// <summary>
-    /// Ajoute une ligne de détail au panneau de droite avec un label et un contrôle
+    /// Helper pour ajouter un champ dans le panneau de détails
     /// </summary>
     private void AddDetailRow(TableLayoutPanel panel, int row, string labelText, Control control)
     {

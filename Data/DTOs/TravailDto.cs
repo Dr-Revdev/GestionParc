@@ -1,8 +1,6 @@
 namespace ProjetParc.Data.DTOs;
 
-/// <summary>
-/// DTO représentant une relation Agent-Site (table Travail)
-/// </summary>
+// DTO pour la relation Agent-Site (Idrh + SiteId)
 public sealed record TravailDto(
     string Idrh,
     int SiteId

@@ -3,8 +3,10 @@ using ProjetParc.Data.Repositories.Contracts;
 
 namespace ProjetParc.Data.Repositories.MySQL
 {
+    // Repository MySQL pour les types d'équipements - CRUD simple (GetAll, Insert, Update, Delete)
     public sealed class EquipmentTypeMySqlRepository : IEquipmentTypeRepository
     {
+        // Récupère tous les types d'équipements triés par nom
         public List<EquipmentTypeDto> GetAll()
         {
             var list = new List<EquipmentTypeDto>();
@@ -22,6 +24,7 @@ namespace ProjetParc.Data.Repositories.MySQL
             return list;
         }
 
+        // Modifie le nom d'un type d'équipement
         public void Update(EquipmentTypeDto equipmentType)
         {
             using var connection = DbFactory.Create();
@@ -42,6 +45,7 @@ namespace ProjetParc.Data.Repositories.MySQL
             command.ExecuteNonQuery();
         }
 
+        // Crée un nouveau type d'équipement et retourne son ID
         public int Insert(string name)
         {
             using var connection = DbFactory.Create();
@@ -57,6 +61,7 @@ namespace ProjetParc.Data.Repositories.MySQL
             return Convert.ToInt32(command.ExecuteScalar());
         }
 
+        // Supprime un type d'équipement par son ID
         public void Delete(int id)
         {
             using var connection = DbFactory.Create();
