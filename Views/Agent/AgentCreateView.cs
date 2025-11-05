@@ -8,7 +8,7 @@ namespace ProjetParc.Views.Agent;
 
 /// <summary>
 /// Formulaire pour créer un nouvel agent. On remplit tous les champs (IDRH, nom, prénom, email...)
-/// et on sauvegarde dans la base MySQL (tables Agents + Travail pour le lien avec le site)
+/// et on sauvegarde dans la base MySQL (table Agents avec son site via site_id)
 /// </summary>
 public class AgentCreateView : UserControl
 {
@@ -244,8 +244,7 @@ public class AgentCreateView : UserControl
     }
 
     /// <summary>
-    /// Sauvegarde l'agent en base de données. Fait 2 opérations : 
-    /// 1) Insert dans Agents, 2) Mise à jour de Travail (relation agent-site)
+    /// Sauvegarde l'agent en base de données avec son site directement via agents.site_id
     /// </summary>
     private void InsertAgent()
     {
@@ -272,19 +271,6 @@ public class AgentCreateView : UserControl
             // Insérer l'agent via le repository
             var agentRepo = new Data.Repositories.MySQL.AgentMySqlRepository();
             agentRepo.Insert(agent);
-
-            // Gérer la table Travail (relation agent-site)
-            var travailRepo = new Data.Repositories.MySQL.TravailMySqlRepository();
-            
-            // Supprimer les anciennes relations pour cet agent
-            travailRepo.DeleteByAgent(tbIDRH.Text.Trim());
-            
-            // Créer la nouvelle relation
-            var travail = new Data.DTOs.TravailDto(
-                Idrh: tbIDRH.Text.Trim(),
-                SiteId: siteId
-            );
-            travailRepo.Insert(travail);
 
             MessageBox.Show("Agent créé");
 

@@ -18,3 +18,7 @@ installer-output/
 
 # Notes de travail
 .notes/
+
+# Documentation (ne pas versionner)
+Docs/
+Documentation/
