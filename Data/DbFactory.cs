@@ -8,7 +8,6 @@ namespace ProjetParc.Data
         // Remplie au démarrage (Program.cs)
         public static string ConnectionString { get; set; } = "";
 
-        public static IDbConnection Create()
-            => new MySqlConnection(ConnectionString);
+        public static IDbConnection Create() => new MySqlConnection(ConnectionString);
     }
 }

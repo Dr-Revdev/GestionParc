@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Windows.Forms;
 using ProjetParc.Data;
 using ProjetParc.Views;
+using ProjetParc.Views.Auth;
 
 namespace ProjetParc;
 
@@ -53,8 +54,8 @@ static class Program
                 return;
             }
 
-            // Lancer l'application principale
-            Application.Run(new WelcomePage());
+            // Lancer l'application avec la page de connexion
+            Application.Run(new LoginView());
         }
         catch (Exception ex)
         {
