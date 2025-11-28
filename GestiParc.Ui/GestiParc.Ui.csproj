@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Informations de l'application -->
+    <AssemblyName>GestiParc</AssemblyName>
+    <Product>GestiParc - Gestion de Parc Informatique</Product>
+    <Version>1.1.2</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
+    <Company>Dr-Revdev</Company>
+    <Copyright>Copyright © 2025</Copyright>
+    <Description>Application de gestion de parc informatique et d'équipements</Description>
+    
+    <!-- Configuration de publication -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GestiParc.Core\GestiParc.Core.csproj" />
+    <ProjectReference Include="..\GestiParc.Infrastructure\GestiParc.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\DTOs\" />
+    <Folder Include="Data\Models\" />
+    <Folder Include="Data\Repositories\Contracts\" />
+    <Folder Include="Data\Repositories\MySQL\" />
+  </ItemGroup>
+
+</Project>
