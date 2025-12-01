@@ -2,7 +2,7 @@ using System.Data;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
 
-namespace GestiParc.Infrastructure.Repositories;
+namespace GestiParc.Infrastructure.Data.Repositories;
 
 // Repository MySQL pour les agents - Insert, Update, Delete, GetAll, GetById
 public sealed class AgentMySqlRepository : IAgentRepository

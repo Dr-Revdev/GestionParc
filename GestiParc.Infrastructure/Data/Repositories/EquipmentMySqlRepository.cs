@@ -2,7 +2,7 @@ using System.Data;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
 
-namespace GestiParc.Infrastructure.Repositories;
+namespace GestiParc.Infrastructure.Data.Repositories;
 
 // Repository MySQL pour les équipements - Insert, Update, Delete, GetAll, GetById, GetByAgent
 public sealed class EquipmentMySqlRepository : IEquipmentRepository

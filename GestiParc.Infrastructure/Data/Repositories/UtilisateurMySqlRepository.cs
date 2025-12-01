@@ -7,7 +7,7 @@ using GestiParc.Core.Domain.Entities;
 using GestiParc.Core.Interfaces.Repositories;
 using GestiParc.Infrastructure;
 
-namespace GestiParc.Infrastructure.Repositories;
+namespace GestiParc.Infrastructure.Data.Repositories;
 
 public class UtilisateurMySqlRepository : IUtilisateurRepository
 {

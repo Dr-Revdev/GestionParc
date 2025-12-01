@@ -6,6 +6,7 @@ obj/
 .idea/
 *.iml
 *.config
+*.json
 [Tt]humbs.db
 [Dd]esktop.ini
 

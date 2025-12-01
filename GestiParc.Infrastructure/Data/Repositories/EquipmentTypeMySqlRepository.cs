@@ -2,7 +2,7 @@ using System.Data;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
 
-namespace GestiParc.Infrastructure.Repositories;
+namespace GestiParc.Infrastructure.Data.Repositories;
 
 // Repository MySQL pour les types d'équipements - CRUD simple (GetAll, Insert, Update, Delete)
 public sealed class EquipmentTypeMySqlRepository : IEquipmentTypeRepository

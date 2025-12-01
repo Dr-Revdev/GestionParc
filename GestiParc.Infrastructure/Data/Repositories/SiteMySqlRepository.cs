@@ -2,7 +2,7 @@ using System.Data;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
 
-namespace GestiParc.Infrastructure.Repositories;
+namespace GestiParc.Infrastructure.Data.Repositories;
 
 // Repository MySQL pour les sites - CRUD simple (Insert, Update, Delete, GetAll)
 public sealed class SiteMySqlRepository : ISiteRepository
