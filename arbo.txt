@@ -1,0 +1,1745 @@
+Structure du dossier
+Le numéro de série du volume est 302B-39B2
+C:.
+|   arbo.txt
+|   build.log
+|   GestionParc.ico
+|   GestiParc.sln
+|   GestiParc_Setup.iss
+|   
+|   |   COMMIT_EDITMSG
+|   |   config
+|   |   description
+|   |   FETCH_HEAD
+|   |   HEAD
+|   |   index
+|   |   ms-persist.xml
+|   |   ORIG_HEAD
+|   |   
+|   +---hooks
+|   |       applypatch-msg.sample
+|   |       commit-msg.sample
+|   |       fsmonitor-watchman.sample
+|   |       post-update.sample
+|   |       pre-applypatch.sample
+|   |       pre-commit.sample
+|   |       pre-merge-commit.sample
+|   |       pre-push.sample
+|   |       pre-rebase.sample
+|   |       pre-receive.sample
+|   |       prepare-commit-msg.sample
+|   |       push-to-checkout.sample
+|   |       sendemail-validate.sample
+|   |       update.sample
+|   |       
+|   +---info
+|   |       exclude
+|   |       
+|   +---logs
+|   |   |   HEAD
+|   |   |   
+|   |   \---refs
+|   |       +---heads
+|   |       |   |   main
+|   |       |   |   
+|   |       |   \---feat
+|   |       |           new-database
+|   |       |           
+|   |       \---remotes
+|   |           \---origin
+|   |               |   HEAD
+|   |               |   main
+|   |               |   
+|   |               \---feat
+|   |                       new-database
+|   |                       
+|   +---objects
+|   |   +---00
+|   |   |       df3a5eb099a9be2a3da9a838c39cf7407d0a65
+|   |   |       
+|   |   +---01
+|   |   |       177a94043661f9e9bc3257decefae7082a0bad
+|   |   |       9c06a1194b3f46cde66cd3bce2a1e25ca0cf87
+|   |   |       a1d7a96d4557a257b075fae2cc246a61941af9
+|   |   |       
+|   |   +---02
+|   |   |       09f3fdbb91dc4caf938efe1024d33af0f8cbf2
+|   |   |       f8c0e7150d31fcf4a81488e0e998fe2ab5bb35
+|   |   |       
+|   |   +---04
+|   |   |       5c0917a409ff29932560b8170a325455f8d930
+|   |   |       bd11d0c07eadeabc80f4a28462f46fd6add3ef
+|   |   |       e87d59c9a7364f0fa12dff8fb5606627ec4539
+|   |   |       
+|   |   +---05
+|   |   |       4cb22ddb498491fea557aa11cbc4b831ea3fed
+|   |   |       4dd704886af591adea2eb841c95aa598d3b4ae
+|   |   |       a298f8d0866c4b57be381ae7c0085284919c01
+|   |   |       bf339bbaaefba750b6baf44f7c5d408039f5a2
+|   |   |       
+|   |   +---06
+|   |   |       9e605313c8c28c31ea245f79dd23548882ef4e
+|   |   |       
+|   |   +---07
+|   |   |       33180c04f068a430297eb00da1ea8814a267a3
+|   |   |       479091c25f55507207f2d3bc087852c1026572
+|   |   |       e440ab791b9a11bc5a9b768ad3a6fab2ea2542
+|   |   |       e9c2b9827b0ca050d61452e6a1cf7786958454
+|   |   |       
+|   |   +---08
+|   |   |       461969db0f811941e6279bb6a9988d9482290c
+|   |   |       6ba9da03191d0d7ab368abd305180e7e232897
+|   |   |       803b740e0115771aa52e2b543642a71d96452c
+|   |   |       d483be7f154b3327cac035ff34b28f78bed9b8
+|   |   |       
+|   |   +---09
+|   |   |       cc9657a517c15f78f0f830b78564aa5609ac24
+|   |   |       
+|   |   +---0a
+|   |   |       1b9cdafcdf6d2f2cb3933251ad088c6969e03f
+|   |   |       5b65317009c00811016fa9c58a9ac76153c9f8
+|   |   |       
+|   |   +---0b
+|   |   |       ee37a48a46dbd025015e803ef17922374e5c68
+|   |   |       
+|   |   +---0c
+|   |   |       192637e92fb00cbe4e0f41aced47b3593205e2
+|   |   |       6a6e63b13b0edeb74f1a49522fda9a083fdfe5
+|   |   |       8e95592b6722dd7a0b5db63f24d4d35ded23ec
+|   |   |       
+|   |   +---0d
+|   |   |       9fb96c72afb1298ebc155ebbb16d1431d1f8e8
+|   |   |       
+|   |   +---0e
+|   |   |       20d8dac813d92f54c6a696a78396b485854713
+|   |   |       627fbb6b761927352a43cab325a59816e90abe
+|   |   |       82495944322a508411793a7c654be13a5a3405
+|   |   |       852480f25debbf66206f68adb151bf8ae12760
+|   |   |       
+|   |   +---0f
+|   |   |       86595794f71c65ea63be2070dfa333ee5e7ec0
+|   |   |       
+|   |   +---12
+|   |   |       1d8afce362c9e53e5e1ea925b31ba6ab434fe0
+|   |   |       1ee54ac5dd92cbb538eae6e663160b7b1ede1d
+|   |   |       3b7434d489ec584d2d5586dceb870e1c4f6c6f
+|   |   |       4a8700273cbdd992227178bbc08ff3d301ec23
+|   |   |       8d65b1c56b76055623d6ef703e819b5ea97af2
+|   |   |       
+|   |   +---13
+|   |   |       b5b861fdaa3738b4c130177eb69ce23fb9154e
+|   |   |       
+|   |   +---14
+|   |   |       6b25a4f70e3a7f6a6b135f885dbc2caa54c84d
+|   |   |       975bb7fe3899a75c15843767c59f9db87351d1
+|   |   |       a93b0a3df14b70da9ca56c9187e4fe6d3446cd
+|   |   |       
+|   |   +---15
+|   |   |       9a2730ae6c6efeaed739e09f5ab212cf79686d
+|   |   |       f4bff8b261681579ac496c47a269d6c3eacba1
+|   |   |       
+|   |   +---16
+|   |   |       063acffab52fdd0f972ff43d3a818b7d7f88be
+|   |   |       29d09a6588f92891eea654c48894fd819e5543
+|   |   |       3bceefe325b057796ae724724e040201155111
+|   |   |       42fdfa3c7ec8999d103191430e976287d633a5
+|   |   |       b1e14789be0cceefedf51f6f72f3cc942bad02
+|   |   |       d267e9815914647fb201c58e160513739bd87e
+|   |   |       
+|   |   +---17
+|   |   |       268a230f20ba08f1f28e3c66ab04777a0c6ac0
+|   |   |       72a2f733a0eb1b14384d973e8c6309bd784db9
+|   |   |       
+|   |   +---19
+|   |   |       6d63873df53283ff2222ab48c4301c55008382
+|   |   |       d7b0e0c9748f1929b48283380a4fc6b59b2ab5
+|   |   |       f13634f3b482c96476aa99bf4e2e017370dedf
+|   |   |       
+|   |   +---1a
+|   |   |       2d5e77645ac213acbc1b8eac3262c26f99c65a
+|   |   |       75fa97a2b192521694197faede6ba3a0b0020e
+|   |   |       a3359ce2c771b62d580f68bdd387d7a8261e8f
+|   |   |       f7de150c99c12dd67a509fe57c10d63e4eeb04
+|   |   |       
+|   |   +---1b
+|   |   |       8f7f25577ce472a9b7e6da77ac8a9ffd24eacc
+|   |   |       a5e4f0c9046081c91abf52b03ac40333abc8a1
+|   |   |       c6c1232d4d5258f394579365e44c28af7ceaa6
+|   |   |       
+|   |   +---1c
+|   |   |       523037e884c650d24a3869449b23ef574ea1f2
+|   |   |       655ddc1f8faea4fb0923e80315d048c5787fe7
+|   |   |       b3c0b665e9a7caffd1e37a5e5908d4d704d710
+|   |   |       
+|   |   +---1f
+|   |   |       e6eae8ce80b7c5390215c41bcc1aeb8740a96f
+|   |   |       
+|   |   +---21
+|   |   |       4ef4852b3804e9a7ca00fdb3922d9f34b997e5
+|   |   |       5643311f8730b16a57bfcc9f48a2047acd6d3b
+|   |   |       76a3d2ef25f5a8d006cee0201d0145cf46da82
+|   |   |       b70da1c7223f7363e76d8b65cd4dde987fa938
+|   |   |       ec4220da6643e832193b488f54ed930366e666
+|   |   |       
+|   |   +---22
+|   |   |       72d4639e6c0241a559d4def1f5fc1847e91908
+|   |   |       ca22d978f456c3ae6f1b7ca202a97cca15676e
+|   |   |       e744c61ead3192b9a1983e05704115db7dfae8
+|   |   |       
+|   |   +---23
+|   |   |       058656b32de23815a6d8cd4f068fcd171c0ead
+|   |   |       
+|   |   +---26
+|   |   |       ad2c35f7a7af06c4a666e25303a2eb0f7637c6
+|   |   |       cc00e4164c8c0b2fd0b7d5e828956c1a18c04c
+|   |   |       d48945e68116121f5c8eee1e2f5bb1297efa94
+|   |   |       
+|   |   +---27
+|   |   |       dce564f328f44a68f5c35dc13d4cb58c25b33c
+|   |   |       
+|   |   +---28
+|   |   |       08456c862d1f8ac3f038f7373dfe7b50b1bad8
+|   |   |       83e44e317693b5e4a511396667df738679653a
+|   |   |       fef739225274e2eacf784b239be724293543f2
+|   |   |       
+|   |   +---2a
+|   |   |       e5cbc823605196f019c24500031df97ea96813
+|   |   |       
+|   |   +---2b
+|   |   |       2ad97c5e3e923d8c8fd5035b0016b972707c0b
+|   |   |       2e99e295f7b1636bfc776f05fbe50309aed336
+|   |   |       e75de7e472d4f10be491f4ac0f81c705436ef6
+|   |   |       f2685d41c918b7e7ef0a47f21dc04164ce2c87
+|   |   |       
+|   |   +---2c
+|   |   |       0daff59ab08aa5198e3c86babc184ad9bdfaa1
+|   |   |       1292e8e1eaf3597b8254e803baa764b8f9bfd4
+|   |   |       696385e5772ffdd608afe96ae6bc6642367fdc
+|   |   |       77829971f5737f8f64201452ce48e4125a0bc1
+|   |   |       92db49fc69baaefca691118206c6d462952bb2
+|   |   |       ab02a9cf9b115c1621d1e99b5e848c1a44ef94
+|   |   |       b5476ad6ba11d9cd060ea88d488fd3c6e68945
+|   |   |       fe679b15f8a1f21a60640e63c2275d639a14d7
+|   |   |       
+|   |   +---2d
+|   |   |       b9690a346caac4c1fa42f6de8b466c7efaa910
+|   |   |       
+|   |   +---2e
+|   |   |       709ec7adbac492b0af9a77129a368a7ff30763
+|   |   |       
+|   |   +---2f
+|   |   |       00c40b481e21ff343b1b8fb0fee83c678f7a36
+|   |   |       5c16401c57342d0bdda9ba83bb5fc8815aba7f
+|   |   |       
+|   |   +---30
+|   |   |       136139233a899388cb34eb0f5b7eb4e74b0611
+|   |   |       d9223f192763ba1966fc15dc104470781ce5a8
+|   |   |       
+|   |   +---31
+|   |   |       1f7e2ccf7b8c254da30e0d684eec150f207d26
+|   |   |       8c90a3c76b599c0d01a9dfb1709acca79c80d0
+|   |   |       
+|   |   +---32
+|   |   |       b11619fb3f325f026d0df395d714c1a58986cd
+|   |   |       e18582fdd360c550852ee966a5e2bf5355fc45
+|   |   |       
+|   |   +---33
+|   |   |       1ddc6120b37cb2a547f4fe0a9cfafb7ac05658
+|   |   |       2527a175ad51e961882e6155d971f937d7a3e7
+|   |   |       7036487df63fda291d1697fbe6248d1fa9061f
+|   |   |       a5a98a0649f3737f93b19122bee2259fce40cd
+|   |   |       b0d1f165fc9754208402208ffce37b3224fe7d
+|   |   |       
+|   |   +---34
+|   |   |       2df28d6d5ddeb9f7d55dc4f8c43c401cc709c1
+|   |   |       8720ceb8354325bff63c2aa19c17c222ea880a
+|   |   |       d278cd7c3428105aa83d259c57c9fb6ac11696
+|   |   |       
+|   |   +---35
+|   |   |       e7fed58e0691e558ab01328df098d935eb7992
+|   |   |       
+|   |   +---36
+|   |   |       79dbd8bac85acfe9a0f22eee77b64fd15d7b4e
+|   |   |       a2b3403fa89aaa5588259d5f1bdc48c881e887
+|   |   |       f43b94b1c5cab0e25a22c1d247601978ef0a77
+|   |   |       
+|   |   +---37
+|   |   |       0efa2c48eb594044b975dcd39e85f2e53ecfe3
+|   |   |       59d55ede0e1aea57d3a39fc668838d0d02fd5e
+|   |   |       e0da33d1412959ef83872dceb6bcb25495d54d
+|   |   |       
+|   |   +---38
+|   |   |       477ec85922e16c26a4cb8626146d2b6260113e
+|   |   |       58bdc9066627376870504d842c1ddfa12b2a75
+|   |   |       5d37d010b8f48fd07d15edb045ab1f136f4da3
+|   |   |       
+|   |   +---3a
+|   |   |       22e6fa24482b2701b5e28d21509d6720a06383
+|   |   |       
+|   |   +---3b
+|   |   |       3287723f75ef2c7c569080a4f1ac77b357067e
+|   |   |       3c215a816ee548a19715d69e076f2a2a8e8d66
+|   |   |       89c904bf54e1a3574a6d5cc4865f817ddc7d53
+|   |   |       d5a0eb7fa9d77b14b8d583d4f327e160ed4786
+|   |   |       
+|   |   +---3c
+|   |   |       dab37ff61b701e54ffbad139eebc2a0e9f69cd
+|   |   |       ffab0f587a48f8efb3fad937cd88403df370af
+|   |   |       
+|   |   +---3d
+|   |   |       0411a34b66de6a53edbdf11ae7751fb403d3a3
+|   |   |       6d0ae4449fae895bbddd42da0e05e40a17baa7
+|   |   |       c76122625fc138b373414e97c89a558a2ee18c
+|   |   |       
+|   |   +---3e
+|   |   |       769aeef881bcc5703edd6347ae061ab6f18c5e
+|   |   |       7b517c066173e7963741b4b9f0c1dcfc12557e
+|   |   |       
+|   |   +---3f
+|   |   |       7edfebeb0a2dd1aa35dc5449c3279f5348ccf0
+|   |   |       
+|   |   +---40
+|   |   |       509cf1773db54f40bb7a62d214077fb541d89b
+|   |   |       8b8f64479b7a3ba109465e73877fb476849901
+|   |   |       a56ed945e322a08235c6dd83948c022d70faf2
+|   |   |       
+|   |   +---41
+|   |   |       44715d6e98169ca0e52e82126931076a2ad5d3
+|   |   |       863011cdfd1bbfb76cc53f6d5c0e5c495b0b60
+|   |   |       
+|   |   +---42
+|   |   |       a49a8659cf7a433dbe3ce9a489d7a462b0f20f
+|   |   |       eca8a9315a73e93b6287d840983ddcfa9cc35c
+|   |   |       
+|   |   +---43
+|   |   |       5e7da1d4abf33c30a1caa752e3f56b1989a28e
+|   |   |       664fd30b0df947c5a236db84b65a82666d43f5
+|   |   |       764194e07b379ba76f3eb8e7c8b8bba61c6055
+|   |   |       
+|   |   +---44
+|   |   |       3ed57a485a564d6406f68d5637be6594a18f6e
+|   |   |       bf18cb1126e2b30d817775935df09ad22c9e6a
+|   |   |       
+|   |   +---45
+|   |   |       e80771937d5346d09193630d102a125801b940
+|   |   |       
+|   |   +---46
+|   |   |       c12956145d45f7d6ab62ea7e217dd2f48697ce
+|   |   |       cc5f6a8dec0fda368a212ae2977989b24efd1d
+|   |   |       ce043cddf03f5cbf820d9355814fecee822be7
+|   |   |       fe4116b2e43462d5e534d6a26c63fdd1f86b54
+|   |   |       
+|   |   +---47
+|   |   |       cf5de2b952adc7832ce4232866f04af4e3d2ed
+|   |   |       
+|   |   +---48
+|   |   |       6cbfa1050dfbfb5d4be552815263b266b874cd
+|   |   |       
+|   |   +---49
+|   |   |       39d6234f6ff014671ece1f9d6e90727a618680
+|   |   |       63b260fa59acc2abaae25c29819f4d5779cc86
+|   |   |       ebf838f791632b4501d5e51b0893a905773b08
+|   |   |       
+|   |   +---4a
+|   |   |       9adedc9a771dd845630995e019891078789c7b
+|   |   |       f6f7588138a03318fbbb91a5947d723b719446
+|   |   |       
+|   |   +---4b
+|   |   |       694e267ae9e36e25d49b1ff078221237c67d53
+|   |   |       
+|   |   +---4c
+|   |   |       a5d0bebf4a8a17140c521895f2d91e87912ef9
+|   |   |       ee3e24df99ed70a7a9cf3ec8b5f6d454587421
+|   |   |       
+|   |   +---4e
+|   |   |       4b9d678f246c7a2446d8158804a372e5d19b4c
+|   |   |       be08ec65be6881cedacff07167bf053bdc250d
+|   |   |       
+|   |   +---4f
+|   |   |       df04b339e35e9a841795767c567c7b33c606c3
+|   |   |       
+|   |   +---50
+|   |   |       fa04d99613a72a5aa2d39b897a026537ac2bcf
+|   |   |       
+|   |   +---51
+|   |   |       6b74f27eb8ac7eff1215bfe9cac7e2baaf6a03
+|   |   |       d1f34048b4a68c70f52ed493feb6a9631b171d
+|   |   |       f0e74f1594553d1bc13866eb155370014d0943
+|   |   |       
+|   |   +---52
+|   |   |       57691be3d747ee18ac93f9ab282abc6e9d8378
+|   |   |       cb4a47c2783e7dbad8a0ed56fb3f268a3c4f34
+|   |   |       f91ea53dcbf46f0a6a9381e68db11d71d8e1e1
+|   |   |       
+|   |   +---53
+|   |   |       9a49e2a844baaefcef8d21a1183cb18abde548
+|   |   |       a854e9f015c0a2fe94e3ebf515122d8dd94149
+|   |   |       f73d293dadeab600043072a6bbebf7d8c17d8f
+|   |   |       
+|   |   +---54
+|   |   |       03797a1b08d78ceda8c6658eb929b2e7804872
+|   |   |       72c0e8ba75f6c6b805b73083b40bb25b3af00d
+|   |   |       ded8d2b76c313e80babb711f16c229f70b7441
+|   |   |       
+|   |   +---55
+|   |   |       65aeb9befc1e6a03828a4b2f6b54c8066e8f22
+|   |   |       c72b13d8f451e67ac8052ec59941f8aa59e9f7
+|   |   |       
+|   |   +---56
+|   |   |       6e29d534ce13444ad9e686d9a4cc9d46e12ea0
+|   |   |       adafbba184b65985d1bce3524ac1af8427e850
+|   |   |       
+|   |   +---57
+|   |   |       564535d3bf1c9db4959a88ca6f03c80779b643
+|   |   |       aa6dcce3f6eedeb01f26614b9955559f77ec20
+|   |   |       c7fdf67cc4c34891eb5e60a0dcdbc9659f34b7
+|   |   |       f7d4e6dad2f28781bf41c49db40cf2953bff89
+|   |   |       
+|   |   +---58
+|   |   |       539d85ab515ddb1ded0104f32dd1fb582474d8
+|   |   |       
+|   |   +---59
+|   |   |       33cd5569c69c2e782d337fade97d9e485203de
+|   |   |       9edb55158cefa88562e6d2516f011fc6910ad5
+|   |   |       
+|   |   +---5a
+|   |   |       64f216aff78c59ce48599c823142499828de7f
+|   |   |       
+|   |   +---5b
+|   |   |       7a74a3f97b1c1fcff43a1006a31c3c05fe6f8f
+|   |   |       9dd65acb1bab3eb6523bbf13f859aea8ca4817
+|   |   |       
+|   |   +---5c
+|   |   |       77979c7a5fcbb0c72b59073982c1cf5e1d3550
+|   |   |       ad115a9b8d2210070e2693e86e25b6d79f1321
+|   |   |       
+|   |   +---5d
+|   |   |       3f1330fd4a5d604d4962d876bbc761c0dfcb35
+|   |   |       
+|   |   +---5e
+|   |   |       05a8928333ea1d048238452541ad51d03b2ba9
+|   |   |       07796707fb4010526fdf3e86199c9094f3038b
+|   |   |       0c652b2013f6ac5bd6adbe0063e8e0c4f94415
+|   |   |       2f99f16f844cc6d3f919d4d5871d00f0c12d47
+|   |   |       bd7a86e02617e2e5461707e1797bf9079cf45a
+|   |   |       ed1abf9bf76a2f2d9ea8080965742b540bd404
+|   |   |       ffc5c2cd8272fb03ae83b5fc4dea1ca6358a8a
+|   |   |       
+|   |   +---5f
+|   |   |       18f80a305f7a85c806466aa321be5784428ce3
+|   |   |       4a4b0d2466458ce461019018bd2b57145a1aa5
+|   |   |       
+|   |   +---60
+|   |   |       1b8ee92bd0ba44018608e3ac63bd14daa3809b
+|   |   |       1c22f2743d25f29edbcf84068f2e17d07f81dc
+|   |   |       34bcc5da1dde7131365b9b553a8d41c0be32ad
+|   |   |       c412a9ebc4bf3c714a947dbcbc9bdde09108ef
+|   |   |       d1b0782b870be40976971666b160e8e8679137
+|   |   |       
+|   |   +---61
+|   |   |       f2b9dfcdaa0be988a8de67c522452052e37a44
+|   |   |       
+|   |   +---62
+|   |   |       2d356ae666cdd28010dc0fd281af891e4c99cb
+|   |   |       d527e9dbc78495f134f7390853eb6be73dbb47
+|   |   |       
+|   |   +---63
+|   |   |       917e9a12618084355043798643a6a7449061a4
+|   |   |       a892d06b64be10e106effd94ffdfb6426b1b5a
+|   |   |       
+|   |   +---64
+|   |   |       734124aa652e92559084397f96dba65609ec86
+|   |   |       c357d3cf70940b3557cadf40863aca55a0da37
+|   |   |       
+|   |   +---65
+|   |   |       119cf8b80f4a6ee81e78a7ff26fb65d4fe99dc
+|   |   |       5861073fcc2e750d0d5c407085fc1fec1416ef
+|   |   |       602cd965801090abe5d167198a408f3ff3b6ef
+|   |   |       77779aafd6086621b22be89802e4676a3ab4cc
+|   |   |       89891b0c0bea6fcfefbdbc72600d6aed5cbed7
+|   |   |       ca2ff90c5e8ec2a43342c44939dc81271f24c2
+|   |   |       
+|   |   +---66
+|   |   |       11b28dfb388e92b6cb95de0260a4f91e0af929
+|   |   |       13e5a0f3023a24446471de3362a6cb38191ec5
+|   |   |       2152fdae181ff185426a29be9b0bd017149a67
+|   |   |       34ba685822bfe2233253d82326554d68775778
+|   |   |       954b5ecb7a5d7a443c312e47b8c3c29d6a8762
+|   |   |       
+|   |   +---67
+|   |   |       1d6d6c608449526d34f2a07f1e306aee51473e
+|   |   |       212a4884404f7133e33e6a55a03753bd9d45e7
+|   |   |       dbc96b96f87ddf14f4ae9c12ffbad4bfd550c8
+|   |   |       e736238b1624a2f8fc5d5524fc90f1bbdba431
+|   |   |       
+|   |   +---68
+|   |   |       2cfc9e67f1c62328b94c7edd8323b512d8932b
+|   |   |       9468b1e850a39d91a8283592d6623ef4251502
+|   |   |       
+|   |   +---69
+|   |   |       35e389e0a3f4f48af20f42b32e7ec03865dc25
+|   |   |       a14daebce5ea46e99cee4e8792da688284695d
+|   |   |       ca778bbe18f8dcf50e902a4dadc4c6a948ab9d
+|   |   |       
+|   |   +---6a
+|   |   |       77e9e5b1fb4b1694539d5cdf314afe34a27a17
+|   |   |       
+|   |   +---6b
+|   |   |       f05155b6a9f26472357965f0ae2846736384d8
+|   |   |       
+|   |   +---6c
+|   |   |       6442cac550abb4abcc716e24eaa17d66052f35
+|   |   |       
+|   |   +---6d
+|   |   |       0357e44a63784da509eda04445ee4f2166a9bd
+|   |   |       1439c7ec56ad016845cc16964b0aada54a33c2
+|   |   |       4fd81d69c5d480309a18eb9821ca6f19b161f1
+|   |   |       745be3b7fe2876e7805455912e1495fd33177f
+|   |   |       
+|   |   +---6e
+|   |   |       a881ecacb6886b107ed785628425212e26ac5f
+|   |   |       
+|   |   +---6f
+|   |   |       1310c6b66c0e9646233a7c9ff2f9c5146f5d08
+|   |   |       d04c235bbe9366cd99644fcae58296e33fafae
+|   |   |       
+|   |   +---70
+|   |   |       569eb6f90ee4e6e66a5bca8fa70557e066b126
+|   |   |       b4335167bf7624f69820baec4fc06fd36cc021
+|   |   |       
+|   |   +---71
+|   |   |       3abb0a9db700a320c8ff8e1ef75bf11244632c
+|   |   |       4aab53145960bcf25da54e0102f70a643d9102
+|   |   |       70c21905b9a91f6249285ab9dc90a66c1c9c58
+|   |   |       7454647456abccd2db56ac69fb6334b4e62d85
+|   |   |       955683791d81630129d74a3611713dbcc2575c
+|   |   |       
+|   |   +---72
+|   |   |       6da90263d468f0af798cf4e2951a2633d615ed
+|   |   |       d455ebef3493e602d921283ce47f7b3a33e30a
+|   |   |       fd069cd3f32fbb62c28ba8d3840738479b0a9e
+|   |   |       
+|   |   +---73
+|   |   |       49beb73cd8613f32983d24e1d70ca4d68318a4
+|   |   |       
+|   |   +---74
+|   |   |       11f615e7b5f2ee1b067cb42c0b4ec9b3c09be8
+|   |   |       3e0b1dcce133a722420051a2fbf59566bfabc2
+|   |   |       9094cfc7b67223a69c9958d866f19d54046973
+|   |   |       
+|   |   +---75
+|   |   |       6de02a6cb6f92b708f946a5d926ab3493edf3e
+|   |   |       ec97121c387681fb87096fe4fbc65d07338557
+|   |   |       
+|   |   +---76
+|   |   |       8a1a6f382776ba3b9d9e622a52706483fe2f24
+|   |   |       
+|   |   +---78
+|   |   |       2edc8363cfa981cc983d96c6ce3b160b921db9
+|   |   |       d30465e5245685b1510afb46e961d1109ead82
+|   |   |       
+|   |   +---79
+|   |   |       d36c6de0e706d554336e85308f1d77cbdfe961
+|   |   |       e35efb0732adee18dbea04b65c05efe9fb3607
+|   |   |       
+|   |   +---7a
+|   |   |       39f84dc2c466e578a08da4ae8c0dec79df176b
+|   |   |       
+|   |   +---7b
+|   |   |       70fc6a46119c9ad3f7b56cf43d8f6d0353d0fe
+|   |   |       81c81cf9ddb8841bd803f18660c9b5c5b7efec
+|   |   |       c4c0df01e9a7bc6c096c7116b0ec9da0887f1a
+|   |   |       
+|   |   +---7c
+|   |   |       7d0ce78e8bb9921ec43da4535f6ed95f4b9558
+|   |   |       b1bd300749f5e02b435f15937b95780466689b
+|   |   |       
+|   |   +---7d
+|   |   |       0101e7eb3e5be01ad7d846eec84a58a060b839
+|   |   |       075e9b448e1e93671d625a14b38baf672648de
+|   |   |       9621c35b932203433281a5cf2fb7b88d562851
+|   |   |       
+|   |   +---7e
+|   |   |       3270f491b271bb0b0d9b9741eef860b2c2a1a9
+|   |   |       
+|   |   +---81
+|   |   |       533825f635ab7b209a1c2c42a610e88f275038
+|   |   |       dbe350922c84f737f3e22f5cc6a831c5068d9e
+|   |   |       
+|   |   +---82
+|   |   |       45c5930cff1695154cca4961b1a6ad54957ac7
+|   |   |       63aa40eb83034e08c0e45eae55503983908196
+|   |   |       
+|   |   +---83
+|   |   |       49e275dc10c3a8a6ae424fcec63c876447ea12
+|   |   |       b09092d149a17e7d3cdc99b11f11c8041eb952
+|   |   |       c2e6f919a070e9b10fce9abf4a1d45222dbe43
+|   |   |       eb23c16b51edb5b2b3239b954f90e67b881497
+|   |   |       eef869c84cdc530d74c132df7cf9fcffc0e90b
+|   |   |       
+|   |   +---85
+|   |   |       5c48e03a74f2be5856f849d1e607d318f72367
+|   |   |       c190b39baa599529d7ea3b4a3d4a64e9fc7ac2
+|   |   |       ef19710b4274e47e0b0c8b686ca836ee14b222
+|   |   |       
+|   |   +---86
+|   |   |       1b55beb3aa265f144041e3401f7c71980ea439
+|   |   |       277567cae81b751f9e89f146b74bf03278e7dc
+|   |   |       68fa067ab8e0682d0e903cceac25ec7dab0b32
+|   |   |       ab4c4af07d546d548d2866b004cd1b63809f25
+|   |   |       d3f74c530b955983fd2688d26a4d9bdcdf7baa
+|   |   |       f8c250746eb17165df8435229638766f4f498e
+|   |   |       
+|   |   +---87
+|   |   |       09c5ebf776fbb68e98cf2c9a9a96bb0f0407a4
+|   |   |       252da34eed6a2339abee7ecde5f0977a5cecfb
+|   |   |       88a25c98d6ad74519e772fc552777b15632429
+|   |   |       
+|   |   +---88
+|   |   |       0190c1eb27367970822b6ee12a473d0a794483
+|   |   |       05408ee98bc316839c54d1e8b015852262e207
+|   |   |       6134127555eb7b41d48ef4967840b5593be37c
+|   |   |       fd9b07bcb0fd2b69df6df7bd36f6d619909645
+|   |   |       
+|   |   +---89
+|   |   |       6d832b671d66f665b1bbceed0f9eb6308e984a
+|   |   |       85a257483b8ec0d6bd722a0d07ae7d13ee2949
+|   |   |       97ebc81edea6ae2c20f5d8761942df371617be
+|   |   |       e71eab254f77e6e032620f2ade7f57089e86b8
+|   |   |       
+|   |   +---8c
+|   |   |       030791cffb7fe73b95cb430d2fa6a620b6fd13
+|   |   |       0535f7b4162cb61befe72c92b038d88710446e
+|   |   |       
+|   |   +---8d
+|   |   |       d24dae2ce22f1c27997e5ded96778700cbfa1e
+|   |   |       
+|   |   +---8e
+|   |   |       32d0683364cdf818b3cf2e7b0e9e8fd4518269
+|   |   |       d92bf1342bc64761b654ba78bb9ebff02b4420
+|   |   |       
+|   |   +---8f
+|   |   |       8cf4b7791418d30efc24e5b371cf7724d9f1ba
+|   |   |       fdb5e0c919c65b92e8a2bfd2602a25c8eec845
+|   |   |       
+|   |   +---90
+|   |   |       2cdcb345f11452ef065cd352a8e86a355ec3ae
+|   |   |       b95c9449d178d599377082f8da717ff106710b
+|   |   |       c9bf9a501960d6b85c40a703c8928e7aef5748
+|   |   |       d649967ae5f75ea6b85fdf342f44f16294003e
+|   |   |       
+|   |   +---91
+|   |   |       36a92f8e1e0a4cbb6e64f21b67e4771ff89f9c
+|   |   |       eb81a1c5901b1d1fe163893245769decc54e87
+|   |   |       
+|   |   +---92
+|   |   |       4bca2c1e490d05c71d3b10ce5cbdd2145cf0b6
+|   |   |       b83642b0ecae4f603082ac3589d4626bedf878
+|   |   |       d5911b925009aaa40722b1aa064bd1db949cca
+|   |   |       
+|   |   +---93
+|   |   |       29ee7af8246d5480a42f3205c911deed4cf32c
+|   |   |       6122fb6e4b0365a433b3dff0b428b7838756c3
+|   |   |       7a8bd0f4cc6c8ba1fb424e2963d5260b69ae8c
+|   |   |       889bd1983fa1e92108bae1642e9f4eb06f6de4
+|   |   |       
+|   |   +---94
+|   |   |       31015217bf15b45179758a9f92b275dfe6f7b4
+|   |   |       39ba0f2f35944d120cc89829f5e6caca8f6dd0
+|   |   |       
+|   |   +---95
+|   |   |       c3d395d93055990c94153ac8b58aaaa4d4fc40
+|   |   |       d3f52acccffa14e4b686be88e4cf484f4635e8
+|   |   |       
+|   |   +---96
+|   |   |       05c532d99a40f6935468972de25c8573c16c3c
+|   |   |       2cdbec46cbbae99d173864cd30927485a22527
+|   |   |       dc03df20da277e80af4c0c45c79c7cc2d17113
+|   |   |       
+|   |   +---97
+|   |   |       18d80d6ae3f43a2fb8f4b94c0357609da26719
+|   |   |       2d55ce1e64fbbf9c9958e2e7549e75e188fff5
+|   |   |       e84a12b8b241a3d499a9d82ab5d75e3942f05b
+|   |   |       
+|   |   +---98
+|   |   |       8b1fa75cdbb02f78e264eed6b68c47bd8a67e3
+|   |   |       
+|   |   +---99
+|   |   |       48228cb02dfa09d763c1b61739e2896398b431
+|   |   |       
+|   |   +---9a
+|   |   |       14d5c3f02df0b5ec3a56b6c67db07b6785d660
+|   |   |       19396770189ad897ea6ea02fac28996ad03d06
+|   |   |       ab65aafb7771b5c40d96f70579e2328ea575c9
+|   |   |       cca7ee0292c96161856b03fc072aa5b692ef83
+|   |   |       
+|   |   +---9b
+|   |   |       8741ec41d4bea0a1bba7c2539f111d8f4732c3
+|   |   |       
+|   |   +---9d
+|   |   |       b34744a2f1bd882fbd4eb1853f8011e282d807
+|   |   |       c1d496776c8a897d9a7c4b90b39e1719e41457
+|   |   |       
+|   |   +---9e
+|   |   |       5db90549b1b3cbb264ee5bced7d0b20733c232
+|   |   |       cce405b08ea51ca0df5c39260ad2cfea0be0b1
+|   |   |       e00b02c78af49c029be86d7bf6a04d4bd354f8
+|   |   |       
+|   |   +---9f
+|   |   |       507a28343951a4d3636b49b6a8e9787bcefd49
+|   |   |       7075b7eb4eba3b9be5cb397a6b5335e1086e2b
+|   |   |       dc6260123868064f627c2a2064a075a008f611
+|   |   |       
+|   |   +---a0
+|   |   |       3396109c7636ef012b25c77477144883c00a3a
+|   |   |       39dc0946ab6b69f80b130ab7b16d33bf3f8e50
+|   |   |       7e79e69e0209dc557c865a396e44935ce005f6
+|   |   |       c824c3ebdc1a3af96a25d8c96a2658d4dd74f0
+|   |   |       
+|   |   +---a1
+|   |   |       5a888cc5b08ebb6ecc56334661292d80f085fc
+|   |   |       e93dbd0573193b3053879a2b1c2babab0e3803
+|   |   |       
+|   |   +---a2
+|   |   |       2cd39935ef59c299222f369f4fa2828a8472bd
+|   |   |       
+|   |   +---a4
+|   |   |       f96adb5e21afc410572a3a1b32af5e947621be
+|   |   |       
+|   |   +---a5
+|   |   |       a8335eeb81ded7ffa23d63de24c5c1a71280c4
+|   |   |       
+|   |   +---a6
+|   |   |       457c2ecbe13fb0dc31a69fcd38a967c9864941
+|   |   |       8db482baa66335baac710a3340c30994b1143b
+|   |   |       
+|   |   +---a7
+|   |   |       18def57a02a08180699e2e588673e3059e17b1
+|   |   |       45c4d6e6e0f6569d0ddc2488ec154e1695f661
+|   |   |       93d8d1835925656971d27c4846004d9a820e70
+|   |   |       ea1b0ae30e0c5e8e96ef89828d3b590e768e9e
+|   |   |       
+|   |   +---a8
+|   |   |       0db0b64c15b13b626017babe6c9934e2e2c766
+|   |   |       523e51d696b78419b41c89f995638880789184
+|   |   |       7173471c7212c498bbefc8e3eb39e3f4454d9f
+|   |   |       881048f847347b7cb18f70e0cdc9b017eed4fa
+|   |   |       a534d77dd74a8af8e088a8c273e5c805dc8d34
+|   |   |       
+|   |   +---a9
+|   |   |       2cd5c9ce6d36f0ede25fbff1dd9272ca9bdf70
+|   |   |       448bac7b7fd3e71457235a4c3d8d184df3ef07
+|   |   |       d09a18b8e8b43b3273e404a5328baae88e546b
+|   |   |       
+|   |   +---aa
+|   |   |       0cc237337cb15efb64e20ebc205d1cb978160c
+|   |   |       20e6dbb469ce0232218b91b0524e4e63c6eba3
+|   |   |       3a2bac34f57eb284848f93f5da65db73de1b50
+|   |   |       517d8ecd0a640699eefed31dc39bf0dcf530b9
+|   |   |       
+|   |   +---ab
+|   |   |       296cd42cfa832c05dc5e4c13089c2a11c576f4
+|   |   |       a69290d9cbc42634751b3728a80135e0e16de0
+|   |   |       edb4ecf113542bda0a10b2c432eac67e833d63
+|   |   |       
+|   |   +---ac
+|   |   |       b1c1903f943d5118af1c26cbb1263c6b63cca5
+|   |   |       
+|   |   +---ad
+|   |   |       bda8536a1e8959c50194fa7bff430170242797
+|   |   |       
+|   |   +---ae
+|   |   |       96ab5c0339fef63371c7c10955e7b62f296ee4
+|   |   |       
+|   |   +---b1
+|   |   |       2348457ab02fb8707846450d10b19bbbe1d645
+|   |   |       376058c57a872ec8b3b1fadbe42bb48666fd4a
+|   |   |       
+|   |   +---b2
+|   |   |       1551d8dd821ef2240e4a14827e9a47fe845369
+|   |   |       66cdff557f4091064f03f557131e98dec62156
+|   |   |       6b345a982b57221be0e156212098b98973d815
+|   |   |       6d016bc286ebee0d7e5d21da53f6c683b42c65
+|   |   |       dffbee2745208fa35f6d04868cfec993e5804c
+|   |   |       
+|   |   +---b3
+|   |   |       72ffed9821c4bee86ba67a01ee464a49a94376
+|   |   |       e56ceabfbf07820edde0cd934df3491a48d83f
+|   |   |       fbed69fc52f95aa27ce417bc3c572839636dfa
+|   |   |       
+|   |   +---b5
+|   |   |       142b59078da43dc7a2588bc75b9c3e8f20dd30
+|   |   |       21edf55d001da6b1f54aafb92b0a1195c8cfe7
+|   |   |       5c16224421a8748d15022a63e1bc67360de296
+|   |   |       72cf8312f3421928acacf7dc4db33b773a4705
+|   |   |       bfc2af9354ec01ca9d49b35311e58bf87c086a
+|   |   |       
+|   |   +---b6
+|   |   |       05689a2f2a7aeb0dddb7fecfea192e237cf784
+|   |   |       7bf765555ee28635c39145a97aec986c898955
+|   |   |       
+|   |   +---b7
+|   |   |       041bcb0f5336ebad6f67cb981afc0915555014
+|   |   |       3628126cb3f7a39e151a043ab27e0dfb3d1db4
+|   |   |       5d0dbb2a0340b1d2675fcdb12983447b05fb06
+|   |   |       a04042267bd76f7981d314910199f4f17cf97c
+|   |   |       c37295022352fafdccad219a6bc597ff4d7274
+|   |   |       
+|   |   +---b8
+|   |   |       01d84deb1d2114c2f1950cbb686278e14ee0eb
+|   |   |       43baccde9698e9610ddd08b6743cc4460082b0
+|   |   |       d12d3e4454a3998812948f466717e53682c562
+|   |   |       f0cc8ccb03d5d8cbac1c385307d8da19e8cb71
+|   |   |       
+|   |   +---b9
+|   |   |       5df92770fc78c76b98b444395acce0055c3680
+|   |   |       6f3fea24b8d83c051f314274e68bcc6050e4d3
+|   |   |       85291d942245482907a66b9326f3f9b6422ec7
+|   |   |       
+|   |   +---ba
+|   |   |       0216611acedd3006dec7ddf9a4a82ca4e62b42
+|   |   |       146e0175bcf9cb13e4b0f6057e560de6a37ebc
+|   |   |       596884d1b60f8b4f2172aae9c45075a3ba777e
+|   |   |       98f5b12b33409251d113e94b0a4182b4ff1eef
+|   |   |       c391b315a229b2938e54a8f07d120892a794a6
+|   |   |       ce14a9e1eb2f6f713cd8984ff9f83583db3317
+|   |   |       d335232b32008976e79abd076a35641cfdad8f
+|   |   |       
+|   |   +---bb
+|   |   |       175afe8b15d18cbfda104ce01cfa93af578155
+|   |   |       6057ea35ac09d0b927bea0fa42ba33f2681e10
+|   |   |       
+|   |   +---bc
+|   |   |       b305c4d2779fcda5cbea1465cdb0ca0275758f
+|   |   |       
+|   |   +---bd
+|   |   |       046bcb10a090db4aff9b198766803d780a0602
+|   |   |       61fd9a8e7f1dfdedbf7aa1f712f54224204d96
+|   |   |       72ce2ed75ebf2a0df13b3b70d781ddc5cd9e0e
+|   |   |       dce24c33ff2479650efc5ef3c06107402f17d5
+|   |   |       
+|   |   +---bf
+|   |   |       0046f364f52f031a97119e4e57a2e88f8ebba4
+|   |   |       3172e3feb1d12d3eb5ddbf563f765372f2e4aa
+|   |   |       7d5e6ee7efd7b5897d40e1c8cf061cf15d9142
+|   |   |       ecc11ed50fa2f8e4bc38a871cb37e0cbf4d884
+|   |   |       
+|   |   +---c1
+|   |   |       2a923529b1ac3e42dbf3ff7c0c71cf74bba00a
+|   |   |       
+|   |   +---c2
+|   |   |       16c7e8be9f2596908919e1864dbc64698a22b7
+|   |   |       7cd77f22821411cb15aba8d13d5b46a3c7e791
+|   |   |       8ae61c4eb9576e16f8902ffc9b6c6570d497b3
+|   |   |       96327e6f2e3a99fab011f3c2467d79374f4aee
+|   |   |       999323deb2513ab33929919caa70f4e3fbefc9
+|   |   |       b8648cdc7fd194a99be967fb93cbc16dace7c0
+|   |   |       
+|   |   +---c5
+|   |   |       2438b0947a3afe3b3a33820c8158f983edf608
+|   |   |       6f074a430292a99263acc14cddb2f3e28b124d
+|   |   |       770d84b965411df81e296ac8ad750051edc759
+|   |   |       77beafab85f8d18fd68800e842f9ec12d6265f
+|   |   |       
+|   |   +---c6
+|   |   |       6da84d2c8af5135cc07d5166bc8dec67c943db
+|   |   |       79b57551b0aab2dde959b63879f3f16f34e851
+|   |   |       bd2a226b3d62fc9334892f62e5022a97c8b363
+|   |   |       
+|   |   +---c7
+|   |   |       373e98572df86da15af09f70539b501563485d
+|   |   |       8d808e33bab66a62921957aa5574c1ee29c836
+|   |   |       
+|   |   +---c8
+|   |   |       0d594a10df627e5b9616945cae6ff00a0de191
+|   |   |       
+|   |   +---c9
+|   |   |       377075213dbb14dd2a16f213a885a47f144905
+|   |   |       4d7f1fb5aed4e608e4b052666b0aa2eb195ce8
+|   |   |       
+|   |   +---ca
+|   |   |       731fe937aaffe05437cc4cd1a5872ee9ed4579
+|   |   |       
+|   |   +---cb
+|   |   |       7d577b9cb8d4d0d597f40f3baa3ae7c52d6080
+|   |   |       f7234eb15ef2e78501e4de56a851d412926a80
+|   |   |       
+|   |   +---cc
+|   |   |       660baf004ba572044ce583c6faca7344fbb5b4
+|   |   |       a714bcc733c94fba5a233c3a34141c347cecc5
+|   |   |       aab719a09ca3218554ffca4b4b8476ba2b432f
+|   |   |       
+|   |   +---cd
+|   |   |       036ece4d258c55aebf2ab80ab84d1887d67652
+|   |   |       288b1babe08ebcf88a13de76660e2b6ce67558
+|   |   |       367fbaa0beb78eacceb2708ea524c52c9a5095
+|   |   |       8c132a378b49bd9604d269336b49230a892471
+|   |   |       e779bd19bf4fe185fb770c86d1e32f96d89b4c
+|   |   |       
+|   |   +---cf
+|   |   |       37c006c790fd9ff22c90f35d3ff377a949db55
+|   |   |       68f1ef13389364d77b9817fb3189d6cfdfd5a3
+|   |   |       87cbb2738f8b2aef3d9231fff967385994e416
+|   |   |       889d60647f23beb2783b3c931165c4731fa57d
+|   |   |       d84f5651bdf3fac38d3e82647063cb086fa06e
+|   |   |       e3c95d4369e0ec9782a75c7c9ddb862a729f7e
+|   |   |       
+|   |   +---d0
+|   |   |       bd2fe3d1a34d2ee3c3047786c68647999fb3f4
+|   |   |       
+|   |   +---d1
+|   |   |       edc9add5bee1459cd85a79cd68bfb5f55c346d
+|   |   |       f498c7e0a3dea17916ef052bc69dbd97887f49
+|   |   |       
+|   |   +---d2
+|   |   |       7772bc3ccabaa09016a3ea5ffb3b93cdfcdad6
+|   |   |       f553d4ef9365a881483c982f1da09a9532d919
+|   |   |       
+|   |   +---d3
+|   |   |       4d60230410b2f9f5744bc6394aa3c1c3c06cef
+|   |   |       6a16835f20c00fcab86848b8a6f57523c57db0
+|   |   |       7a3e1312e4b7ab0a6fa9fb970c0772c02266e0
+|   |   |       924a71e5de5025fa41a4766257121549b8e087
+|   |   |       f1a0d4f5a991516c50d75c248e8f21be3d9c05
+|   |   |       
+|   |   +---d4
+|   |   |       18514a1388442bac07a016a9fb6239965ca5d3
+|   |   |       290dfa7c5d661fa57ad26d1591d9d09acb7c51
+|   |   |       
+|   |   +---d5
+|   |   |       40cba6382e68e0b3e60587cec0a49e26115fee
+|   |   |       f8a11c1528707134613e2e2fa98cec04f35a7f
+|   |   |       
+|   |   +---d6
+|   |   |       5373535ec84e0b2193f9f48b81031150673b27
+|   |   |       
+|   |   +---d8
+|   |   |       52e59c6ff8c66c23f192407e99ac95cf3bb66c
+|   |   |       a199b60cb23fb55b93e5e10e26b3b7eb390769
+|   |   |       de46c6e0f2a5b12fe6faea74ddd6c1181dbf5e
+|   |   |       eba115bc70b86edb2f8f8f79b9d708417603bc
+|   |   |       
+|   |   +---d9
+|   |   |       5aeca5fc726123fda00d208c611fa026c4e9eb
+|   |   |       86f6d6f665fff8adc0a54acf3364b6e5c753c8
+|   |   |       c0220d204f2a9be200daedf55d00442c7cbc48
+|   |   |       
+|   |   +---da
+|   |   |       2345c433e4588a3c80016c419f74db2ddd401b
+|   |   |       2a543cdadca786bda3b265141857aede4daf75
+|   |   |       805ebe3a862a1e1e0653e7ffa7e03d037c21fd
+|   |   |       ecd8a66bebfe119883d19bfe7507cca92290df
+|   |   |       
+|   |   +---db
+|   |   |       065a3b9b358a54d408884765af738f3a1cb9d1
+|   |   |       3d1221e64e6058200ee8aaac499e3a83bf203c
+|   |   |       4ebde905dd8cee1d05a0fe669f33ebcbcd768e
+|   |   |       
+|   |   +---dc
+|   |   |       3c12d8d2ea62e1be4fa6973737d9520767ca44
+|   |   |       e198b9ecbfa2f605568f2e0b7fb38a2e21bc74
+|   |   |       
+|   |   +---dd
+|   |   |       02456c0a2bae5887c67c4409914bab1d7f2ffa
+|   |   |       103134127db06ab2f96a3e734d10c020d05fef
+|   |   |       
+|   |   +---de
+|   |   |       22516877dbafabb8556ac109c2d6a59e898c1d
+|   |   |       304fdb6d2ef37f30e0b3ef685a58d585d696c4
+|   |   |       7fffcbfc8dcd5c2a3d7bd116b575a59391fa41
+|   |   |       dc028f15dca09393715b75a03d1e1fce38b50c
+|   |   |       
+|   |   +---e0
+|   |   |       01a0ade220e3e2da52daeabded98305b117f86
+|   |   |       4a409cf7c2c4c2d1dbae0c0c2d6cfefa867494
+|   |   |       9b60df3875305a700b391f632d4af2026fbd63
+|   |   |       ad1b2e2a8739e3e7f2db1c02b88242754d4db8
+|   |   |       
+|   |   +---e2
+|   |   |       240dc85687da4b73da53138b09af6a522d53a9
+|   |   |       482d75e7b53c320850f945f4c75e9e8798b78c
+|   |   |       c78b1da47caa82accc0172b4b326088f5bcb62
+|   |   |       
+|   |   +---e3
+|   |   |       180c39543212050a1e851db358dd400f1cb50e
+|   |   |       eb74e2261af5a736650b5b1fdc2376269894da
+|   |   |       
+|   |   +---e4
+|   |   |       61522b673c1863680df9b9db0204d3125980dd
+|   |   |       
+|   |   +---e5
+|   |   |       289fbc0ceb9c68ccb45a97abea8ac215053f6b
+|   |   |       40d8d85062b571a73a16d424e6d816aabecb10
+|   |   |       87fb509b0a4c276c0c07365c110afa7441f191
+|   |   |       
+|   |   +---e6
+|   |   |       23370ff592913f8cb77bd50b640d03ae6f704d
+|   |   |       59ff6b40bdf3dfaf86980322326dd2a067078a
+|   |   |       fa13f5ae99c65a90e0272194c236fb97984168
+|   |   |       
+|   |   +---e8
+|   |   |       31b0e5ab89ccb204ada8430d96f36f13a03249
+|   |   |       85853c576ed5eb166a492d616b7da0df32645b
+|   |   |       a2270339caecd9a00898ab2fe653d6fb09b676
+|   |   |       
+|   |   +---e9
+|   |   |       1a28af15d3695608c01413b57af865ce62e215
+|   |   |       b2810db9e055f2da1991012967a3733cb11990
+|   |   |       cd024216596a4c643a434268b0f162075f261c
+|   |   |       
+|   |   +---ea
+|   |   |       2aebbf69226981a82aab750a846f27f22273e3
+|   |   |       d76b730eca7c36354cc599c37673011bcb6db3
+|   |   |       
+|   |   +---eb
+|   |   |       5c82c14958ff35aebfc9df63d7d704ede33f86
+|   |   |       827f76e346dcbe37861e16dba797e49e94aa81
+|   |   |       e959d17ad888a37d3bd247a74278c8e3408dd5
+|   |   |       
+|   |   +---ec
+|   |   |       1ff4777d558dd9b0624545ff1a40460ed3db77
+|   |   |       8453f4ed4bad0d124c7e6fb23b0005c724ff32
+|   |   |       86e5c5a938759f1972740782c79a43cad3cbf9
+|   |   |       
+|   |   +---ed
+|   |   |       459e4b9ad7841ab1feb28bb6d2896f386e312c
+|   |   |       69dfafaabdea2d4ecc50da974c98b8af8aca12
+|   |   |       ff65d7735e311044bb6fbc5e39a4d7f9119186
+|   |   |       
+|   |   +---ee
+|   |   |       b904eb874edc7f473406cb9c51d66a59b1debd
+|   |   |       c8cab83d8541751b3e456c9aab2c75d5ebac3e
+|   |   |       e6c01b3152393123f7ac4dbf4a3060d0aa651c
+|   |   |       
+|   |   +---ef
+|   |   |       8ff863f567a3df7b410e4f42c68aeb736d2a26
+|   |   |       9f613ea4deae50f1ad534386b39ed8e175bfb1
+|   |   |       
+|   |   +---f0
+|   |   |       469df6ea4a21387fef73bf07af1c318d6b38a8
+|   |   |       aacd6c9e067aaf9d16593fb31ed00483b0f069
+|   |   |       
+|   |   +---f1
+|   |   |       56bb9cde3de68122ebc3e7da7e7b50a356a274
+|   |   |       81fbd0af9ec32a08f9a411a5f8655cdeb6726c
+|   |   |       d1f3e7030720bae07c34ac30d34a68b866941b
+|   |   |       d5ef4296cadacfd68fcb3803d20c73daee9769
+|   |   |       f82e866b1cd0d89258df8b9884bc2f569b483d
+|   |   |       
+|   |   +---f3
+|   |   |       3a7802c28e845e755eab1a781abe569477e0c3
+|   |   |       618a15496de7c93b4aca8deba783aa5642f33c
+|   |   |       996d3e7c26cfeca3d1f6786254548323b051b8
+|   |   |       a6d48fac1828de32d1375989c39088bca7e607
+|   |   |       ad80a27672d355d12cc675e963d0cae6ee70da
+|   |   |       b9aad32797da748af64d77e6b06740efe35f4d
+|   |   |       eb3d3afb87b3e56fbbbef664cd30740eb2352a
+|   |   |       
+|   |   +---f4
+|   |   |       8d623cc7e308c9a65d330238bf89c23a876936
+|   |   |       
+|   |   +---f5
+|   |   |       49f99c8f7d8c57d619c6b9f1334a227aad1111
+|   |   |       5d60b09a300974e62f83ea3f10ecea9ca213a3
+|   |   |       b2a5668d83420d171c683a7fa74ca0c37cceb8
+|   |   |       
+|   |   +---f6
+|   |   |       5170d356e2df030b0cbf085b637018eeca7384
+|   |   |       
+|   |   +---f7
+|   |   |       42b04e85bc754dafe0b6dd252432cfad2064a1
+|   |   |       574e67e5a2653bf1e0c6f9f3f7eb5bc1b6cab3
+|   |   |       
+|   |   +---f8
+|   |   |       b615be8bc943412e9202f8810fc10e21744346
+|   |   |       fe4feb0375ec8653c2dd11b014d22f9c21fc1a
+|   |   |       
+|   |   +---f9
+|   |   |       8b43a88dcd1a29bf144f5c1afa32d0e934d15a
+|   |   |       e7af2f4e5ba48633e5fda6ea11ef026f847342
+|   |   |       
+|   |   +---fb
+|   |   |       777ac0147bfd33e91a1422c8487e896b848085
+|   |   |       
+|   |   +---fc
+|   |   |       447ebbe01cc4b0446817653abb23c1caefccaf
+|   |   |       
+|   |   +---fd
+|   |   |       c3cc639e8cb15e3aa6610bb354caeb0bbd8b64
+|   |   |       
+|   |   +---fe
+|   |   |       36fd67f68a563981783189b4f89c98cd157794
+|   |   |       5fc8b9592a21dc63d9ee90602f2982b0c84a66
+|   |   |       
+|   |   +---ff
+|   |   |       7b23847aadd79aa3cb62ff45324f7681a4a973
+|   |   |       
+|   |   +---info
+|   |   \---pack
+|   +---refs
+|   |   +---heads
+|   |   |   |   main
+|   |   |   |   
+|   |   |   \---feat
+|   |   |           new-database
+|   |   |           
+|   |   +---remotes
+|   |   |   \---origin
+|   |   |       |   HEAD
+|   |   |       |   main
+|   |   |       |   
+|   |   |       \---feat
+|   |   |               new-database
+|   |   |               
+|   |   \---tags
+|   \---worktrees
+|       \---GestionParc-main
+|           |   COMMIT_EDITMSG
+|           |   commondir
+|           |   FETCH_HEAD
+|           |   gitdir
+|           |   HEAD
+|           |   index
+|           |   ORIG_HEAD
+|           |   
+|           +---logs
+|           |       HEAD
+|           |       
+|           \---refs
+|   \---workflows
+|           dotnet-desktop.yml
+|           
++---.notes
+|       BRAINSTORMING_E6.md
+|       
++---.vs
+|   +---GestiParc
+|   |   +---copilot-chat
+|   |   |   \---00338dc2
+|   |   |       \---sessions
+|   |   |               6e910a8e-3605-413b-805c-4cb853783369
+|   |   |               
+|   |   +---CopilotIndices
+|   |   |   \---17.14.794.21998
+|   |   |           CodeChunks.db
+|   |   |           SemanticSymbols.db
+|   |   |           
+|   |   +---DesignTimeBuild
+|   |   |       .dtbcache.v2
+|   |   |       
+|   |   +---FileContentIndex
+|   |   |       328b3093-70c5-4fdc-b397-7d7b321ac804.vsidx
+|   |   |       356114ea-5c13-432c-bf5e-b80732df642c.vsidx
+|   |   |       6501907a-92a4-4245-aa33-b7f4fda6ea09.vsidx
+|   |   |       c64c012f-c4a4-4828-bb20-6f04cff9cc6d.vsidx
+|   |   |       e1718e9f-721a-4c03-904f-98c6263156a3.vsidx
+|   |   |       
+|   |   \---v17
+|   |           .futdcache.v2
+|   |           DocumentLayout.backup.json
+|   |           DocumentLayout.json
+|   |           
+|   +---ProjectEvaluation
+|   |       gestiparc.metadata.v9.bin
+|   |       gestiparc.projects.v9.bin
+|   |       gestiparc.strings.v9.bin
+|   |       projetparc.metadata.v9.bin
+|   |       projetparc.projects.v9.bin
+|   |       projetparc.strings.v9.bin
+|   |       
+|   \---ProjetParc
+|       +---CopilotIndices
+|       |   \---17.14.794.21998
+|       |           CodeChunks.db
+|       |           SemanticSymbols.db
+|       |           
+|       +---DesignTimeBuild
+|       |       .dtbcache.v2
+|       |       
+|       +---FileContentIndex
+|       |   |   2ef323ae-5318-439c-8208-edef3058aa7d.vsidx
+|       |   |   4038aba4-2c60-4df4-b193-4cfa0a6cc729.vsidx
+|       |   |   926d0364-1b95-4b8d-9a91-051e358820ec.vsidx
+|       |   |   b6beed43-3749-40d6-ba3f-0fc0567ae9ef.vsidx
+|       |   |   ca37aea5-5a62-446b-90f5-3da11092a4e7.vsidx
+|       |   |   d089ea7e-5382-4775-8843-9c6ed061f3d3.vsidx
+|       |   |   
+|       |   \---merges
+|       \---v17
+|               .futdcache.v2
+|               fileList.bin
+|               
++---bin
+|   \---Debug
+|       \---net9.0
++---Docs
+|       Diagramme sans nom.drawio
+|       Diagramme sans nom.drawio (3).png
+|       Maquette.drawio (1).png
+|       mcd_park.drawio
+|       SettingsView_Flow.md
+|       UML_CasUtilisation.md
+|       UML_DiagrammeClasses.md
+|       UML_DiagrammeSequence.md
+|       
++---GestiParc.Core
+|   |   GestiParc.Core.csproj
+|   |   
+|   +---bin
+|   |   +---Debug
+|   |   |   \---net9.0
+|   |   |           GestiParc.Core.deps.json
+|   |   |           GestiParc.Core.dll
+|   |   |           GestiParc.Core.pdb
+|   |   |           
+|   |   \---Release
+|   |       \---net9.0
+|   |               GestiParc.Core.deps.json
+|   |               GestiParc.Core.dll
+|   |               GestiParc.Core.pdb
+|   |               
+|   +---Domain
+|   |   \---Entities
+|   |           Utilisateur.cs
+|   |           
+|   +---DTOs
+|   |       AgentDto.cs
+|   |       EquipeDto.cs
+|   |       EquipmentDto.cs
+|   |       EquipmentTypeDto.cs
+|   |       SiteDto.cs
+|   |       
+|   +---Interfaces
+|   |   +---Repositories
+|   |   |       IAgentRepository.cs
+|   |   |       IEquipeRepository.cs
+|   |   |       IEquipmentRepository.cs
+|   |   |       IEquipmentTypeRepository.cs
+|   |   |       ISiteRepository.cs
+|   |   |       IUtilisateurRepository.cs
+|   |   |       
+|   |   \---Services
+|   |           ICsvExportService.cs
+|   |           IDocumentGenerationService.cs
+|   |           
+|   +---obj
+|   |   |   GestiParc.Core.csproj.nuget.dgspec.json
+|   |   |   GestiParc.Core.csproj.nuget.g.props
+|   |   |   GestiParc.Core.csproj.nuget.g.targets
+|   |   |   project.assets.json
+|   |   |   project.nuget.cache
+|   |   |   
+|   |   +---Debug
+|   |   |   \---net9.0
+|   |   |       |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|   |   |       |   GestiParc.Core.AssemblyInfo.cs
+|   |   |       |   GestiParc.Core.AssemblyInfoInputs.cache
+|   |   |       |   GestiParc.Core.assets.cache
+|   |   |       |   GestiParc.Core.csproj.CoreCompileInputs.cache
+|   |   |       |   GestiParc.Core.csproj.FileListAbsolute.txt
+|   |   |       |   GestiParc.Core.dll
+|   |   |       |   GestiParc.Core.GeneratedMSBuildEditorConfig.editorconfig
+|   |   |       |   GestiParc.Core.GlobalUsings.g.cs
+|   |   |       |   GestiParc.Core.pdb
+|   |   |       |   GestiParc.Core.sourcelink.json
+|   |   |       |   
+|   |   |       +---ref
+|   |   |       |       GestiParc.Core.dll
+|   |   |       |       
+|   |   |       \---refint
+|   |   |               GestiParc.Core.dll
+|   |   |               
+|   |   \---Release
+|   |       \---net9.0
+|   |           |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|   |           |   GestiParc.Core.AssemblyInfo.cs
+|   |           |   GestiParc.Core.AssemblyInfoInputs.cache
+|   |           |   GestiParc.Core.assets.cache
+|   |           |   GestiParc.Core.csproj.CoreCompileInputs.cache
+|   |           |   GestiParc.Core.csproj.FileListAbsolute.txt
+|   |           |   GestiParc.Core.dll
+|   |           |   GestiParc.Core.GeneratedMSBuildEditorConfig.editorconfig
+|   |           |   GestiParc.Core.GlobalUsings.g.cs
+|   |           |   GestiParc.Core.pdb
+|   |           |   GestiParc.Core.sourcelink.json
+|   |           |   
+|   |           +---ref
+|   |           |       GestiParc.Core.dll
+|   |           |       
+|   |           \---refint
+|   |                   GestiParc.Core.dll
+|   |                   
+|   \---Services
+|           CsvExportService.cs
+|           DocumentGenerationService.cs
+|           
++---GestiParc.Infrastructure
+|   |   DbFactory.cs
+|   |   GestiParc.Infrastructure.csproj
+|   |   
+|   +---bin
+|   |   +---Debug
+|   |   |   \---net9.0
+|   |   |           GestiParc.Core.dll
+|   |   |           GestiParc.Core.pdb
+|   |   |           GestiParc.Infrastructure.deps.json
+|   |   |           GestiParc.Infrastructure.dll
+|   |   |           GestiParc.Infrastructure.pdb
+|   |   |           
+|   |   \---Release
+|   |       \---net9.0
+|   |               GestiParc.Core.dll
+|   |               GestiParc.Core.pdb
+|   |               GestiParc.Infrastructure.deps.json
+|   |               GestiParc.Infrastructure.dll
+|   |               GestiParc.Infrastructure.pdb
+|   |               
+|   +---Data
+|   |   \---Repositories
+|   |           AgentMySqlRepository.cs
+|   |           EquipeMySqlRepository.cs
+|   |           EquipmentMySqlRepository.cs
+|   |           EquipmentTypeMySqlRepository.cs
+|   |           SiteMySqlRepository.cs
+|   |           UtilisateurMySqlRepository.cs
+|   |           
+|   \---obj
+|       |   GesriParc.Infrastructure.csproj.nuget.dgspec.json
+|       |   GesriParc.Infrastructure.csproj.nuget.g.props
+|       |   GesriParc.Infrastructure.csproj.nuget.g.targets
+|       |   GestiParc.Infrastructure.csproj.nuget.dgspec.json
+|       |   GestiParc.Infrastructure.csproj.nuget.g.props
+|       |   GestiParc.Infrastructure.csproj.nuget.g.targets
+|       |   project.assets.json
+|       |   project.nuget.cache
+|       |   
+|       +---Debug
+|       |   \---net9.0
+|       |       |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|       |       |   GesriParc.Infrastructure.assets.cache
+|       |       |   GestiPar.A086676D.Up2Date
+|       |       |   GestiParc.Infrastructure.AssemblyInfo.cs
+|       |       |   GestiParc.Infrastructure.AssemblyInfoInputs.cache
+|       |       |   GestiParc.Infrastructure.assets.cache
+|       |       |   GestiParc.Infrastructure.csproj.AssemblyReference.cache
+|       |       |   GestiParc.Infrastructure.csproj.CoreCompileInputs.cache
+|       |       |   GestiParc.Infrastructure.csproj.FileListAbsolute.txt
+|       |       |   GestiParc.Infrastructure.dll
+|       |       |   GestiParc.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+|       |       |   GestiParc.Infrastructure.GlobalUsings.g.cs
+|       |       |   GestiParc.Infrastructure.pdb
+|       |       |   GestiParc.Infrastructure.sourcelink.json
+|       |       |   
+|       |       +---ref
+|       |       |       GestiParc.Infrastructure.dll
+|       |       |       
+|       |       \---refint
+|       |               GestiParc.Infrastructure.dll
+|       |               
+|       \---Release
+|           \---net9.0
+|               |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|               |   GestiPar.A086676D.Up2Date
+|               |   GestiParc.Infrastructure.AssemblyInfo.cs
+|               |   GestiParc.Infrastructure.AssemblyInfoInputs.cache
+|               |   GestiParc.Infrastructure.assets.cache
+|               |   GestiParc.Infrastructure.csproj.AssemblyReference.cache
+|               |   GestiParc.Infrastructure.csproj.CoreCompileInputs.cache
+|               |   GestiParc.Infrastructure.csproj.FileListAbsolute.txt
+|               |   GestiParc.Infrastructure.dll
+|               |   GestiParc.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+|               |   GestiParc.Infrastructure.GlobalUsings.g.cs
+|               |   GestiParc.Infrastructure.pdb
+|               |   GestiParc.Infrastructure.sourcelink.json
+|               |   
+|               +---ref
+|               |       GestiParc.Infrastructure.dll
+|               |       
+|               \---refint
+|                       GestiParc.Infrastructure.dll
+|                       
++---GestiParc.Tests
+|   |   appsettings.json
+|   |   DatabaseConnectionTests.cs
+|   |   GestiParc.Tests.csproj
+|   |   
+|   +---bin
+|   |   \---Debug
+|   |       \---net9.0
+|   |           |   .msCoverageSourceRootsMapping_GestiParc.Tests
+|   |           |   appsettings.json
+|   |           |   CoverletSourceRootsMapping_GestiParc.Tests
+|   |           |   GestiParc.Core.dll
+|   |           |   GestiParc.Core.pdb
+|   |           |   GestiParc.Infrastructure.dll
+|   |           |   GestiParc.Infrastructure.pdb
+|   |           |   GestiParc.Tests.deps.json
+|   |           |   GestiParc.Tests.dll
+|   |           |   GestiParc.Tests.pdb
+|   |           |   GestiParc.Tests.runtimeconfig.json
+|   |           |   Microsoft.Extensions.Configuration.Abstractions.dll
+|   |           |   Microsoft.Extensions.Configuration.dll
+|   |           |   Microsoft.Extensions.Configuration.FileExtensions.dll
+|   |           |   Microsoft.Extensions.Configuration.Json.dll
+|   |           |   Microsoft.Extensions.DependencyInjection.Abstractions.dll
+|   |           |   Microsoft.Extensions.FileProviders.Abstractions.dll
+|   |           |   Microsoft.Extensions.FileProviders.Physical.dll
+|   |           |   Microsoft.Extensions.FileSystemGlobbing.dll
+|   |           |   Microsoft.Extensions.Logging.Abstractions.dll
+|   |           |   Microsoft.Extensions.Primitives.dll
+|   |           |   Microsoft.TestPlatform.CommunicationUtilities.dll
+|   |           |   Microsoft.TestPlatform.CoreUtilities.dll
+|   |           |   Microsoft.TestPlatform.CrossPlatEngine.dll
+|   |           |   Microsoft.TestPlatform.PlatformAbstractions.dll
+|   |           |   Microsoft.TestPlatform.Utilities.dll
+|   |           |   Microsoft.VisualStudio.CodeCoverage.Shim.dll
+|   |           |   Microsoft.VisualStudio.TestPlatform.Common.dll
+|   |           |   Microsoft.VisualStudio.TestPlatform.ObjectModel.dll
+|   |           |   MySqlConnector.dll
+|   |           |   Newtonsoft.Json.dll
+|   |           |   testhost.dll
+|   |           |   testhost.exe
+|   |           |   xunit.abstractions.dll
+|   |           |   xunit.assert.dll
+|   |           |   xunit.core.dll
+|   |           |   xunit.execution.dotnet.dll
+|   |           |   xunit.runner.reporters.netcoreapp10.dll
+|   |           |   xunit.runner.utility.netcoreapp10.dll
+|   |           |   xunit.runner.visualstudio.testadapter.dll
+|   |           |   
+|   |           +---cs
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---de
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---es
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---fr
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---it
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---ja
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---ko
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---pl
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---pt-BR
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---ru
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---runtimes
+|   |           |   \---win
+|   |           |       \---lib
+|   |           |           \---net9.0
+|   |           +---tr
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           +---zh-Hans
+|   |           |       Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |           |       Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |           |       Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |           |       
+|   |           \---zh-Hant
+|   |                   Microsoft.TestPlatform.CommunicationUtilities.resources.dll
+|   |                   Microsoft.TestPlatform.CoreUtilities.resources.dll
+|   |                   Microsoft.TestPlatform.CrossPlatEngine.resources.dll
+|   |                   Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+|   |                   Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
+|   |                   
+|   \---obj
+|       |   GestiParc.Tests.csproj.nuget.dgspec.json
+|       |   GestiParc.Tests.csproj.nuget.g.props
+|       |   GestiParc.Tests.csproj.nuget.g.targets
+|       |   project.assets.json
+|       |   project.nuget.cache
+|       |   
+|       \---Debug
+|           \---net9.0
+|               |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|               |   GestiPar.CAAA31A5.Up2Date
+|               |   GestiParc.Tests.AssemblyInfo.cs
+|               |   GestiParc.Tests.AssemblyInfoInputs.cache
+|               |   GestiParc.Tests.assets.cache
+|               |   GestiParc.Tests.csproj.AssemblyReference.cache
+|               |   GestiParc.Tests.csproj.CoreCompileInputs.cache
+|               |   GestiParc.Tests.csproj.FileListAbsolute.txt
+|               |   GestiParc.Tests.dll
+|               |   GestiParc.Tests.GeneratedMSBuildEditorConfig.editorconfig
+|               |   GestiParc.Tests.genruntimeconfig.cache
+|               |   GestiParc.Tests.GlobalUsings.g.cs
+|               |   GestiParc.Tests.pdb
+|               |   GestiParc.Tests.sourcelink.json
+|               |   
+|               +---ref
+|               |       GestiParc.Tests.dll
+|               |       
+|               \---refint
+|                       GestiParc.Tests.dll
+|                       
++---GestiParc.Ui
+|   |   App.config
+|   |   GestiParc.Ui.csproj
+|   |   GestiParc.Ui.csproj.user
+|   |   Program.cs
+|   |   
+|   +---bin
+|   |   +---Debug
+|   |   |   \---net9.0-windows
+|   |   |       |   GestionParc.ico
+|   |   |       |   GestiParc.Core.dll
+|   |   |       |   GestiParc.Core.pdb
+|   |   |       |   GestiParc.deps.json
+|   |   |       |   GestiParc.dll
+|   |   |       |   GestiParc.dll.config
+|   |   |       |   GestiParc.exe
+|   |   |       |   GestiParc.Infrastructure.dll
+|   |   |       |   GestiParc.Infrastructure.pdb
+|   |   |       |   GestiParc.pdb
+|   |   |       |   GestiParc.runtimeconfig.json
+|   |   |       |   Microsoft.Extensions.DependencyInjection.Abstractions.dll
+|   |   |       |   Microsoft.Extensions.Logging.Abstractions.dll
+|   |   |       |   MySqlConnector.dll
+|   |   |       |   System.Configuration.ConfigurationManager.dll
+|   |   |       |   System.Diagnostics.EventLog.dll
+|   |   |       |   System.Security.Cryptography.ProtectedData.dll
+|   |   |       |   
+|   |   |       \---runtimes
+|   |   |           \---win
+|   |   |               \---lib
+|   |   |                   \---net9.0
+|   |   |                           System.Diagnostics.EventLog.dll
+|   |   |                           
+|   |   \---Release
+|   |       \---net9.0-windows
+|   |           \---win-x64
+|   |                   GestiParc.Core.dll
+|   |                   GestiParc.Core.pdb
+|   |                   GestiParc.deps.json
+|   |                   GestiParc.dll
+|   |                   GestiParc.dll.config
+|   |                   GestiParc.exe
+|   |                   GestiParc.Infrastructure.dll
+|   |                   GestiParc.Infrastructure.pdb
+|   |                   GestiParc.pdb
+|   |                   GestiParc.runtimeconfig.json
+|   |                   Microsoft.Extensions.DependencyInjection.Abstractions.dll
+|   |                   Microsoft.Extensions.Logging.Abstractions.dll
+|   |                   MySqlConnector.dll
+|   |                   System.Configuration.ConfigurationManager.dll
+|   |                   System.Diagnostics.EventLog.dll
+|   |                   System.Security.Cryptography.ProtectedData.dll
+|   |                   
+|   +---Data
+|   |       SessionManager.cs
+|   |       
+|   +---obj
+|   |   |   GestiParc.Ui.csproj.nuget.dgspec.json
+|   |   |   GestiParc.Ui.csproj.nuget.g.props
+|   |   |   GestiParc.Ui.csproj.nuget.g.targets
+|   |   |   project.assets.json
+|   |   |   project.nuget.cache
+|   |   |   ProjetParc.csproj.nuget.dgspec.json
+|   |   |   ProjetParc.csproj.nuget.g.props
+|   |   |   ProjetParc.csproj.nuget.g.targets
+|   |   |   
+|   |   +---Debug
+|   |   |   \---net9.0-windows
+|   |   |       |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|   |   |       |   apphost.exe
+|   |   |       |   GestiPar.AE9EFD03.Up2Date
+|   |   |       |   GestiParc.designer.deps.json
+|   |   |       |   GestiParc.designer.runtimeconfig.json
+|   |   |       |   GestiParc.dll
+|   |   |       |   GestiParc.pdb
+|   |   |       |   GestiParc.Ui.AssemblyInfo.cs
+|   |   |       |   GestiParc.Ui.AssemblyInfoInputs.cache
+|   |   |       |   GestiParc.Ui.assets.cache
+|   |   |       |   GestiParc.Ui.csproj.AssemblyReference.cache
+|   |   |       |   GestiParc.Ui.csproj.CoreCompileInputs.cache
+|   |   |       |   GestiParc.Ui.csproj.FileListAbsolute.txt
+|   |   |       |   GestiParc.Ui.csproj.GenerateResource.cache
+|   |   |       |   GestiParc.Ui.GeneratedMSBuildEditorConfig.editorconfig
+|   |   |       |   GestiParc.Ui.genruntimeconfig.cache
+|   |   |       |   GestiParc.Ui.GlobalUsings.g.cs
+|   |   |       |   GestiParc.Ui.sourcelink.json
+|   |   |       |   GestiParc.Ui.Views.Loan.LoanCreationView.resources
+|   |   |       |   GestiParc.Ui.Views.WelcomePage.resources
+|   |   |       |   ProjetParc.AssemblyInfo.cs
+|   |   |       |   ProjetParc.AssemblyInfoInputs.cache
+|   |   |       |   ProjetParc.assets.cache
+|   |   |       |   ProjetParc.csproj.AssemblyReference.cache
+|   |   |       |   ProjetParc.csproj.CoreCompileInputs.cache
+|   |   |       |   ProjetParc.csproj.FileListAbsolute.txt
+|   |   |       |   ProjetParc.csproj.GenerateResource.cache
+|   |   |       |   ProjetParc.csproj.Up2Date
+|   |   |       |   ProjetParc.GeneratedMSBuildEditorConfig.editorconfig
+|   |   |       |   ProjetParc.genruntimeconfig.cache
+|   |   |       |   ProjetParc.GlobalUsings.g.cs
+|   |   |       |   ProjetParc.sourcelink.json
+|   |   |       |   
+|   |   |       +---ref
+|   |   |       |       GestiParc.dll
+|   |   |       |       
+|   |   |       \---refint
+|   |   |               GestiParc.dll
+|   |   |               
+|   |   \---Release
+|   |       \---net9.0-windows
+|   |           \---win-x64
+|   |               |   .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+|   |               |   apphost.exe
+|   |               |   GestiPar.AE9EFD03.Up2Date
+|   |               |   GestiParc.dll
+|   |               |   GestiParc.pdb
+|   |               |   GestiParc.Ui.AssemblyInfo.cs
+|   |               |   GestiParc.Ui.AssemblyInfoInputs.cache
+|   |               |   GestiParc.Ui.assets.cache
+|   |               |   GestiParc.Ui.csproj.AssemblyReference.cache
+|   |               |   GestiParc.Ui.csproj.CoreCompileInputs.cache
+|   |               |   GestiParc.Ui.csproj.FileListAbsolute.txt
+|   |               |   GestiParc.Ui.csproj.GenerateResource.cache
+|   |               |   GestiParc.Ui.GeneratedMSBuildEditorConfig.editorconfig
+|   |               |   GestiParc.Ui.genruntimeconfig.cache
+|   |               |   GestiParc.Ui.GlobalUsings.g.cs
+|   |               |   GestiParc.Ui.sourcelink.json
+|   |               |   GestiParc.Ui.Views.Admin.AdminMenuView.resources
+|   |               |   GestiParc.Ui.Views.Loan.LoanCreationView.resources
+|   |               |   GestiParc.Ui.Views.WelcomePage.resources
+|   |               |   PublishOutputs.a4f98ece82.txt
+|   |               |   
+|   |               +---R2R
+|   |               |       GestiParc.Core.dll
+|   |               |       GestiParc.dll
+|   |               |       GestiParc.Infrastructure.dll
+|   |               |       Microsoft.Extensions.DependencyInjection.Abstractions.dll
+|   |               |       Microsoft.Extensions.Logging.Abstractions.dll
+|   |               |       MySqlConnector.dll
+|   |               |       System.Configuration.ConfigurationManager.dll
+|   |               |       System.Diagnostics.EventLog.dll
+|   |               |       System.Security.Cryptography.ProtectedData.dll
+|   |               |       
+|   |               +---ref
+|   |               |       GestiParc.dll
+|   |               |       
+|   |               \---refint
+|   |                       GestiParc.dll
+|   |                       
+|   +---Services
+|   |       CsvExportUiService.cs
+|   |       DocumentGeneratorUiService.cs
+|   |       
+|   \---Views
+|       |   ListViewColumnSorter.cs
+|       |   Theme.cs
+|       |   WelcomePage.cs
+|       |   WelcomePage.resx
+|       |   
+|       +---Admin
+|       |       AdminMenuView.cs
+|       |       
+|       +---Agent
+|       |       AgentCreateView.cs
+|       |       AgentEditView.cs
+|       |       
+|       +---Auth
+|       |       LoginView.cs
+|       |       
+|       +---Equipment
+|       |       EquipmentCreateView.cs
+|       |       EquipmentEditView.cs
+|       |       EquipmentExchangeView.cs
+|       |       FreeEquipmentView.cs
+|       |       
+|       +---Inventory
+|       |       MainInventoryView.cs
+|       |       
+|       +---Loan
+|       |   |   EquipmentSelectionControl.cs
+|       |   |   LoanCreationView.cs
+|       |   |   LoanCreationView.resx
+|       |   |   
+|       |   \---Models
+|       |           AgentItem.cs
+|       |           EquipmentItem.cs
+|       |           
+|       \---Settings
+|               SettingsView.cs
+|               
++---obj
+|   \---Debug
+|       \---net9.0
+|           \---ref
+\---publish
+        GestiParc.Core.dll
+        GestiParc.Core.pdb
+        GestiParc.deps.json
+        GestiParc.dll
+        GestiParc.dll.config
+        GestiParc.exe
+        GestiParc.Infrastructure.dll
+        GestiParc.Infrastructure.pdb
+        GestiParc.pdb
+        GestiParc.runtimeconfig.json
+        Microsoft.Extensions.DependencyInjection.Abstractions.dll
+        Microsoft.Extensions.Logging.Abstractions.dll
+        MySqlConnector.dll
+        System.Configuration.ConfigurationManager.dll
+        System.Diagnostics.EventLog.dll
+        System.Security.Cryptography.ProtectedData.dll
+        

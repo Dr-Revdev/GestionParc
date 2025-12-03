@@ -4,6 +4,8 @@ using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
 using GestiParc.Core.DTOs;
 using GestiParc.Infrastructure.Data.Repositories;
+using System.Net.Http;
+using GestiParc.Ui.Services.Api;
 
 namespace GestiParc.Ui.Views.Equipment;
 
@@ -13,6 +15,7 @@ namespace GestiParc.Ui.Views.Equipment;
 public class EquipmentCreateView : UserControl
 {
     private readonly Action _onBack;
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
 
     private ComboBox cbType = null!;
     private TextBox tbName = null!;
@@ -223,18 +226,21 @@ public class EquipmentCreateView : UserControl
     /// <summary>
     /// Sauvegarde le nouvel équipement en base (INSERT dans Equipements)
     /// </summary>
-    private void InsertEquipment()
+    private async Task InsertEquipmentAsync()
     {
         if (!ValidateEquipmentForm(out var errorMessage))
         {
-            MessageBox.Show(errorMessage);
+            MessageBox.Show(errorMessage, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         var selectedType = (EquipmentTypeItem?)cbType.SelectedItem;
-        if (selectedType == null) return;
+        if (selectedType == null)
+        {
+            MessageBox.Show("Veuillez sélectionner un type d'équipement.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
 
-        // Créer le DTO avec les données du formulaire
         var equipment = new EquipmentDto(
             IdEquipement: GenerateEquipmentId(),
             TypeId: selectedType.Id,
@@ -243,39 +249,40 @@ public class EquipmentCreateView : UserControl
             NumeroSerie: tbSerial.Text.Trim(),
             Marque: tbBrand.Text.Trim(),
             Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim(),
-            EtatPret: 0,  // Disponible par défaut
-            Idrh: string.Empty,   // Pas encore assigné
-            DateRenduDsem: string.Empty
+            EtatPret: 0,
+            Idrh: null,
+            DateRenduDsem: null
         );
 
-        try
-        {
-            // Utiliser le Repository pour l'insertion
-            var repo = new EquipmentMySqlRepository();
-            repo.Insert(equipment);
+        await _equipmentApiClient.CreateAsync(equipment);
 
-            MessageBox.Show("Équipement créé.");
-
-            // Réinitialiser le formulaire
-            tbSerial.Clear();
-            tbName.Clear();
-            tbBrand.Clear();
-            tbCodeParc.Clear();
-            tbComment.Clear();
-            if (cbType.Items.Count > 0) cbType.SelectedIndex = 0;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Erreur lors de la création : {ex.Message}");
-        }
+        tbSerial.Clear();
+        tbName.Clear();
+        tbBrand.Clear();
+        tbCodeParc.Clear();
+        tbComment.Clear();
+        if (cbType.Items.Count > 0) cbType.SelectedIndex = 0;      
     }
 
     /// <summary>
     /// Handler du bouton Créer
     /// </summary>
-    private void btnCreate_Click(object? sender, EventArgs e)
+    private async void btnCreate_Click(object? sender, EventArgs e)
     {
-        InsertEquipment();
+        try
+        {
+            await InsertEquipmentAsync();
+            MessageBox.Show("Equipement créé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            _onBack?.Invoke();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la création de l'équipement : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

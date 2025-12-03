@@ -37,6 +37,13 @@ namespace GestiParc.Ui.Views.Auth
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
+            
+            // Icône de l'application
+            try
+            {
+                Icon = new Icon("GestionParc.ico");
+            }
+            catch { /* Icône non trouvée, utiliser l'icône par défaut */ }
 
             // Titre
             _lblTitle = new Label

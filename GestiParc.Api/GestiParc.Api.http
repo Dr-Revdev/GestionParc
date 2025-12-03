@@ -1,0 +1,6 @@
+@GestiParc.Api_HostAddress = http://localhost:5139
+
+GET {{GestiParc.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

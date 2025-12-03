@@ -25,11 +25,18 @@ public class WelcomePage : Form
 
     public WelcomePage()
     {
-        Text = "Gestion Parc";
+        Text = "GestiParc";
         WindowState = FormWindowState.Maximized;
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(800, 600);
         BackColor = Theme.Colors.Background;
+        
+        // Icône de l'application
+        try
+        {
+            Icon = new Icon("GestionParc.ico");
+        }
+        catch { /* Icône non trouvée, utiliser l'icône par défaut */ }
 
         FormClosing += OnFormClosing;
 
@@ -57,7 +64,7 @@ public class WelcomePage : Form
         
         title = new Label
         {
-            Text = "Gestion de Parc",
+            Text = "GestiParc",
             Font = Theme.Fonts.H1,
             ForeColor = Theme.Colors.Primary,
             Dock = DockStyle.Fill,

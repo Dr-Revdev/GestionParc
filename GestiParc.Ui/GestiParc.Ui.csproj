@@ -22,6 +22,9 @@
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishTrimmed>false</PublishTrimmed>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    
+    <!-- Icône de l'application -->
+    <ApplicationIcon>..\GestionParc.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,6 +42,13 @@
     <Folder Include="Data\Models\" />
     <Folder Include="Data\Repositories\Contracts\" />
     <Folder Include="Data\Repositories\MySQL\" />
+    <Folder Include="Services\Api\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\GestionParc.ico" Link="GestionParc.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
