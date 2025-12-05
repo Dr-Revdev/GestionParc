@@ -3,7 +3,6 @@ using System.Windows.Forms;
 using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
 using GestiParc.Core.DTOs;
-using GestiParc.Infrastructure.Data.Repositories;
 using System.Net.Http;
 using GestiParc.Ui.Services.Api;
 
@@ -15,6 +14,7 @@ namespace GestiParc.Ui.Views.Equipment;
 public class EquipmentCreateView : UserControl
 {
     private readonly Action _onBack;
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
     private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
 
     private ComboBox cbType = null!;
@@ -33,8 +33,10 @@ public class EquipmentCreateView : UserControl
     {
         _onBack = onBack;
         BuildUi();
-        LoadEquipmentTypes();
+        
         btnCreate.Click += btnCreate_Click;
+
+        Load += async (sender, e) => await LoadEquipmentTypesAsync();
     }
 
     /// <summary>
@@ -164,11 +166,11 @@ public class EquipmentCreateView : UserControl
     /// <summary>
     /// Remplit la liste déroulante des types (PC, Ecran, etc.)
     /// </summary>
-    private void LoadEquipmentTypes()
+    private async Task LoadEquipmentTypesAsync()
     {
         try
         {
-            var types = new EquipmentTypeMySqlRepository().GetAll();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
 
             var equipmentTypeItems = types
                 .Select(t => new EquipmentTypeItem { Id = t.Id, Name = t.Name })
@@ -179,15 +181,18 @@ public class EquipmentCreateView : UserControl
             cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
             cbType.ValueMember = nameof(EquipmentTypeItem.Id);
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les types d'équipement. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show(
-                $"Erreur lors du chargement des types d'équipement : {ex.Message}",
-                "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error
-            );
+            MessageBox.Show($"Erreur : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
 
     /// <summary>
     /// Vérifie que le formulaire est correct - le type est obligatoire + au moins 1 champ parmi nom/code parc/n°série
@@ -273,7 +278,6 @@ public class EquipmentCreateView : UserControl
         {
             await InsertEquipmentAsync();
             MessageBox.Show("Equipement créé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            _onBack?.Invoke();
         }
         catch (HttpRequestException ex)
         {

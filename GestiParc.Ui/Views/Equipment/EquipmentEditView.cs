@@ -1,10 +1,13 @@
 using System;
 using System.Drawing;
+using System.Configuration;
 using System.Windows.Forms;
 using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
-using GestiParc.Infrastructure.Data.Repositories;
 using GestiParc.Core.DTOs;
+using GestiParc.Ui.Services.Api;
+using System.Net.Http;
+
 
 namespace GestiParc.Ui.Views.Equipment;
 
@@ -13,6 +16,8 @@ namespace GestiParc.Ui.Views.Equipment;
 /// </summary>
 public class EquipementEditView : UserControl
 {
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
     private TextBox tbSearch = null!;
     private Button btnSearch = null!;
     private ListView lvEquipment = null!;
@@ -32,13 +37,14 @@ public class EquipementEditView : UserControl
     {
         _onBack = onBack;
         BuildUi();
-        LoadEquipmentTypes();
-        LoadEquipmentList();
 
         btnSearch.Click += btnSearch_Click;
         lvEquipment.SelectedIndexChanged += lbEquipment_SelectedIndexChanged;
-        btnUpdate.Click += (_, __) => SaveEquipmentChanges();
-        btnDelete.Click += (_, __) => DeleteSelectedEquipment();
+        btnUpdate.Click += btnUpdate_Click;
+        btnDelete.Click += btnDelete_Click;
+
+        Load += async (sender, e) => await LoadEquipmentListAsync();
+        Load += async (sender, e) => await LoadEquipmentTypesAsync();
     }
 
     /// <summary>
@@ -116,11 +122,12 @@ public class EquipementEditView : UserControl
         lvEquipment.Columns.Add("Code Parc", 120);
         lvEquipment.Columns.Add("N° Série", 150);
         lvEquipment.Columns.Add("Nom", 200);
-        
+
         // Configuration du tri par colonnes
         lvEquipmentSorter = new ListViewColumnSorter();
         lvEquipment.ListViewItemSorter = lvEquipmentSorter;
-        lvEquipment.ColumnClick += (s, e) => {
+        lvEquipment.ColumnClick += (s, e) =>
+        {
             lvEquipmentSorter.SetSortColumn(e.Column);
             lvEquipment.Sort();
         };
@@ -158,19 +165,19 @@ public class EquipementEditView : UserControl
         // Initialisation des contrôles du formulaire
         cbType = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         Theme.StyleComboBox(cbType);
-        
+
         tbName = new TextBox { Dock = DockStyle.Fill };
         Theme.StyleTextBox(tbName);
-        
+
         tbCodeParc = new TextBox { Dock = DockStyle.Fill };
         Theme.StyleTextBox(tbCodeParc);
-        
+
         tbSerialNumber = new TextBox { Dock = DockStyle.Fill };
         Theme.StyleTextBox(tbSerialNumber);
-        
+
         tbBrand = new TextBox { Dock = DockStyle.Fill };
         Theme.StyleTextBox(tbBrand);
-        
+
         tbComment = new TextBox { Dock = DockStyle.Fill, Multiline = true, ScrollBars = ScrollBars.Vertical };
         Theme.StyleTextBox(tbComment);
 
@@ -181,9 +188,9 @@ public class EquipementEditView : UserControl
         AddFormRow(rightPanel, 2, "Numéro de série", tbSerialNumber, 0);
         AddFormRow(rightPanel, 2, "Marque", tbBrand, 1);
 
-        var commentLabel = new Label 
-        { 
-            Text = "Commentaire", 
+        var commentLabel = new Label
+        {
+            Text = "Commentaire",
             Dock = DockStyle.Fill,
             Font = Theme.Fonts.Label,
             ForeColor = Theme.Colors.TextSecondary,
@@ -208,10 +215,10 @@ public class EquipementEditView : UserControl
 
         btnUpdate = new Button { Text = "Modifier", Width = Theme.Sizes.ButtonWidth, Height = Theme.Sizes.ButtonHeight, Margin = new Padding(0) };
         Theme.StylePrimaryButton(btnUpdate);
-        
+
         btnDelete = new Button { Text = "Supprimer", Width = Theme.Sizes.ButtonWidth, Height = Theme.Sizes.ButtonHeight, Margin = new Padding(0, 0, 10, 0) };
         Theme.StyleDangerButton(btnDelete);
-        
+
         buttonsPanel.Controls.AddRange([btnUpdate, btnDelete]);
 
         rightPanel.Controls.Add(buttonsPanel, 0, 7);
@@ -240,51 +247,57 @@ public class EquipementEditView : UserControl
     /// <summary>
     /// Remplit la combobox des types (PC, Ecran, etc.)
     /// </summary>
-    private void LoadEquipmentTypes()
+    private async Task LoadEquipmentTypesAsync()
     {
         try
         {
-            var types = new EquipmentTypeMySqlRepository().GetAll();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
 
-            var items = types
+            var equipmentTypeItems = types
                 .Select(t => new EquipmentTypeItem { Id = t.Id, Name = t.Name })
                 .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
 
-            cbType.DataSource = items;
+            cbType.DataSource = equipmentTypeItems;
             cbType.DisplayMember = nameof(EquipmentTypeItem.Name);
             cbType.ValueMember = nameof(EquipmentTypeItem.Id);
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les types d'équipement. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show(
-                $"Erreur lors du chargement des types d'équipement : {ex.Message}",
-                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error
-            );
+            MessageBox.Show($"Erreur : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
     /// <summary>
     /// Charge tous les équipements et les affiche dans la liste
     /// </summary>
-    private void LoadEquipmentList()
+    private async Task LoadEquipmentListAsync()
     {
         try
         {
-            // Récupérer tous les équipements via le Repository
-            var repo = new EquipmentMySqlRepository();
-            var equipments = repo.GetAll();
+            // Récupérer tous les équipements via l'API
+            var equipments = await _equipmentApiClient.GetAllAsync();
 
             // Récupérer les types pour afficher le nom du type
-            var typeRepo = new EquipmentTypeMySqlRepository();
-            var types = typeRepo.GetAll().ToDictionary(t => t.Id, t => t.Name);
+            var types = await _equipmentTypeApiClient.GetAllAsync();
+            var typesDictionary = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Vider et remplir le ListView
             lvEquipment.Items.Clear();
+
             foreach (var equipment in equipments)
             {
-                var typeName = types.ContainsKey(equipment.TypeId) ? types[equipment.TypeId] : "Inconnu";
+                var typeName = typesDictionary.ContainsKey(equipment.TypeId) ? typesDictionary[equipment.TypeId] : "Inconnu";
+
                 var codeParc = string.IsNullOrWhiteSpace(equipment.CodeParc) ? "-" : equipment.CodeParc.Trim();
+
                 var serial = string.IsNullOrWhiteSpace(equipment.NumeroSerie) ? "-" : equipment.NumeroSerie.Trim();
+
                 var nom = string.IsNullOrWhiteSpace(equipment.Nom) ? "(sans nom)" : equipment.Nom.Trim();
 
                 var item = new ListViewItem(typeName);
@@ -293,56 +306,66 @@ public class EquipementEditView : UserControl
                 lvEquipment.Items.Add(item);
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les équipements.\n\n : {ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
     /// <summary>
     /// Récupère un équipement depuis la base et remplit tous les champs du formulaire
     /// </summary>
-    private void LoadEquipmentById(string equipmentId)
+    private async Task LoadEquipmentByIdAsync(string equipmentId)
     {
         try
         {
-            var repo = new EquipmentMySqlRepository();
-            var equipment = repo.GetById(equipmentId);
+            var equipment = await _equipmentApiClient.GetByIdAsync(equipmentId);
 
             // Remplir les champs (gérer les valeurs null)
-            tbName.Text = equipment.Nom ?? "";
-            tbCodeParc.Text = equipment.CodeParc ?? "";
-            tbSerialNumber.Text = equipment.NumeroSerie ?? "";
-            tbBrand.Text = equipment.Marque ?? "";
-            tbComment.Text = equipment.Commentaire ?? "";
+            tbName.Text = equipment?.Nom ?? "";
+            tbCodeParc.Text = equipment?.CodeParc ?? "";
+            tbSerialNumber.Text = equipment?.NumeroSerie ?? "";
+            tbBrand.Text = equipment?.Marque ?? "";
+            tbComment.Text = equipment?.Commentaire ?? "";
 
             // Sélectionner le type correspondant dans la ComboBox
             for (int i = 0; i < cbType.Items.Count; i++)
             {
-                if (cbType.Items[i] is EquipmentTypeItem t && t.Id == equipment.TypeId)
+                if (cbType.Items[i] is EquipmentTypeItem t && t.Id == equipment?.TypeId)
                 {
                     cbType.SelectedIndex = i;
                     break;
                 }
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger l'équipement. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement de l'équipement : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement de l'équipement : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>
     /// Quand on clique sur un équipement dans la liste, on charge ses infos
     /// </summary>
-    private void lbEquipment_SelectedIndexChanged(object? sender, EventArgs e)
+    private async void lbEquipment_SelectedIndexChanged(object? sender, EventArgs e)
     {
         if (lvEquipment.SelectedItems.Count > 0)
         {
             var selectedItem = lvEquipment.SelectedItems[0];
             var equipmentId = selectedItem.Tag as string;
-            if (equipmentId != null) LoadEquipmentById(equipmentId);
+            if (equipmentId != null) await LoadEquipmentByIdAsync(equipmentId);
         }
     }
 
@@ -374,7 +397,7 @@ public class EquipementEditView : UserControl
     /// <summary>
     /// Sauvegarde les modifs en base (UPDATE). Garde l'état de prêt et l'agent actuel tel quel
     /// </summary>
-    private void SaveEquipmentChanges()
+    private async Task SaveEquipmentChangesAsync()
     {
         if (lvEquipment.SelectedItems.Count == 0)
         {
@@ -392,39 +415,50 @@ public class EquipementEditView : UserControl
         var selectedType = cbType.SelectedItem as EquipmentTypeItem;
         if (equipmentId == null || selectedType == null) return;
 
+        // Charger l'équipement existant pour récupérer les champs non modifiables
+        var existingEquipment = await _equipmentApiClient.GetByIdAsync(equipmentId);
+
+        // Créer un DTO avec les valeurs modifiées + les champs préservés
+        if (existingEquipment == null)
+        {
+            MessageBox.Show("Équipement introuvable.");
+            return;
+        }
+
+        var equipment = new EquipmentDto(
+            IdEquipement: equipmentId,
+            TypeId: selectedType.Id,
+            Nom: tbName.Text.Trim(),
+            CodeParc: tbCodeParc.Text.Trim(),
+            NumeroSerie: tbSerialNumber.Text.Trim(),
+            Marque: tbBrand.Text.Trim(),
+            Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim(),
+            EtatPret: existingEquipment.EtatPret,       // Préserver l'état de prêt
+            Idrh: existingEquipment.Idrh,               // Préserver l'agent
+            DateRenduDsem: existingEquipment.DateRenduDsem // Préserver la date de rendu
+        );
+
+        // Appeler l'API pour la mise à jour
+        await _equipmentApiClient.UpdateAsync(equipmentId, equipment);
+
+        // Recharger la liste pour refléter les modifications
+        await LoadEquipmentListAsync();
+    }
+
+    private async void btnUpdate_Click(object? sender, EventArgs e)
+    {
         try
         {
-            var repo = new EquipmentMySqlRepository();
-            
-            // Charger l'équipement existant pour récupérer les champs non modifiables
-            var existingEquipment = repo.GetById(equipmentId);
-
-            // Créer un DTO avec les valeurs modifiées + les champs préservés
-            var equipment = new EquipmentDto(
-                IdEquipement: equipmentId,
-                TypeId: selectedType.Id,
-                Nom: tbName.Text.Trim(),
-                CodeParc: tbCodeParc.Text.Trim(),
-                NumeroSerie: tbSerialNumber.Text.Trim(),
-                Marque: tbBrand.Text.Trim(),
-                Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim(),
-                EtatPret: existingEquipment.EtatPret,       // Préserver l'état de prêt
-                Idrh: existingEquipment.Idrh,               // Préserver l'agent
-                DateRenduDsem: existingEquipment.DateRenduDsem // Préserver la date de rendu
-            );
-
-            // Appeler le repository pour la mise à jour
-            repo.Update(equipment);
-
-            MessageBox.Show("Modifications enregistrées.");
-
-            // Recharger la liste pour refléter les modifications
-            LoadEquipmentList();
+            await SaveEquipmentChangesAsync();
+            MessageBox.Show("Équipement modifié avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de la sauvegarde : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors de la modification de l'équipement : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -432,32 +466,30 @@ public class EquipementEditView : UserControl
     /// <summary>
     /// Handler du bouton recherche - applique le filtre
     /// </summary>
-    private void btnSearch_Click(object? sender, EventArgs e)
+    private async void btnSearch_Click(object? sender, EventArgs e)
     {
         var q = (tbSearch?.Text ?? "").Trim();
-        LoadEquipmentListFiltered(q);
+        await LoadEquipmentListFilteredAsync(q);
     }
 
     /// <summary>
     /// Charge les équipements avec un filtre de recherche (cherche dans nom, code parc, n° série, type)
     /// </summary>
-    private void LoadEquipmentListFiltered(string query)
+    private async Task LoadEquipmentListFilteredAsync(string query)
     {
         try
         {
-            var repo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
+            var equipments = await _equipmentApiClient.GetAllAsync();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
 
             // Charger les équipements et les types
-            var equipments = repo.GetAll();
-            var types = typeRepo.GetAll();
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             lvEquipment.Items.Clear();
 
             // Filtrer les équipements si une requête est fournie
             IEnumerable<EquipmentDto> filteredEquipments = equipments;
-            
+
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var q = query.ToLower();
@@ -489,6 +521,10 @@ public class EquipementEditView : UserControl
                 lvEquipment.Items.Add(item);
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de la recherche d'équipements : {ex.Message}", "Erreur",
@@ -496,10 +532,27 @@ public class EquipementEditView : UserControl
         }
     }
 
+    private async void btnDelete_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            await DeleteSelectedEquipmentAsync();
+            MessageBox.Show("Équipement supprimé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la suppression de l'équipement : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
     /// <summary>
     /// Supprime l'équipement (demande confirmation avant)
     /// </summary>
-    private void DeleteSelectedEquipment()
+    private async Task DeleteSelectedEquipmentAsync()
     {
         if (lvEquipment.SelectedItems.Count == 0)
         { MessageBox.Show("Sélectionne un équipement à supprimer."); return; }
@@ -508,7 +561,7 @@ public class EquipementEditView : UserControl
         var equipmentId = selectedItem.Tag as string;
         if (equipmentId == null) return;
         var equipmentLabel = $"{selectedItem.SubItems[3].Text} [{selectedItem.Text}]";
-        
+
         var confirm = MessageBox.Show(
             $"Supprimer « {equipmentLabel} » ?",
             "Confirmer la suppression",
@@ -516,20 +569,10 @@ public class EquipementEditView : UserControl
 
         if (confirm != DialogResult.Yes) return;
 
-        try
-        {
-            var repo = new EquipmentMySqlRepository();
-            repo.Delete(equipmentId);
+        await _equipmentApiClient.DeleteAsync(equipmentId);
 
-            LoadEquipmentListFiltered(tbSearch?.Text?.Trim() ?? "");
-            tbName.Clear(); tbCodeParc.Clear(); tbSerialNumber.Clear(); tbBrand.Clear(); tbComment.Clear();
-            MessageBox.Show("Équipement supprimé.");
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+        await LoadEquipmentListFilteredAsync(tbSearch?.Text?.Trim() ?? "");
+        tbName.Clear(); tbCodeParc.Clear(); tbSerialNumber.Clear(); tbBrand.Clear(); tbComment.Clear();
     }
 
     /// <summary>
@@ -537,9 +580,9 @@ public class EquipementEditView : UserControl
     /// </summary>
     private void AddFormRow(TableLayoutPanel panel, int row, string labelText, Control control, int col = 0, int colSpan = 1)
     {
-        var label = new Label 
-        { 
-            Text = labelText, 
+        var label = new Label
+        {
+            Text = labelText,
             Dock = DockStyle.Fill,
             Font = Theme.Fonts.Label,
             ForeColor = Theme.Colors.TextSecondary,
