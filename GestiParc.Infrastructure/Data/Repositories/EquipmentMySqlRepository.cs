@@ -70,7 +70,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
     }
 
     // Récupère un équipement par son ID (lance une exception si introuvable)
-    public EquipmentDto GetById(string idEquipement)
+    public EquipmentDto? GetById(string idEquipement)
     {
         using var connection = DbFactory.Create();
         connection.Open();
@@ -83,7 +83,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
 
         using var reader = command.ExecuteReader();
         if (!reader.Read())
-            throw new InvalidOperationException($"Équipement avec ID '{idEquipement}' introuvable.");
+            return null;
 
         return MapToDto(reader);
     }

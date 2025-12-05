@@ -42,7 +42,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
     }
 
     // Récupère une équipe par son ID
-    public EquipeDto GetById(int id)
+    public EquipeDto? GetById(int id)
     {
         using var connection = DbFactory.Create();
         connection.Open();
@@ -52,7 +52,7 @@ public sealed class EquipeMySqlRepository : IEquipeRepository
 
         using var reader = command.ExecuteReader();
         if (!reader.Read())
-            throw new InvalidOperationException($"Équipe avec ID '{id}' introuvable.");
+            return null;
 
         return new EquipeDto(reader.GetInt32(0), reader.GetString(1));
     }

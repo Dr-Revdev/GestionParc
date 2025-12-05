@@ -14,8 +14,9 @@ DbFactory.ConnectionString = cs;
 // 2. Controllers
 builder.Services.AddControllers();
 
-// 3. DI : repository équipements
+// 3. DI : repository Ã©quipements
 builder.Services.AddScoped<IEquipmentRepository, EquipmentMySqlRepository>();
+builder.Services.AddScoped<IEquipmentTypeRepository, EquipmentTypeMySqlRepository>();
 
 var app = builder.Build();
 

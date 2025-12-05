@@ -11,7 +11,7 @@ public interface IEquipmentRepository
     void Insert(EquipmentDto equipment);
     void Update(EquipmentDto equipment);
     void Delete(string idEquipement);
-    EquipmentDto GetById(string idEquipement);
+    EquipmentDto? GetById(string idEquipement);
     List<EquipmentDto> GetAll();
     List<EquipmentDto> GetByAgent(string idrh);
     List<EquipmentDto> GetFreeEquipments();

@@ -42,7 +42,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
     }
 
     // Récupère un site par son ID
-    public SiteDto GetById(int id)
+    public SiteDto? GetById(int id)
     {
         using var connection = DbFactory.Create();
         connection.Open();
@@ -52,7 +52,7 @@ public sealed class SiteMySqlRepository : ISiteRepository
 
         using var reader = command.ExecuteReader();
         if (!reader.Read())
-            throw new InvalidOperationException($"Site avec ID '{id}' introuvable.");
+            return null;
 
         return new SiteDto(reader.GetInt32(0), reader.GetString(1));
     }

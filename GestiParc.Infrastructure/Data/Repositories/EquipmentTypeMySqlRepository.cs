@@ -25,6 +25,27 @@ public sealed class EquipmentTypeMySqlRepository : IEquipmentTypeRepository
             return list;
         }
 
+        // Récupère un type d'équipement par son ID
+        public EquipmentTypeDto? GetById(int id)
+        {
+            using IDbConnection connection = DbFactory.Create();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT id, name FROM equipment_type WHERE id = @id;";
+            
+            var param = command.CreateParameter();
+            param.ParameterName = "@id";
+            param.Value = id;
+            command.Parameters.Add(param);
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+                return new EquipmentTypeDto(reader.GetInt32(0), reader.GetString(1));
+            
+            return null;
+        }
+
         // Modifie le nom d'un type d'équipement
         public void Update(EquipmentTypeDto equipmentType)
         {

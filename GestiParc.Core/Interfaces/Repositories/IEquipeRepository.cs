@@ -10,7 +10,7 @@ public interface IEquipeRepository
     int Insert(string name);
     void Update(EquipeDto equipe);
     void Delete(int id);
-    EquipeDto GetById(int id);
+    EquipeDto? GetById(int id);
     List<EquipeDto> GetAll();
     bool ExistsByName(string name);
     bool IsInUse(int id);

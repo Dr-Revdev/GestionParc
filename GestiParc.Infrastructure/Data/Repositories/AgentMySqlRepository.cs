@@ -66,7 +66,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
     }
 
     // Récupère un agent par son IDRH (lance une exception si introuvable)
-    public AgentDto GetById(string idrh)
+    public AgentDto? GetById(string idrh)
     {
         using var connection = DbFactory.Create();
         connection.Open();
@@ -79,7 +79,7 @@ public sealed class AgentMySqlRepository : IAgentRepository
 
         using var reader = command.ExecuteReader();
         if (!reader.Read())
-            throw new InvalidOperationException($"Agent avec IDRH '{idrh}' introuvable.");
+            return null;
 
         return MapToDto(reader);
     }

@@ -48,15 +48,37 @@ namespace GestiParc.Api.Controllers
         }
 
         // PUT /api/equipment/{id}
-        [HttpPut]
-        public IActionResult Update([FromBody] EquipmentDto dto)
+        [HttpPut("{id}")]
+        public IActionResult Update(string id, [FromBody] EquipmentDto dto)
         {
             if (dto == null)
                 return BadRequest("Payload vide.");
+
+            if (id != dto.IdEquipement)
+                return BadRequest("L'ID de l'URL ne correspond pas à l'ID de l'équipement.");
             
+            var existing = _equipmentRepository.GetById(id);
+            if (existing == null)
+                return NotFound();
+
             _equipmentRepository.Update(dto);
 
-            return Update(nameof(GetById), new { id = dto.IdEquipement }, dto);
+            return NoContent();
         }
+
+        // DELETE /api/equipment/{id}
+        [HttpDelete("{id}")]
+        public IActionResult Delete(string id)
+        {
+            
+            var existing = _equipmentRepository.GetById(id);
+            if (existing == null)
+                return NotFound();
+            
+            _equipmentRepository.Delete(id);
+
+            return NoContent();
+        }
+
     }
 }
