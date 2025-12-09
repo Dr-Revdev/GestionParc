@@ -1,7 +1,3 @@
-using System.Drawing;
-using System.Windows.Forms;
-using GestiParc.Ui.Data;
-using GestiParc.Ui.Services;
 using GestiParc.Core.DTOs;
 using System.Net.Http;
 using GestiParc.Ui.Services.Api;

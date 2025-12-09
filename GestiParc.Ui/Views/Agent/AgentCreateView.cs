@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Windows.Forms;
-using GestiParc.Ui.Data;
-using GestiParc.Ui.Services;
-using GestiParc.Infrastructure.Data.Repositories;
 using GestiParc.Core.DTOs;
+using System.Net.Http;
+using GestiParc.Ui.Services.Api;
 
 namespace GestiParc.Ui.Views.Agent;
 
@@ -16,6 +11,9 @@ namespace GestiParc.Ui.Views.Agent;
 public class AgentCreateView : UserControl
 {
     private readonly Action _onBack;
+    private readonly SiteApiClient _siteApiClient = new SiteApiClient();
+    private readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private readonly AgentApiClient _agentApiClient = new AgentApiClient();
     private TextBox tbIDRH = null!;
     private TextBox tbAgentName = null!;
     private TextBox tbFirstName = null!;
@@ -34,10 +32,11 @@ public class AgentCreateView : UserControl
     {
         _onBack = onBack;
         BuildUi();
-        LoadAgentSite();
-        LoadAgentTeam();
 
         btnCreate.Click += btnCreate_Click;
+
+        Load += async (sender, e) => await LoadAgentSiteAsync();
+        Load += async (sender, e) => await LoadAgentTeamAsync();
     }
 
     /// <summary>
@@ -185,52 +184,58 @@ public class AgentCreateView : UserControl
     private sealed class AgentTeamItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
 
     /// <summary>Remplit la liste déroulante des sites à partir de la table Sites</summary>
-    private void LoadAgentSite()
+    private async Task LoadAgentSiteAsync()
     {
         try
         {
-            var repo = new SiteMySqlRepository();
-            var sites = repo.GetAll();
+            var sites = await _siteApiClient.GetAllAsync();
 
-            var items = new List<AgentSiteItem>();
-            foreach (var site in sites)
-            {
-                items.Add(new AgentSiteItem { Id = site.Id, Name = site.Name });
-            }
+            var siteItems = sites
+                .Select(s => new AgentSiteItem { Id = s.Id, Name = s.Name })
+                .OrderBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
 
-            cbSite.DataSource = items;
+            cbSite.DataSource = siteItems;
             cbSite.DisplayMember = nameof(AgentSiteItem.Name);
             cbSite.ValueMember   = nameof(AgentSiteItem.Id);
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les sites. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des sites : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur  : {ex.Message}", 
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>Remplit la liste déroulante des équipes à partir de la table Equipes</summary>
-    private void LoadAgentTeam()
+    private async Task LoadAgentTeamAsync()
     {
         try
         {
-            var repo = new EquipeMySqlRepository();
-            var equipes = repo.GetAll();
+            var teams = await _equipeApiClient.GetAllAsync();
 
-            var items = new List<AgentTeamItem>();
-            foreach (var equipe in equipes)
-            {
-                items.Add(new AgentTeamItem { Id = equipe.Id, Name = equipe.Name });
-            }
+            var equipeItems = teams
+                .Select(t => new AgentTeamItem { Id = t.Id, Name = t.Name })
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
 
-            cbTeam.DataSource = items;
+            cbTeam.DataSource = equipeItems;
             cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
             cbTeam.ValueMember   = nameof(AgentTeamItem.Id);
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les équipes. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des équipes : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -249,7 +254,7 @@ public class AgentCreateView : UserControl
     /// <summary>
     /// Sauvegarde l'agent en base de données avec son site directement via agents.site_id
     /// </summary>
-    private void InsertAgent()
+    private async Task InsertAgentAsync()
     {
         if (!ValidateTeamForm(out var errorMessage)) { MessageBox.Show(errorMessage); return; }
 
@@ -257,45 +262,48 @@ public class AgentCreateView : UserControl
         var teamId = ((AgentTeamItem?)cbTeam.SelectedItem)?.Id ?? 0;
         var hebergeValue = cbxHeberge.Checked ? 1 : 0;
 
-        try
-        {
-            // Créer le DTO pour l'agent
-            var agent = new AgentDto(
-                Idrh: tbIDRH.Text.Trim(),
-                Nom: tbAgentName.Text.Trim(),
-                Prenom: tbFirstName.Text.Trim(),
-                Email: tbEmail.Text.Trim(),
-                EquipeId: teamId,
-                SiteId: siteId,
-                Heberge: hebergeValue,
-                Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim()
-            );
+        // Créer le DTO pour l'agent
+        var agent = new AgentDto(
+            Idrh: tbIDRH.Text.Trim(),
+            Nom: tbAgentName.Text.Trim(),
+            Prenom: tbFirstName.Text.Trim(),
+            Email: tbEmail.Text.Trim(),
+            EquipeId: teamId,
+            SiteId: siteId,
+            Heberge: hebergeValue,
+            Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim()
+        );
 
-            // Insérer l'agent via le repository
-            var agentRepo = new AgentMySqlRepository();
-            agentRepo.Insert(agent);
+        await _agentApiClient.CreateAsync(agent);
 
-            MessageBox.Show("Agent créé");
-
-            // Reset UI
-            tbIDRH.Clear(); 
-            tbFirstName.Clear(); 
-            tbAgentName.Clear(); 
-            tbEmail.Clear(); 
-            tbComment.Clear();
-            if (cbSite.Items.Count > 0) cbSite.SelectedIndex = 0;
-            if (cbTeam.Items.Count > 0) cbTeam.SelectedIndex = 0;
-            cbxHeberge.Checked = false;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Erreur lors de la création de l'agent : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
+        // Reset UI
+        tbIDRH.Clear(); 
+        tbFirstName.Clear(); 
+        tbAgentName.Clear(); 
+        tbEmail.Clear(); 
+        tbComment.Clear();
+        if (cbSite.Items.Count > 0) cbSite.SelectedIndex = 0;
+        if (cbTeam.Items.Count > 0) cbTeam.SelectedIndex = 0;
+        cbxHeberge.Checked = false;
     }
 
     /// <summary>Handler du bouton Créer - appelle InsertAgent()</summary>
-    private void btnCreate_Click(object? sender, EventArgs e) => InsertAgent();
+    private async void btnCreate_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            await InsertAgentAsync();
+            MessageBox.Show("Agent créé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la création de l'Agent : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
 
     /// <summary>
     /// Méthode utilitaire pour ajouter un champ dans le formulaire (label + contrôle)
