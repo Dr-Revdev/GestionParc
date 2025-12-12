@@ -5,8 +5,9 @@ using System.Linq;
 using System.Windows.Forms;
 using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
-using GestiParc.Infrastructure.Data.Repositories;
 using GestiParc.Core.DTOs;
+using GestiParc.Ui.Services.Api;
+using System.Net.Http;
 
 namespace GestiParc.Ui.Views.Agent;
 
@@ -16,6 +17,9 @@ namespace GestiParc.Ui.Views.Agent;
 /// </summary>
 public class AgentEditView : UserControl
 {
+    private readonly AgentApiClient _agentApiClient = new AgentApiClient();
+    private readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private readonly SiteApiClient _siteApiClient = new SiteApiClient();
     private TextBox tbSearch = null!;
     private Button btnSearch = null!;
     private ListView lvAgents = null!;
@@ -36,14 +40,15 @@ public class AgentEditView : UserControl
     {
         _onBack = onBack;
         BuildUi();
-        LoadAgentSite();
-        LoadAgentTeam();
-        LoadAgentList();
 
         btnSearch.Click += btnSearch_Click;
         lvAgents.SelectedIndexChanged += lbAgents_SelectedIndexChanged;
-        btnUpdate.Click += (_, __) => SaveAgentChanges();
-        btnDelete.Click += (_, __) => DeleteSelectedAgent();
+        btnUpdate.Click += btnUpdate_Click;
+        btnDelete.Click += btnDelete_Click;
+
+        Load += async (sender, e) => await LoadAgentSiteAsync();
+        Load += async (sender, e) => await LoadAgentTeamAsync();
+        Load += async (sender, e) => await LoadAgentListAsync();
     }
 
     /// <summary>
@@ -251,75 +256,80 @@ public class AgentEditView : UserControl
     private sealed class AgentTeamItem { public int Id { get; set; } public string Name { get; set; } = ""; public override string ToString() => Name; }
 
     /// <summary>Remplit la combobox des sites</summary>
-    private void LoadAgentSite()
+    private async Task LoadAgentSiteAsync()
     {
         try
         {
-            var repo = new SiteMySqlRepository();
-            var sites = repo.GetAll();
+            var sites = await _siteApiClient.GetAllAsync();
 
-            var items = new List<AgentSiteItem>();
-            foreach (var site in sites)
-            {
-                items.Add(new AgentSiteItem { Id = site.Id, Name = site.Name });
-            }
+            var siteItems = sites
+                .Select(s => new AgentSiteItem { Id = s.Id, Name = s.Name })
+                .OrderBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
 
-            cbSite.DataSource = items;
+            cbSite.DataSource = siteItems;
             cbSite.DisplayMember = nameof(AgentSiteItem.Name);
             cbSite.ValueMember = nameof(AgentSiteItem.Id);
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les sites. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des sites : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur  : {ex.Message}", 
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>Remplit la combobox des équipes</summary>
-    private void LoadAgentTeam()
+    private async Task LoadAgentTeamAsync()
     {
         try
         {
-            var repo = new EquipeMySqlRepository();
-            var equipes = repo.GetAll();
+            var teams = await _equipeApiClient.GetAllAsync();
 
-            var items = new List<AgentTeamItem>();
-            foreach (var equipe in equipes)
-            {
-                items.Add(new AgentTeamItem { Id = equipe.Id, Name = equipe.Name });
-            }
+            var equipeItems = teams
+                .Select(t => new AgentTeamItem { Id = t.Id, Name = t.Name })
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
 
-            cbTeam.DataSource = items;
+            cbTeam.DataSource = equipeItems;
             cbTeam.DisplayMember = nameof(AgentTeamItem.Name);
             cbTeam.ValueMember = nameof(AgentTeamItem.Id);
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les équipes. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des équipes : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>Charge tous les agents et les affiche dans la liste (triés par nom/prénom)</summary>
-    private void LoadAgentList()
+    private async Task LoadAgentListAsync()
     {
         try
         {
-            var agentRepo = new AgentMySqlRepository();
-            var equipeRepo = new EquipeMySqlRepository();
-            var siteRepo = new SiteMySqlRepository();
+            // Récupérer tous les agents via l'API
+            var agents = await _agentApiClient.GetAllAsync();
 
-            var agents = agentRepo.GetAll();
-            var equipes = equipeRepo.GetAll();
-            var sites = siteRepo.GetAll();
+            // Récupérer les sites
+            var sites = await _siteApiClient.GetAllAsync();
+            var sitesDictionary = sites.ToDictionary(s => s.Id, s => s.Name);
 
-            // Créer des dictionnaires pour les JOINs en mémoire
-            var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
-            var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
+            // Récupérer les équipes
+            var teams = await _equipeApiClient.GetAllAsync();
+            var teamsDictionary = teams.ToDictionary(t => t.Id, t => t.Name);
 
+            // Vider et remplir le ListView
             lvAgents.Items.Clear();
 
-            // Trier par nom, prénom, idrh
             var sortedAgents = agents
                 .OrderBy(a => a.Nom ?? "")
                 .ThenBy(a => a.Prenom ?? "")
@@ -327,40 +337,40 @@ public class AgentEditView : UserControl
 
             foreach (var agent in sortedAgents)
             {
-                var nom = agent.Nom?.Trim() ?? "";
-                var prenom = agent.Prenom?.Trim() ?? "";
-                var nomComplet = (nom, prenom) switch { ("", "") => "-", _ => $"{nom} {prenom}".Trim() };
-                
-                var equipeName = (agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value)) 
-                    ? equipeDict[agent.EquipeId.Value] : "-";
-                var siteName = (agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value)) 
-                    ? siteDict[agent.SiteId.Value] : "-";
+                var idrh = string.IsNullOrWhiteSpace(agent.Idrh) ? "-" : agent.Idrh.Trim();
+                var nom = string.IsNullOrWhiteSpace(agent.Nom) ? "-" : agent.Nom.Trim();
+                var prenom = string.IsNullOrWhiteSpace(agent.Prenom) ? "-" : agent.Prenom.Trim();
+                var equipe = agent.EquipeId.HasValue && teamsDictionary.ContainsKey(agent.EquipeId.Value) ? teamsDictionary[agent.EquipeId.Value] : "Inconnu";
+                var site = agent.SiteId.HasValue && sitesDictionary.ContainsKey(agent.SiteId.Value) ? sitesDictionary[agent.SiteId.Value] : "Inconnu";
+                var nomComplet = $"{nom} {prenom}".Trim();
 
-                var item = new ListViewItem(agent.Idrh);
-                item.SubItems.AddRange(new[] { nomComplet, equipeName, siteName });
+                var item = new ListViewItem(idrh);
+                item.SubItems.AddRange(new[] { nomComplet, equipe, site });
                 item.Tag = agent.Idrh;
                 lvAgents.Items.Add(item);
             }
+
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les agents.\n\n : {ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement de la liste d'agents : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement des agents : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>Charge les agents avec un filtre de recherche (cherche dans IDRH, nom, prénom, email)</summary>
-    private void LoadAgentListFiltered(string query)
+    private async Task LoadAgentListFilteredAsync(string query)
     {
         try
         {
-            var agentRepo = new AgentMySqlRepository();
-            var equipeRepo = new EquipeMySqlRepository();
-            var siteRepo = new SiteMySqlRepository();
-
-            var agents = agentRepo.GetAll();
-            var equipes = equipeRepo.GetAll();
-            var sites = siteRepo.GetAll();
+            var agents = await _agentApiClient.GetAllAsync();
+            var equipes = await _equipeApiClient.GetAllAsync();
+            var sites = await _siteApiClient.GetAllAsync();
 
             var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
             var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
@@ -404,6 +414,10 @@ public class AgentEditView : UserControl
                 lvAgents.Items.Add(item);
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de la recherche d'agents : {ex.Message}", "Erreur",
@@ -411,25 +425,24 @@ public class AgentEditView : UserControl
         }
     }
 
-    /// <summary>Récupère un agent depuis la base et remplit tous les champs du formulaire</summary>
-    private void LoadAgentById(string agentIDRH)
+    /// <summary>Récupère un agent depuis l'API et remplit tous les champs du formulaire</summary>
+    private async Task LoadAgentByIdAsync(string agentIDRH)
     {
         try
         {
-            var repo = new AgentMySqlRepository();
-            var agent = repo.GetById(agentIDRH);
+            var agent = await _agentApiClient.GetByIdAsync(agentIDRH);
 
-            tbIDRH.Text = agent.Idrh ?? "";
-            tbAgentName.Text = agent.Nom ?? "";
-            tbFirstName.Text = agent.Prenom ?? "";
-            tbEmail.Text = agent.Email ?? "";
-            tbComment.Text = agent.Commentaire ?? "";
-            cbxHeberge.Checked = agent.Heberge == 1;
+            tbIDRH.Text = agent?.Idrh ?? "";
+            tbAgentName.Text = agent?.Nom ?? "";
+            tbFirstName.Text = agent?.Prenom ?? "";
+            tbEmail.Text = agent?.Email ?? "";
+            tbComment.Text = agent?.Commentaire ?? "";
+            cbxHeberge.Checked = agent?.Heberge == 1;
 
             // Sélectionner le site
             for (int i = 0; i < cbSite.Items.Count; i++)
             {
-                if (cbSite.Items[i] is AgentSiteItem s && s.Id == agent.SiteId)
+                if (cbSite.Items[i] is AgentSiteItem s && s.Id == agent?.SiteId)
                 {
                     cbSite.SelectedIndex = i;
                     break;
@@ -439,12 +452,17 @@ public class AgentEditView : UserControl
             // Sélectionner l'équipe
             for (int i = 0; i < cbTeam.Items.Count; i++)
             {
-                if (cbTeam.Items[i] is AgentTeamItem t && t.Id == agent.EquipeId)
+                if (cbTeam.Items[i] is AgentTeamItem t && t.Id == agent?.EquipeId)
                 {
                     cbTeam.SelectedIndex = i;
                     break;
                 }
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
@@ -454,17 +472,20 @@ public class AgentEditView : UserControl
     }
 
     /// <summary>Handler du bouton de recherche - applique le filtre</summary>
-    private void btnSearch_Click(object? sender, EventArgs e)
-        => LoadAgentListFiltered((tbSearch?.Text ?? "").Trim());
+    private async void btnSearch_Click(object? sender, EventArgs e)
+    {
+        var q = (tbSearch?.Text ?? "").Trim();
+        await LoadAgentListFilteredAsync(q);
+    }
 
     /// <summary>Quand on clique sur un agent dans la liste, on charge ses infos dans le formulaire</summary>
-    private void lbAgents_SelectedIndexChanged(object? sender, EventArgs e)
+    private async void lbAgents_SelectedIndexChanged(object? sender, EventArgs e)
     {
         if (lvAgents.SelectedItems.Count > 0)
         {
             var selectedItem = lvAgents.SelectedItems[0];
             var agentId = selectedItem.Tag as string;
-            if (agentId != null) LoadAgentById(agentId);
+            if (agentId != null) await LoadAgentByIdAsync(agentId);
         }
     }
 
@@ -478,46 +499,62 @@ public class AgentEditView : UserControl
     }
 
     /// <summary>Sauvegarde les modifs de l'agent en base (UPDATE)</summary>
-    private void SaveAgentChanges()
+    private async Task SaveAgentChangesAsync()
     {
         if (lvAgents.SelectedItems.Count == 0) { MessageBox.Show("Choisir d'abord un agent."); return; }
         if (!ValidateAgentForm(out var msg)) { MessageBox.Show(msg); return; }
 
+        var selectedItem = lvAgents.SelectedItems[0];
+        var agentId = selectedItem.Tag as string;
+        if (agentId == null) return;
+
+        var existingAgent = await _agentApiClient.GetByIdAsync(agentId);
+        if (existingAgent == null)
+        {
+            MessageBox.Show("Agent introuvable.");
+            return;
+        }
+
         int? teamId = (cbTeam.SelectedItem as AgentTeamItem)?.Id;
         int? siteId = (cbSite.SelectedItem as AgentSiteItem)?.Id;
 
+        var agent = new AgentDto(
+            Idrh: tbIDRH.Text.Trim(),
+            Nom: tbAgentName.Text.Trim(),
+            Prenom: tbFirstName.Text.Trim(),
+            Email: tbEmail.Text.Trim(),
+            EquipeId: teamId,
+            SiteId: siteId,
+            Heberge: cbxHeberge.Checked ? 1 : 0,
+            Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim()
+        );
+
+        // Appeler l'API pour la mise à jour
+        await _agentApiClient.UpdateAsync(agentId, agent);
+
+        // Recharger la liste pour refléter les modifications
+        await LoadAgentListAsync();
+    }
+
+    private async void btnUpdate_Click(object? sender, EventArgs e)
+    {
         try
         {
-            // Créer un DTO avec les valeurs modifiées
-            var agent = new AgentDto(
-                Idrh: tbIDRH.Text.Trim(),
-                Nom: tbAgentName.Text.Trim(),
-                Prenom: tbFirstName.Text.Trim(),
-                Email: tbEmail.Text.Trim(),
-                EquipeId: teamId,
-                SiteId: siteId,
-                Heberge: cbxHeberge.Checked ? 1 : 0,
-                Commentaire: string.IsNullOrWhiteSpace(tbComment.Text) ? null : tbComment.Text.Trim()
-            );
-
-            // Appeler le repository pour la mise à jour
-            var repo = new AgentMySqlRepository();
-            repo.Update(agent);
-
-            MessageBox.Show("Modifications enregistrées.");
-
-            // Recharger la liste pour refléter les modifications
-            LoadAgentList();
+            await SaveAgentChangesAsync();
+            MessageBox.Show("Agent modifié avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de la sauvegarde : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors de la modification de l'agent : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>Supprime l'agent (demande confirmation avant)</summary>
-    private void DeleteSelectedAgent()
+    private async Task DeleteSelectedAgentAsync()
     {
         if (lvAgents.SelectedItems.Count == 0)
         { MessageBox.Show("Sélectionne un agent à supprimer."); return; }
@@ -534,27 +571,33 @@ public class AgentEditView : UserControl
 
         if (confirm != DialogResult.Yes) return;
 
+        await _agentApiClient.DeleteAsync(agentId);
+
+        await LoadAgentListFilteredAsync(tbSearch?.Text?.Trim() ?? "");
+        tbIDRH.Clear(); 
+        tbAgentName.Clear(); 
+        tbFirstName.Clear(); 
+        tbEmail.Clear(); 
+        tbComment.Clear();
+        cbxHeberge.Checked = false;
+    }
+
+    private async void btnDelete_Click(object? sender, EventArgs e)
+    {
         try
         {
-            var repo = new AgentMySqlRepository();
-            repo.Delete(agentId);
-
-            LoadAgentListFiltered(tbSearch?.Text?.Trim() ?? "");
-            tbIDRH.Clear(); 
-            tbAgentName.Clear(); 
-            tbFirstName.Clear(); 
-            tbEmail.Clear(); 
-            tbComment.Clear();
-            cbxHeberge.Checked = false;
-            MessageBox.Show("Agent supprimé.");
+            await DeleteSelectedAgentAsync();
+            MessageBox.Show("Agent supprimé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors de la suppression de l'Agent : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
-
     /// <summary>
     /// Helper pour ajouter un champ dans le formulaire (label + contrôle)
     /// </summary>

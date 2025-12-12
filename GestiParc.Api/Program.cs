@@ -17,6 +17,9 @@ builder.Services.AddControllers();
 // 3. DI : repository équipements
 builder.Services.AddScoped<IEquipmentRepository, EquipmentMySqlRepository>();
 builder.Services.AddScoped<IEquipmentTypeRepository, EquipmentTypeMySqlRepository>();
+builder.Services.AddScoped<IAgentRepository, AgentMySqlRepository>();
+builder.Services.AddScoped<ISiteRepository, SiteMySqlRepository>();
+builder.Services.AddScoped<IEquipeRepository, EquipeMySqlRepository>();
 
 var app = builder.Build();
 
