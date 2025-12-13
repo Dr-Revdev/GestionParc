@@ -7,6 +7,9 @@ using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
 using GestiParc.Ui.Views.Loan.Models;
 using GestiParc.Infrastructure.Data.Repositories;
+using GestiParc.Core.DTOs;
+using GestiParc.Ui.Services.Api;
+using System.Net.Http;
 
 namespace GestiParc.Ui.Views.Equipment;
 
@@ -15,6 +18,10 @@ namespace GestiParc.Ui.Views.Equipment;
 /// </summary>
 public class EquipmentExchangeView : Form
 {
+    private readonly AgentApiClient _agentApiClient = new AgentApiClient();
+    private readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
     private ComboBox cbAgent1 = null!;
     private ComboBox cbAgent2 = null!;
     private CheckedListBox clbAgent1Equipment = null!;
@@ -27,7 +34,7 @@ public class EquipmentExchangeView : Form
     public EquipmentExchangeView()
     {
         BuildUi();
-        LoadAgents();
+        Load += async (sender, e) => await LoadAgentsAsync();
     }
 
     private void BuildUi()
@@ -80,7 +87,7 @@ public class EquipmentExchangeView : Form
 
         // === AGENT 1 ===
         var agent1Panel = CreateAgentPanel("Agent 1", out cbAgent1, out clbAgent1Equipment, out lblAgent1Count);
-        cbAgent1.SelectedIndexChanged += (s, e) => LoadAgent1Equipment();
+        cbAgent1.SelectedIndexChanged += async (s, e) => await LoadAgent1EquipmentAsync();
         clbAgent1Equipment.ItemCheck += (s, e) => 
         {
             BeginInvoke(new Action(() => UpdateSelectionCount(clbAgent1Equipment, lblAgent1Count)));
@@ -105,7 +112,7 @@ public class EquipmentExchangeView : Form
 
         // === AGENT 2 ===
         var agent2Panel = CreateAgentPanel("Agent 2", out cbAgent2, out clbAgent2Equipment, out lblAgent2Count);
-        cbAgent2.SelectedIndexChanged += (s, e) => LoadAgent2Equipment();
+        cbAgent2.SelectedIndexChanged += async (s, e) => await LoadAgent2EquipmentAsync();
         clbAgent2Equipment.ItemCheck += (s, e) => 
         {
             BeginInvoke(new Action(() => UpdateSelectionCount(clbAgent2Equipment, lblAgent2Count)));
@@ -236,18 +243,21 @@ public class EquipmentExchangeView : Form
     /// <summary>
     /// Remplit les 2 combobox avec la liste de tous les agents
     /// </summary>
-    private void LoadAgents()
+    private async Task LoadAgentsAsync()
     {
         try
         {
-            var agentRepo = new AgentMySqlRepository();
-            var equipeRepo = new EquipeMySqlRepository();
+            var agents = await _agentApiClient.GetAllAsync();
+            var equipes = await _equipeApiClient.GetAllAsync();
 
-            var agents = agentRepo.GetAll().OrderBy(a => a.Nom).ThenBy(a => a.Prenom).ToList();
-            var equipes = equipeRepo.GetAll();
+            var sortedAgents = agents
+                .OrderBy(a => a.Nom ?? "")
+                .ThenBy(a => a.Prenom ?? "")
+                .ThenBy(a => a.Idrh);
+            
             var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
 
-            var agentItems = agents.Select(a =>
+            var agentItems = sortedAgents.Select(a =>
             {
                 var equipe = a.EquipeId.HasValue && equipeDict.ContainsKey(a.EquipeId.Value)
                     ? $" ({equipeDict[a.EquipeId.Value]})"
@@ -268,29 +278,34 @@ public class EquipmentExchangeView : Form
                 cbAgent2.Items.Add(agent);
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les agents.\n\n : {ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des agents : {ex.Message}", 
-                          "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement des agents : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>Charge les équipements de l'agent 1</summary>
-    private void LoadAgent1Equipment()
+    private async Task LoadAgent1EquipmentAsync()
     {
-        LoadAgentEquipment(cbAgent1, clbAgent1Equipment, lblAgent1Count);
+        await LoadAgentEquipmentAsync(cbAgent1, clbAgent1Equipment, lblAgent1Count);
     }
 
     /// <summary>Charge les équipements de l'agent 2</summary>
-    private void LoadAgent2Equipment()
+    private async Task LoadAgent2EquipmentAsync()
     {
-        LoadAgentEquipment(cbAgent2, clbAgent2Equipment, lblAgent2Count);
+        await LoadAgentEquipmentAsync(cbAgent2, clbAgent2Equipment, lblAgent2Count);
     }
 
     /// <summary>
     /// Charge les équipements prêtés d'un agent dans sa CheckedListBox
     /// </summary>
-    private void LoadAgentEquipment(ComboBox comboBox, CheckedListBox listBox, Label countLabel)
+    private async Task LoadAgentEquipmentAsync(ComboBox comboBox, CheckedListBox listBox, Label countLabel)
     {
         listBox.Items.Clear();
         countLabel.Text = "Sélectionnés : 0";
@@ -302,11 +317,8 @@ public class EquipmentExchangeView : Form
 
         try
         {
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
-
-            var equipments = equipmentRepo.GetByAgent(agent.Idrh).Where(e => e.EtatPret == 1).ToList();
-            var types = typeRepo.GetAll();
+            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.Idrh == agent.Idrh);
+            var types = await _equipmentTypeApiClient.GetAllAsync();
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             var sortedEquipments = equipments
@@ -324,10 +336,15 @@ public class EquipmentExchangeView : Form
                 listBox.Items.Add(equipmentItem);
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger l'équipement. \n\n{ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}", 
-                          "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement de l'équipement : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -343,7 +360,7 @@ public class EquipmentExchangeView : Form
     /// <summary>
     /// Handler du bouton Échanger - fait la permutation des équipements cochés entre les 2 agents
     /// </summary>
-    private void btnExchange_Click(object? sender, EventArgs e)
+    private async void btnExchange_Click(object? sender, EventArgs e)
     {
         // Validation
         if (cbAgent1.SelectedItem is not AgentItem agent1)
@@ -410,36 +427,35 @@ public class EquipmentExchangeView : Form
         // Exécution de l'échange
         try
         {
-            var equipmentRepo = new EquipmentMySqlRepository();
-
             // Transférer les équipements de Agent1 vers Agent2
             foreach (var equipment in agent1Equipments)
             {
-                var eq = equipmentRepo.GetById(equipment.Id);
-                if (eq != null)
-                {
-                    var updatedEq = eq with { Idrh = agent2.Idrh };
-                    equipmentRepo.Update(updatedEq);
-                }
+                var eq = await _equipmentApiClient.GetByIdAsync(equipment.Id);
+                if (eq == null) continue;
+                var updatedDto = eq with { Idrh = agent2.Idrh };
+                await _equipmentApiClient.UpdateAsync(equipment.Id, updatedDto);
             }
 
             // Transférer les équipements de Agent2 vers Agent1
             foreach (var equipment in agent2Equipments)
             {
-                var eq = equipmentRepo.GetById(equipment.Id);
-                if (eq != null)
-                {
-                    var updatedEq = eq with { Idrh = agent1.Idrh };
-                    equipmentRepo.Update(updatedEq);
-                }
+                var eq = await _equipmentApiClient.GetByIdAsync(equipment.Id);
+                if (eq == null) continue;
+                var updatedDto = eq with { Idrh = agent1.Idrh };
+                await _equipmentApiClient.UpdateAsync(equipment.Id, updatedDto);
             }
 
             MessageBox.Show("Échange effectué avec succès !", "Succès", 
-                          MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             // Rafraîchir les listes sans fermer la fenêtre
-            LoadAgent1Equipment();
-            LoadAgent2Equipment();
+            await LoadAgent1EquipmentAsync();
+            await LoadAgent2EquipmentAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible d'effectuer l'échange.\n\n{ex.Message}",
+                          "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
