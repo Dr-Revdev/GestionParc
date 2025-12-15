@@ -1,10 +1,6 @@
-using System;
-using System.Drawing;  
-using System.Windows.Forms;
 using GestiParc.Ui.Views.Admin;
 using GestiParc.Ui.Views.Agent;
 using GestiParc.Ui.Views.Equipment;
-using GestiParc.Ui.Views.Loan;
 using GestiParc.Ui.Views.Inventory;
 using GestiParc.Ui.Views.Settings;
 using GestiParc.Ui.Services;

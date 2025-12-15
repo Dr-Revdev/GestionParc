@@ -2,10 +2,12 @@ using System;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GestiParc.Core.Interfaces.Services;
 using GestiParc.Core.Services;
-using GestiParc.Infrastructure.Data.Repositories;
+using GestiParc.Ui.Services.Api;
 
 #nullable enable
 
@@ -26,7 +28,7 @@ public static class DocumentGeneratorUiService
     /// <summary>
     /// Génère et affiche une feuille de remise pour un agent avec aperçu avant impression
     /// </summary>
-    public static void GenerateFeuilleRemise(string agentId)
+    public static async Task GenerateFeuilleRemiseAsync(string agentId)
     {
         if (string.IsNullOrWhiteSpace(agentId))
         {
@@ -44,7 +46,7 @@ public static class DocumentGeneratorUiService
         try
         {
             // Récupérer les données via le service Core
-            var service = CreateService();
+            var service = await CreateServiceAsync();
             var data = service.GetFeuilleRemiseData(agentId);
 
             // Initialiser les polices
@@ -92,6 +94,11 @@ public static class DocumentGeneratorUiService
                 }
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les données.\n\n{ex.Message}",
+                          "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (InvalidOperationException ex)
         {
             MessageBox.Show(ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -115,15 +122,21 @@ public static class DocumentGeneratorUiService
     /// <summary>
     /// Crée une instance du service de génération de documents
     /// </summary>
-    private static IDocumentGenerationService CreateService()
+    private static async Task<IDocumentGenerationService> CreateServiceAsync()
     {
-        var agentRepo = new AgentMySqlRepository();
-        var equipmentRepo = new EquipmentMySqlRepository();
-        var typeRepo = new EquipmentTypeMySqlRepository();
-        var siteRepo = new SiteMySqlRepository();
-        var equipeRepo = new EquipeMySqlRepository();
+        var agentApiClient = new AgentApiClient();
+        var equipmentApiClient = new EquipmentApiClient();
+        var typeApiClient = new EquipmentTypeApiClient();
+        var siteApiClient = new SiteApiClient();
+        var equipeApiClient = new EquipeApiClient();
 
-        return new DocumentGenerationService(agentRepo, equipmentRepo, typeRepo, siteRepo, equipeRepo);
+        var agents = await agentApiClient.GetAllAsync();
+        var equipments = await equipmentApiClient.GetAllAsync();
+        var types = await typeApiClient.GetAllAsync();
+        var sites = await siteApiClient.GetAllAsync();
+        var equipes = await equipeApiClient.GetAllAsync();
+
+        return new DocumentGenerationService(agents, equipments, types, sites, equipes);
     }
 
     /// <summary>

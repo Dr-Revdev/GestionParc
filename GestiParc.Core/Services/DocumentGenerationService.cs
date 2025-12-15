@@ -1,5 +1,4 @@
 using GestiParc.Core.DTOs;
-using GestiParc.Core.Interfaces.Repositories;
 using GestiParc.Core.Interfaces.Services;
 
 namespace GestiParc.Core.Services;
@@ -9,24 +8,24 @@ namespace GestiParc.Core.Services;
 /// </summary>
 public class DocumentGenerationService : IDocumentGenerationService
 {
-    private readonly IAgentRepository _agentRepository;
-    private readonly IEquipmentRepository _equipmentRepository;
-    private readonly IEquipmentTypeRepository _typeRepository;
-    private readonly ISiteRepository _siteRepository;
-    private readonly IEquipeRepository _equipeRepository;
+    private readonly List<AgentDto> _agents;
+    private readonly List<EquipmentDto> _equipments;
+    private readonly List<EquipmentTypeDto> _types;
+    private readonly List<SiteDto> _sites;
+    private readonly List<EquipeDto> _equipes;
 
     public DocumentGenerationService(
-        IAgentRepository agentRepository,
-        IEquipmentRepository equipmentRepository,
-        IEquipmentTypeRepository typeRepository,
-        ISiteRepository siteRepository,
-        IEquipeRepository equipeRepository)
+        List<AgentDto> agents,
+        List<EquipmentDto> equipments,
+        List<EquipmentTypeDto> types,
+        List<SiteDto> sites,
+        List<EquipeDto> equipes)
     {
-        _agentRepository = agentRepository;
-        _equipmentRepository = equipmentRepository;
-        _typeRepository = typeRepository;
-        _siteRepository = siteRepository;
-        _equipeRepository = equipeRepository;
+        _agents = agents ?? throw new ArgumentNullException(nameof(agents));
+        _equipments = equipments ?? throw new ArgumentNullException(nameof(equipments));
+        _types = types ?? throw new ArgumentNullException(nameof(types));
+        _sites = sites ?? throw new ArgumentNullException(nameof(sites));
+        _equipes = equipes ?? throw new ArgumentNullException(nameof(equipes));
     }
 
     /// <summary>
@@ -40,21 +39,21 @@ public class DocumentGenerationService : IDocumentGenerationService
         }
 
         // Récupérer l'agent
-        var agent = _agentRepository.GetById(agentId);
+        var agent = _agents.FirstOrDefault(a => a.Idrh == agentId);
         if (agent == null)
         {
             throw new InvalidOperationException($"Agent non trouvé : {agentId}");
         }
 
         // Récupérer les équipements en prêt (EtatPret == 1)
-        var equipments = _equipmentRepository.GetByAgent(agentId)
-            .Where(e => e.EtatPret == 1)
+        var equipments = _equipments
+            .Where(e => e.Idrh == agentId && e.EtatPret == 1)
             .ToList();
 
         // Récupérer les données de référence
-        var types = _typeRepository.GetAll();
-        var sites = _siteRepository.GetAll();
-        var equipes = _equipeRepository.GetAll();
+        var types = _types;
+        var sites = _sites;
+        var equipes = _equipes;
 
         // Créer les dictionnaires pour les lookups
         var typeDict = types.ToDictionary(t => t.Id, t => t.Name);

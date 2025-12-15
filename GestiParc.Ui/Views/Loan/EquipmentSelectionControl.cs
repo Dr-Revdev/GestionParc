@@ -1,11 +1,6 @@
-using System;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using GestiParc.Ui.Data;
-using GestiParc.Ui.Services;
 using GestiParc.Ui.Views.Loan.Models;
-using GestiParc.Infrastructure.Data.Repositories;
+using GestiParc.Ui.Services.Api;
+using System.Net.Http;
 
 namespace GestiParc.Ui.Views.Loan;
 
@@ -15,6 +10,8 @@ namespace GestiParc.Ui.Views.Loan;
 /// </summary>
 public class EquipmentSelectionControl : Panel
 {
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
     private ComboBox cmbEquipment = null!;
     private Button btnRemove = null!;
     public event EventHandler? OnRemove;
@@ -28,7 +25,7 @@ public class EquipmentSelectionControl : Panel
     {
         preselectId = preselectedEquipmentId;
         BuildUi();
-        LoadEquipments();
+        HandleCreated += async (sender, e) => await LoadEquipmentsAsync();
     }
 
     private void BuildUi()
@@ -58,15 +55,12 @@ public class EquipmentSelectionControl : Panel
         Controls.Add(btnRemove);
     }
 
-    private void LoadEquipments()
+    private async Task LoadEquipmentsAsync()
     {
         try
         {
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
-
-            var equipments = equipmentRepo.GetAll();
-            var types = typeRepo.GetAll();
+            var equipments = await _equipmentApiClient.GetAllAsync();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Charger les équipements disponibles (etat_pret = 0)
@@ -92,7 +86,7 @@ public class EquipmentSelectionControl : Panel
             // Si on a un ID présélectionné qui n'est pas dans la liste des disponibles, le charger explicitement
             if (preselectId != null && !foundPreselect)
             {
-                var preselectedEq = equipmentRepo.GetById(preselectId);
+                var preselectedEq = await _equipmentApiClient.GetByIdAsync(preselectId);
                 if (preselectedEq != null)
                 {
                     var typeName = typeDict.ContainsKey(preselectedEq.TypeId) ? typeDict[preselectedEq.TypeId] : "Inconnu";
@@ -120,10 +114,15 @@ public class EquipmentSelectionControl : Panel
                 }
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les équipements.\n\n : {ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}",
-                          "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

@@ -1,12 +1,7 @@
-using System.Drawing;
-using System.Windows.Forms;
-using System.Collections.Generic;
-using System.Linq;
-using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
 using GestiParc.Ui.Views.Loan.Models;
-using GestiParc.Infrastructure.Data.Repositories;
-using GestiParc.Core.DTOs;
+using GestiParc.Ui.Services.Api;
+using System.Net.Http;
 
 namespace GestiParc.Ui.Views.Loan;
 
@@ -16,6 +11,8 @@ namespace GestiParc.Ui.Views.Loan;
 /// </summary>
 public class LoanCreationView : Form
 {
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
+    private readonly AgentApiClient _agentApiClient = new AgentApiClient();
     private ComboBox cmbAgent = null!;
     private Label lblAgentDisplay = null!; // Pour afficher le nom en mode édition
     private FlowLayoutPanel pnlEquipments = null!;
@@ -27,7 +24,7 @@ public class LoanCreationView : Form
     private string selectedAgentId = string.Empty;
     private bool isEditMode = false;
     
-    // Optional pre-selected agent id when editing
+
     [System.ComponentModel.Browsable(true)]
     [System.ComponentModel.Category("Data")]
     [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Visible)]
@@ -44,7 +41,7 @@ public class LoanCreationView : Form
                 SelectAgentById(selectedAgentId);
                 if (cmbAgent.SelectedItem != null)
                 {
-                    LoadAssignedEquipments(selectedAgentId);
+                    BeginInvoke(new Action(async () => await LoadAssignedEquipmentsAsync(selectedAgentId)));
                 }
                 UpdateUIForEditMode();
             }
@@ -54,7 +51,7 @@ public class LoanCreationView : Form
     public LoanCreationView()
     {
         BuildUi();
-        LoadAgents();
+        Load += async (sender, e) => await LoadAgentsAsync();
     }
 
     protected override void OnShown(System.EventArgs e)
@@ -113,15 +110,15 @@ public class LoanCreationView : Form
         }
     }
 
-    private void LoadAssignedEquipments(string agentId)
+    private async Task LoadAssignedEquipmentsAsync(string agentId)
     {
         try
         {
             // Vider les contrôles d'équipements existants
             pnlEquipments.Controls.Clear();
             
-            var repo = new EquipmentMySqlRepository();
-            var equipments = repo.GetByAgent(agentId);
+            var allEquipments = await _equipmentApiClient.GetAllAsync();
+            var equipments = allEquipments.Where(e => e.Idrh == agentId);
             
             // Filtrer uniquement ceux en état prêt (etat_pret = 1)
             var loanedEquipments = equipments.Where(e => e.EtatPret == 1);
@@ -134,9 +131,15 @@ public class LoanCreationView : Form
             // S'assurer qu'au moins un contrôle existe
             if (pnlEquipments.Controls.Count == 0) AddEquipmentControl();
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les équipements.\n\n{ex.Message}", 
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des équipements assignés : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement des équipements assignés : {ex.Message}", 
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -274,7 +277,7 @@ public class LoanCreationView : Form
             Margin = new Padding(10, 0, 10, 0)
         };
         Theme.StyleDangerButton(btnDelete);
-        btnDelete.Click += (_, _) => DeleteLoan();
+        btnDelete.Click += btnDelete_Click;
         buttonPanel.Controls.Add(btnDelete, 1, 0);
 
         btnFeuilleRemise = new Button
@@ -295,7 +298,7 @@ public class LoanCreationView : Form
             Margin = new Padding(10, 0, 10, 0)
         };
         Theme.StyleSuccessButton(btnValidate);
-        btnValidate.Click += (_, _) => ValidateLoan();
+        btnValidate.Click += btnValidate_Click;
         buttonPanel.Controls.Add(btnValidate, 3, 0);
 
         btnCancel = new Button
@@ -312,15 +315,17 @@ public class LoanCreationView : Form
         AddEquipmentControl();
     }
 
-    private void LoadAgents()
+    private async Task LoadAgentsAsync()
     {
         try
         {
-            var repo = new AgentMySqlRepository();
-            var agents = repo.GetAll();
+            var agents = await _agentApiClient.GetAllAsync();
             
             // Trier par nom, prénom
-            var sortedAgents = agents.OrderBy(a => a.Nom ?? "").ThenBy(a => a.Prenom ?? "");
+            var sortedAgents = agents
+                .OrderBy(a => a.Nom ?? "")
+                .ThenBy(a => a.Prenom ?? "")
+                .ThenBy(a => a.Idrh);
             
             foreach (var agent in sortedAgents)
             {
@@ -332,10 +337,15 @@ public class LoanCreationView : Form
                 cmbAgent.Items.Add(agentItem);
             }
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les agents.\n\n : {ex.Message}",
+            "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors du chargement des agents : {ex.Message}", "Erreur",
-                          MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors du chargement des agents : {ex.Message}",
+            "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -352,7 +362,7 @@ public class LoanCreationView : Form
         pnlEquipments.Controls.Add(control);
     }
 
-    private void DeleteLoan()
+    private async Task DeleteLoanAsync()
     {
         if (string.IsNullOrEmpty(SelectedAgentId))
         {
@@ -370,36 +380,48 @@ public class LoanCreationView : Form
             return;
         }
 
+        var allEquipments = await _equipmentApiClient.GetAllAsync();
+        var equipments = allEquipments.Where(e => e.Idrh == SelectedAgentId);
+        
+        // Récupérer tous les équipements prêtés à cet agent
+        
+        var loanedEquipments = equipments.Where(e => e.EtatPret == 1);
+        
+        // Mettre à jour chaque équipement pour le rendre disponible
+        foreach (var equipment in loanedEquipments)
+        {
+            var updatedEquipment = equipment with 
+            { 
+                Idrh = string.Empty, 
+                EtatPret = 0 
+            };
+            await _equipmentApiClient.UpdateAsync(equipment.IdEquipement, updatedEquipment);
+        }
+        
+        DialogResult = DialogResult.OK;
+        Close();
+
+    }
+
+    private async void btnDelete_Click(object? sender, EventArgs e)
+    {
         try
         {
-            var repo = new EquipmentMySqlRepository();
-            
-            // Récupérer tous les équipements prêtés à cet agent
-            var equipments = repo.GetByAgent(SelectedAgentId);
-            var loanedEquipments = equipments.Where(e => e.EtatPret == 1);
-            
-            // Mettre à jour chaque équipement pour le rendre disponible
-            foreach (var equipment in loanedEquipments)
-            {
-                var updatedEquipment = equipment with 
-                { 
-                    Idrh = string.Empty, 
-                    EtatPret = 0 
-                };
-                repo.Update(updatedEquipment);
-            }
-            
-            DialogResult = DialogResult.OK;
-            Close();
+            await DeleteLoanAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de la suppression du prêt : {ex.Message}",
-                          "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
-    private void ValidateLoan()
+    private async Task ValidateLoanAsync()
     {
         // En mode édition, on utilise l'agent déjà sélectionné
         if (!isEditMode && cmbAgent.SelectedItem == null)
@@ -420,82 +442,94 @@ public class LoanCreationView : Form
             return;
         }
 
-        try
+        // En mode édition, on utilise selectedAgentId, sinon on prend l'agent sélectionné
+        string agentId;
+        if (isEditMode)
         {
-            // En mode édition, on utilise selectedAgentId, sinon on prend l'agent sélectionné
-            string agentId;
-            if (isEditMode)
+            agentId = selectedAgentId;
+        }
+        else
+        {
+            var agent = (AgentItem?)cmbAgent.SelectedItem;
+            agentId = agent?.Idrh ?? string.Empty;
+        }
+
+        // En mode édition, récupérer les équipements précédemment assignés
+        var previouslyAssigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(selectedAgentId))
+        {
+            var allEquipments = await _equipmentApiClient.GetAllAsync();
+            var prevEquipments = allEquipments.Where(e => e.Idrh == selectedAgentId);
+            foreach (var eq in prevEquipments)
             {
-                agentId = selectedAgentId;
+                previouslyAssigned.Add(eq.IdEquipement);
             }
-            else
-            {
-                var agent = (AgentItem?)cmbAgent.SelectedItem;
-                agentId = agent?.Idrh ?? string.Empty;
-            }
+        }
+
+        var newlySelected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var control in selectedEquipments)
+        {
+            var id = control.SelectedEquipment!.Id;
+            newlySelected.Add(id);
+
+            // Récupérer l'équipement existant
+            var equipment = await _equipmentApiClient.GetByIdAsync(id);
+            if (equipment == null) continue;
             
-            var repo = new EquipmentMySqlRepository();
+            // Mise à jour : garde l'état DSEM (2) si c'était déjà DSEM, sinon met en état prêt (1)
+            var newEtatPret = equipment.EtatPret == 2 ? 2 : 1;
+            
+            var updatedEquipment = equipment with 
+            { 
+                Idrh = agentId, 
+                EtatPret = newEtatPret 
+            };
+            await _equipmentApiClient.UpdateAsync(id, updatedEquipment);
+        }
 
-            // En mode édition, récupérer les équipements précédemment assignés
-            var previouslyAssigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(selectedAgentId))
+        // Pour tout équipement précédemment assigné qui n'est plus sélectionné, retirer l'assignation
+        foreach (var prevId in previouslyAssigned)
+        {
+            if (!newlySelected.Contains(prevId))
             {
-                var prevEquipments = repo.GetByAgent(selectedAgentId);
-                foreach (var eq in prevEquipments)
-                {
-                    previouslyAssigned.Add(eq.IdEquipement);
-                }
-            }
-
-            var newlySelected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var control in selectedEquipments)
-            {
-                var id = control.SelectedEquipment!.Id;
-                newlySelected.Add(id);
-
-                // Récupérer l'équipement existant
-                var equipment = repo.GetById(id);
-                
-                // Mise à jour : garde l'état DSEM (2) si c'était déjà DSEM, sinon met en état prêt (1)
-                var newEtatPret = equipment.EtatPret == 2 ? 2 : 1;
+                var equipment = await _equipmentApiClient.GetByIdAsync(prevId);
+                if (equipment == null) continue;
                 
                 var updatedEquipment = equipment with 
                 { 
-                    Idrh = agentId, 
-                    EtatPret = newEtatPret 
+                    Idrh = string.Empty, 
+                    EtatPret = 0 
                 };
-                repo.Update(updatedEquipment);
+                await _equipmentApiClient.UpdateAsync(prevId, updatedEquipment);
             }
+        }
 
-            // Pour tout équipement précédemment assigné qui n'est plus sélectionné, retirer l'assignation
-            foreach (var prevId in previouslyAssigned)
-            {
-                if (!newlySelected.Contains(prevId))
-                {
-                    var equipment = repo.GetById(prevId);
-                    var updatedEquipment = equipment with 
-                    { 
-                        Idrh = string.Empty, 
-                        EtatPret = 0 
-                    };
-                    repo.Update(updatedEquipment);
-                }
-            }
+        DialogResult = DialogResult.OK;
+        Close();
+    }
 
-            DialogResult = DialogResult.OK;
-            Close();
+    private async void btnValidate_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            await ValidateLoanAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors de l'enregistrement du prêt : {ex.Message}", "Erreur",
-                          MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     /// <summary>
     /// Génère le PDF de feuille de remise (seulement disponible en mode édition)
     /// </summary>
-    private void GenerateFeuilleRemise()
+    private async void GenerateFeuilleRemise()
     {
         if (!isEditMode || string.IsNullOrEmpty(selectedAgentId))
         {
@@ -504,6 +538,6 @@ public class LoanCreationView : Form
             return;
         }
 
-        DocumentGeneratorUiService.GenerateFeuilleRemise(selectedAgentId);
+        await DocumentGeneratorUiService.GenerateFeuilleRemiseAsync(selectedAgentId);
     }
 }

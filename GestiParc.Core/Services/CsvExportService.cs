@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using GestiParc.Core.Interfaces.Services;
-using GestiParc.Core.Interfaces.Repositories;
+using GestiParc.Core.DTOs;
 
 namespace GestiParc.Core.Services;
 
@@ -13,24 +13,24 @@ namespace GestiParc.Core.Services;
 /// </summary>
 public class CsvExportService : ICsvExportService
 {
-    private readonly IAgentRepository _agentRepository;
-    private readonly IEquipmentRepository _equipmentRepository;
-    private readonly IEquipmentTypeRepository _equipmentTypeRepository;
-    private readonly IEquipeRepository _equipeRepository;
-    private readonly ISiteRepository _siteRepository;
+    private readonly List<AgentDto> _agents;
+    private readonly List<EquipmentDto> _equipments;
+    private readonly List<EquipmentTypeDto> _equipmentTypes;
+    private readonly List<EquipeDto> _equipes;
+    private readonly List<SiteDto> _sites;
 
     public CsvExportService(
-        IAgentRepository agentRepository,
-        IEquipmentRepository equipmentRepository,
-        IEquipmentTypeRepository equipmentTypeRepository,
-        IEquipeRepository equipeRepository,
-        ISiteRepository siteRepository)
+        List<AgentDto> agents,
+        List<EquipmentDto> equipments,
+        List<EquipmentTypeDto> equipmentTypes,
+        List<EquipeDto> equipes,
+        List<SiteDto> sites)
     {
-        _agentRepository = agentRepository ?? throw new ArgumentNullException(nameof(agentRepository));
-        _equipmentRepository = equipmentRepository ?? throw new ArgumentNullException(nameof(equipmentRepository));
-        _equipmentTypeRepository = equipmentTypeRepository ?? throw new ArgumentNullException(nameof(equipmentTypeRepository));
-        _equipeRepository = equipeRepository ?? throw new ArgumentNullException(nameof(equipeRepository));
-        _siteRepository = siteRepository ?? throw new ArgumentNullException(nameof(siteRepository));
+        _agents = agents ?? throw new ArgumentNullException(nameof(agents));
+        _equipments = equipments ?? throw new ArgumentNullException(nameof(equipments));
+        _equipmentTypes = equipmentTypes ?? throw new ArgumentNullException(nameof(equipmentTypes));
+        _equipes = equipes ?? throw new ArgumentNullException(nameof(equipes));
+        _sites = sites ?? throw new ArgumentNullException(nameof(sites));
     }
 
     public void ExportAgents(string filePath)
@@ -38,9 +38,9 @@ public class CsvExportService : ICsvExportService
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentException("Le chemin du fichier ne peut pas être vide", nameof(filePath));
 
-        var agents = _agentRepository.GetAll();
-        var equipes = _equipeRepository.GetAll();
-        var sites = _siteRepository.GetAll();
+        var agents = _agents;
+        var equipes = _equipes;
+        var sites = _sites;
 
         var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
         var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
@@ -71,9 +71,9 @@ public class CsvExportService : ICsvExportService
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentException("Le chemin du fichier ne peut pas être vide", nameof(filePath));
 
-        var equipments = _equipmentRepository.GetAll();
-        var types = _equipmentTypeRepository.GetAll();
-        var agents = _agentRepository.GetAll();
+        var equipments = _equipments;
+        var types = _equipmentTypes;
+        var agents = _agents;
 
         var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
         var agentDict = agents.ToDictionary(a => a.Idrh, a => $"{a.Nom} {a.Prenom}");
@@ -110,10 +110,10 @@ public class CsvExportService : ICsvExportService
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentException("Le chemin du fichier ne peut pas être vide", nameof(filePath));
 
-        var agents = _agentRepository.GetAll();
-        var equipments = _equipmentRepository.GetAll();
-        var types = _equipmentTypeRepository.GetAll();
-        var equipes = _equipeRepository.GetAll();
+        var agents = _agents;
+        var equipments = _equipments;
+        var types = _equipmentTypes;
+        var equipes = _equipes;
 
         var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
         var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);

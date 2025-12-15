@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using GestiParc.Ui.Data;
-using GestiParc.Ui.Services;
 using GestiParc.Core.DTOs;
 using GestiParc.Ui.Services.Api;
 using System.Net.Http;

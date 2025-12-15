@@ -1,8 +1,10 @@
 using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using GestiParc.Core.Interfaces.Services;
 using GestiParc.Core.Services;
-using GestiParc.Infrastructure.Data.Repositories;
+using GestiParc.Ui.Services.Api;
 
 namespace GestiParc.Ui.Services;
 
@@ -11,32 +13,43 @@ namespace GestiParc.Ui.Services;
 /// </summary>
 public static class CsvExportUiService
 {
-    private static ICsvExportService CreateService()
+    private static readonly AgentApiClient _agentApiClient = new AgentApiClient();
+    private static readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
+    private static readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+    private static readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private static readonly SiteApiClient _siteApiClient = new SiteApiClient();
+
+    private static async Task<ICsvExportService> CreateServiceAsync()
     {
-        return new CsvExportService(
-            new AgentMySqlRepository(),
-            new EquipmentMySqlRepository(),
-            new EquipmentTypeMySqlRepository(),
-            new EquipeMySqlRepository(),
-            new SiteMySqlRepository()
-        );
+        var agents = await _agentApiClient.GetAllAsync();
+        var equipments = await _equipmentApiClient.GetAllAsync();
+        var types = await _equipmentTypeApiClient.GetAllAsync();
+        var equipes = await _equipeApiClient.GetAllAsync();
+        var sites = await _siteApiClient.GetAllAsync();
+
+        return new CsvExportService(agents, equipments, types, equipes, sites);
     }
 
     /// <summary>
     /// Exporte tous les agents avec dialogue de sélection et notification
     /// </summary>
-    public static void ExportAgents()
+    public static async Task ExportAgentsAsync()
     {
         var filePath = SelectExportFile("agents.csv");
         if (filePath == null) return;
 
         try
         {
-            var service = CreateService();
+            var service = await CreateServiceAsync();
             service.ExportAgents(filePath);
             
             MessageBox.Show($"Export réussi !\n{filePath}", "Export Agents", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les données.\n\n{ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
@@ -48,18 +61,23 @@ public static class CsvExportUiService
     /// <summary>
     /// Exporte tous les équipements avec dialogue de sélection et notification
     /// </summary>
-    public static void ExportEquipments()
+    public static async Task ExportEquipmentsAsync()
     {
         var filePath = SelectExportFile("equipments.csv");
         if (filePath == null) return;
 
         try
         {
-            var service = CreateService();
+            var service = await CreateServiceAsync();
             service.ExportEquipments(filePath);
             
             MessageBox.Show($"Export réussi !\n{filePath}", "Export Équipements",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les données.\n\n{ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
@@ -71,18 +89,23 @@ public static class CsvExportUiService
     /// <summary>
     /// Exporte tous les prêts actifs avec dialogue de sélection et notification
     /// </summary>
-    public static void ExportLoans()
+    public static async Task ExportLoansAsync()
     {
         var filePath = SelectExportFile("prets.csv");
         if (filePath == null) return;
 
         try
         {
-            var service = CreateService();
+            var service = await CreateServiceAsync();
             service.ExportLoans(filePath);
             
             MessageBox.Show($"Export réussi !\n{filePath}", "Export Prêts",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les données.\n\n{ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
@@ -94,18 +117,23 @@ public static class CsvExportUiService
     /// <summary>
     /// Exporte toutes les données (agents, équipements, prêts) dans un dossier
     /// </summary>
-    public static void ExportAll()
+    public static async Task ExportAllAsync()
     {
         var folder = SelectExportFolder();
         if (folder == null) return;
 
         try
         {
-            var service = CreateService();
+            var service = await CreateServiceAsync();
             service.ExportAll(folder);
             
             MessageBox.Show($"Export complet réussi !\nFichiers créés dans :\n{folder}", 
                 "Export Complet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de charger les données.\n\n{ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
