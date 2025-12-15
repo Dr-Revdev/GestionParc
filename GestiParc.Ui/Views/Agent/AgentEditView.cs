@@ -309,15 +309,18 @@ public class AgentEditView : UserControl
     {
         try
         {
-            // Récupérer tous les agents via l'API
-            var agents = await _agentApiClient.GetAllAsync();
-
-            // Récupérer les sites
-            var sites = await _siteApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var agentsTask = _agentApiClient.GetAllAsync();
+            var sitesTask = _siteApiClient.GetAllAsync();
+            var teamsTask = _equipeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(agentsTask, sitesTask, teamsTask);
+            
+            var agents = agentsTask.Result;
+            var sites = sitesTask.Result;
+            var teams = teamsTask.Result;
+            
             var sitesDictionary = sites.ToDictionary(s => s.Id, s => s.Name);
-
-            // Récupérer les équipes
-            var teams = await _equipeApiClient.GetAllAsync();
             var teamsDictionary = teams.ToDictionary(t => t.Id, t => t.Name);
 
             // Vider et remplir le ListView
@@ -361,9 +364,16 @@ public class AgentEditView : UserControl
     {
         try
         {
-            var agents = await _agentApiClient.GetAllAsync();
-            var equipes = await _equipeApiClient.GetAllAsync();
-            var sites = await _siteApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var agentsTask = _agentApiClient.GetAllAsync();
+            var equipesTask = _equipeApiClient.GetAllAsync();
+            var sitesTask = _siteApiClient.GetAllAsync();
+            
+            await Task.WhenAll(agentsTask, equipesTask, sitesTask);
+            
+            var agents = agentsTask.Result;
+            var equipes = equipesTask.Result;
+            var sites = sitesTask.Result;
 
             var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
             var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);

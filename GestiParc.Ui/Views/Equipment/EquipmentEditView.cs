@@ -274,11 +274,14 @@ public class EquipementEditView : UserControl
     {
         try
         {
-            // Récupérer tous les équipements via l'API
-            var equipments = await _equipmentApiClient.GetAllAsync();
-
-            // Récupérer les types pour afficher le nom du type
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result;
+            var types = typesTask.Result;
             var typesDictionary = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Vider et remplir le ListView
@@ -473,8 +476,14 @@ public class EquipementEditView : UserControl
     {
         try
         {
-            var equipments = await _equipmentApiClient.GetAllAsync();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result;
+            var types = typesTask.Result;
 
             // Charger les équipements et les types
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);

@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 using GestiParc.Core.Interfaces.Services;
 using GestiParc.Core.DTOs;

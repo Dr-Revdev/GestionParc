@@ -407,8 +407,14 @@ public class FreeEquipmentView : UserControl
     {
         try
         {
-            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.EtatPret == 0).ToList();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result.Where(e => e.EtatPret == 0).ToList();
+            var types = typesTask.Result;
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
         // Appliquer le filtre si fourni
@@ -468,8 +474,14 @@ public class FreeEquipmentView : UserControl
     {
         try
         {
-            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.EtatPret == 2).ToList();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result.Where(e => e.EtatPret == 2).ToList();
+            var types = typesTask.Result;
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Appliquer le filtre si fourni
@@ -529,14 +541,20 @@ public class FreeEquipmentView : UserControl
     {
         try
         {
-            var equipment = await _equipmentApiClient.GetByIdAsync(equipmentId);
+            // Charger tout en parallèle
+            var equipmentTask = _equipmentApiClient.GetByIdAsync(equipmentId);
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentTask, typesTask);
+            
+            var equipment = equipmentTask.Result;
             if (equipment == null)
             {
                 MessageBox.Show("Équipement introuvable.");
                 return;
             }
 
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            var types = typesTask.Result;
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
             var typeName = typeDict.ContainsKey(equipment.TypeId) ? typeDict[equipment.TypeId] : "";
 

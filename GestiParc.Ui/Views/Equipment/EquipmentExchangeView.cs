@@ -238,8 +238,14 @@ public class EquipmentExchangeView : Form
     {
         try
         {
-            var agents = await _agentApiClient.GetAllAsync();
-            var equipes = await _equipeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var agentsTask = _agentApiClient.GetAllAsync();
+            var equipesTask = _equipeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(agentsTask, equipesTask);
+            
+            var agents = agentsTask.Result;
+            var equipes = equipesTask.Result;
 
             var sortedAgents = agents
                 .OrderBy(a => a.Nom ?? "")
@@ -308,8 +314,14 @@ public class EquipmentExchangeView : Form
 
         try
         {
-            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.Idrh == agent.Idrh);
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result.Where(e => e.Idrh == agent.Idrh);
+            var types = typesTask.Result;
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             var sortedEquipments = equipments

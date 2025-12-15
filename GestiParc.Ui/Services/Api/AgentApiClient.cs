@@ -32,6 +32,12 @@ public class AgentApiClient
     public async Task<AgentDto?> GetByIdAsync(string id)
     {
         var response = await _http.GetAsync($"api/agent/{id}");
+        
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();

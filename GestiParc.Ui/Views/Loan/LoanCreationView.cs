@@ -51,18 +51,23 @@ public class LoanCreationView : Form
     public LoanCreationView()
     {
         BuildUi();
-        Load += async (sender, e) => await LoadAgentsAsync();
+        Load += async (sender, e) =>
+        {
+            await LoadAgentsAsync();
+            
+            // Après le chargement des agents, sélectionner l'agent si nécessaire
+            if (!string.IsNullOrEmpty(selectedAgentId))
+            {
+                SelectAgentById(selectedAgentId);
+                await LoadAssignedEquipmentsAsync(selectedAgentId);
+                UpdateUIForEditMode();
+            }
+        };
     }
 
     protected override void OnShown(System.EventArgs e)
     {
         base.OnShown(e);
-        // Force la mise à jour de l'interface si un agent est sélectionné
-        if (!string.IsNullOrEmpty(selectedAgentId))
-        {
-            SelectedAgentId = selectedAgentId;
-        }
-        UpdateUIForEditMode();
     }
 
     private void UpdateUIForEditMode()

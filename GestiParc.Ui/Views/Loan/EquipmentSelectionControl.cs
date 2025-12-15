@@ -59,8 +59,14 @@ public class EquipmentSelectionControl : Panel
     {
         try
         {
-            var equipments = await _equipmentApiClient.GetAllAsync();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result;
+            var types = typesTask.Result;
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Charger les équipements disponibles (etat_pret = 0)

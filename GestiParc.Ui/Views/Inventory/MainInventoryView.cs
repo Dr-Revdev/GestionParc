@@ -31,7 +31,6 @@ public class MainInventoryView : UserControl
     {
         _onBack = onBack;
         BuildUi();
-        Load += async (sender, e) => await LoadEquipmentsAsync();
         Load += async (sender, e) => await LoadLoansAsync();
     }
 
@@ -223,9 +222,16 @@ public class MainInventoryView : UserControl
         {
             lvEquipments.Items.Clear();
 
-            var equipments = await _equipmentApiClient.GetAllAsync();
-            var agents = await _agentApiClient.GetAllAsync();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var agentsTask = _agentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, agentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result;
+            var agents = agentsTask.Result;
+            var types = typesTask.Result;
 
             // Créer des dictionnaires pour les JOINs
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
@@ -310,9 +316,16 @@ public class MainInventoryView : UserControl
             lvEquipments.Items.Clear();
             lvEquipments.Columns.Clear();
 
-            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.EtatPret == 1 && !string.IsNullOrEmpty(e.Idrh)).ToList();
-            var agents = await _agentApiClient.GetAllAsync();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle pour gagner du temps
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            var agentsTask = _agentApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            
+            await Task.WhenAll(equipmentsTask, agentsTask, typesTask);
+            
+            var equipments = equipmentsTask.Result.Where(e => e.EtatPret == 1 && !string.IsNullOrEmpty(e.Idrh)).ToList();
+            var agents = agentsTask.Result;
+            var types = typesTask.Result;
 
             // Dictionnaire pour les types
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
@@ -333,12 +346,12 @@ public class MainInventoryView : UserControl
             // Créer un dictionnaire des agents
             var agentDict = agents.ToDictionary(a => a.Idrh, a => $"{a.Nom} {a.Prenom}");
 
-            // Charger les agents qui ont des prêts
+            // Charger les agents qui ont des prêts (uniquement ceux qui existent dans la table agents)
             var agentsWithLoans = equipmentsByAgent
-                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .Where(g => !string.IsNullOrEmpty(g.Key) && agentDict.ContainsKey(g.Key!))
                 .Select(g => new { 
-                    Idrh = g.Key, 
-                    Name = agentDict.ContainsKey(g.Key!) ? agentDict[g.Key!] : g.Key!,
+                    Idrh = g.Key!, 
+                    Name = agentDict[g.Key!],
                     Equipments = g.OrderBy(e => e.IdEquipement).ToList()
                 })
                 .OrderBy(a => a.Name)
@@ -402,7 +415,6 @@ public class MainInventoryView : UserControl
 
         if (dialog.ShowDialog() == DialogResult.OK)
         {
-            await LoadEquipmentsAsync();
             await LoadLoansAsync();
         }
     }
@@ -430,21 +442,33 @@ public class MainInventoryView : UserControl
 
         try
         {
-            var agents = await _agentApiClient.GetAllAsync();
-            var equipments = await _equipmentApiClient.GetAllAsync();
-            var sites = await _siteApiClient.GetAllAsync();
-            var equipes = await _equipeApiClient.GetAllAsync();
-            var types = await _equipmentTypeApiClient.GetAllAsync();
+            // Charger tout en parallèle
+            var sitesTask = _siteApiClient.GetAllAsync();
+            var equipesTask = _equipeApiClient.GetAllAsync();
+            var typesTask = _equipmentTypeApiClient.GetAllAsync();
+            var agentTask = _agentApiClient.GetByIdAsync(agentId);
+            var equipmentsTask = _equipmentApiClient.GetAllAsync();
+            
+            await Task.WhenAll(sitesTask, equipesTask, typesTask, agentTask, equipmentsTask);
+            
+            var sites = sitesTask.Result;
+            var equipes = equipesTask.Result;
+            var types = typesTask.Result;
+            var agent = agentTask.Result;
 
             // Récupérer l'agent
-            var agent = await _agentApiClient.GetByIdAsync(agentId);
             if (agent == null)
             {
-                MessageBox.Show("Agent introuvable.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show($"Agent introuvable pour l'identifiant : {agentId}\n\nCet équipement semble avoir un identifiant d'agent invalide dans la base de données.", 
+                    "Agent introuvable", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            // Récupérer les données liées
+            // Récupérer uniquement les équipements de cet agent
+            var equipments = equipmentsTask.Result
+                .Where(e => e.Idrh == agentId && e.EtatPret == 1)
+                .OrderBy(e => e.IdEquipement)
+                .ToList();
 
             var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
             var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
@@ -494,14 +518,8 @@ public class MainInventoryView : UserControl
             detailsTabControl.TabPages.Add(agentTab);
 
             // === ONGLETS ÉQUIPEMENTS ===
-            var agentEquipments = equipments
-                .Where(e => e.Idrh == agentId)
-                .Where(e => e.EtatPret == 1)
-                .OrderBy(e => e.IdEquipement)
-                .ToList();
-
             int equipmentIndex = 1;
-            foreach (var eq in agentEquipments)
+            foreach (var eq in equipments)
             {
                 var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
 
