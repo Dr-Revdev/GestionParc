@@ -1,8 +1,6 @@
-using System;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
 using GestiParc.Infrastructure.Data.Repositories;
+using GestiParc.Ui.Services.Api;
+using System.Net.Http;
 
 namespace GestiParc.Ui.Views.Settings;
 
@@ -120,12 +118,17 @@ public class SettingsView : UserControl
 /// </summary>
 internal class ParameterManagerControl : UserControl
 {
+    private readonly AgentApiClient _agentApiClient = new AgentApiClient();
+    private readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private readonly SiteApiClient _siteApiClient = new SiteApiClient();
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
     private readonly string _tableName;
     private ListView _listView = null!;
     private ListViewColumnSorter _listViewSorter = null!;
     private TextBox _txtName = null!;
-    private Button _btnEdit = null!;
-    private Button _btnDelete = null!;
+    private Button btnEdit = null!;
+    private Button btnDelete = null!;
     private int? _selectedId;
 
     public ParameterManagerControl(string tableName)
@@ -154,8 +157,24 @@ internal class ParameterManagerControl : UserControl
 
         Controls.Add(mainLayout);
 
-        // Chargement initial
-        LoadData();
+        // Chargement initial via Load event
+        Load += async (s, e) =>
+        {
+            try
+            {
+                await LoadDataAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show($"Erreur de connexion au serveur : {ex.Message}",
+                    "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors du chargement des données : {ex.Message}",
+                    "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        };
     }
 
     private Panel CreateListPanel()
@@ -249,7 +268,7 @@ internal class ParameterManagerControl : UserControl
             Font = Theme.Fonts.Button
         };
         Theme.StyleSuccessButton(btnNew, setHeight: false);
-        btnNew.Click += OnNew;
+        btnNew.Click += btnNew_Click;
         layout.Controls.Add(btnNew, 0, 3);
 
         // Panneau des boutons Edit/Delete
@@ -265,7 +284,7 @@ internal class ParameterManagerControl : UserControl
         buttonPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, Theme.Spacing.Small)); // Espacement
         buttonPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Delete
 
-        _btnEdit = new Button
+        btnEdit = new Button
         {
             Text = "Modifier",
             Height = Theme.Sizes.ButtonHeight,
@@ -273,11 +292,11 @@ internal class ParameterManagerControl : UserControl
             Enabled = false,
             Font = Theme.Fonts.Button
         };
-        Theme.StyleSecondaryButton(_btnEdit, setHeight: false);
-        _btnEdit.Click += OnEdit;
-        buttonPanel.Controls.Add(_btnEdit, 0, 0);
+        Theme.StyleSecondaryButton(btnEdit, setHeight: false);
+        btnEdit.Click += btnEdit_Click;
+        buttonPanel.Controls.Add(btnEdit, 0, 0);
 
-        _btnDelete = new Button
+        btnDelete = new Button
         {
             Text = "Supprimer",
             Height = Theme.Sizes.ButtonHeight,
@@ -285,9 +304,9 @@ internal class ParameterManagerControl : UserControl
             Enabled = false,
             Font = Theme.Fonts.Button
         };
-        Theme.StyleDangerButton(_btnDelete, setHeight: false);
-        _btnDelete.Click += OnDelete;
-        buttonPanel.Controls.Add(_btnDelete, 0, 2);
+        Theme.StyleDangerButton(btnDelete, setHeight: false);
+        btnDelete.Click += btnDelete_Click;
+        buttonPanel.Controls.Add(btnDelete, 0, 2);
 
         layout.Controls.Add(buttonPanel, 0, 4);
 
@@ -295,26 +314,26 @@ internal class ParameterManagerControl : UserControl
         return panel;
     }
 
-    private void LoadData()
+    private async Task LoadDataAsync()
     {
         _listView.Items.Clear();
         
         // Charger depuis le repository approprié selon la table
         var items = _tableName switch
         {
-            "Equipes" => new EquipeMySqlRepository().GetAll()
+            "Equipes" => (await _equipeApiClient.GetAllAsync())
                 .OrderBy(e => e.Id)
-                .Select(e => (Id: e.Id, Name: e.Name))
+                .Select(e => (e.Id, e.Name))
                 .ToList(),
-            "Sites" => new SiteMySqlRepository().GetAll()
+            "Sites" => (await _siteApiClient.GetAllAsync())
                 .OrderBy(s => s.Id)
-                .Select(s => (Id: s.Id, Name: s.Name))
+                .Select(s => (s.Id, s.Name))
                 .ToList(),
-            "equipment_type" => new EquipmentTypeMySqlRepository().GetAll()
+            "equipment_type" => (await _equipmentTypeApiClient.GetAllAsync())
                 .OrderBy(t => t.Id)
-                .Select(t => (Id: t.Id, Name: t.Name))
+                .Select(t => (t.Id, t.Name))
                 .ToList(),
-            _ => new System.Collections.Generic.List<(int Id, string Name)>()
+            _ => new List<(int Id, string Name)>()
         };
 
         foreach (var item in items)
@@ -326,7 +345,25 @@ internal class ParameterManagerControl : UserControl
         }
     }
 
-    private void OnNew(object? sender, EventArgs e)
+    private async void LoadData()
+    {
+        try
+        {
+            await LoadDataAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Erreur de connexion au serveur : {ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des données : {ex.Message}",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void btnNew_Click(object? sender, EventArgs e)
     {
         // Ouvrir une fenêtre modale pour ajouter un nouvel élément
         var dialog = new AddParameterDialog(_tableName);
@@ -342,19 +379,19 @@ internal class ParameterManagerControl : UserControl
         {
             _selectedId = _listView.SelectedItems[0].Tag as int?;
             _txtName.Text = _listView.SelectedItems[0].SubItems[1].Text;
-            _btnEdit.Enabled = true;
-            _btnDelete.Enabled = true;
+            btnEdit.Enabled = true;
+            btnDelete.Enabled = true;
         }
         else
         {
             _selectedId = null;
             _txtName.Clear();
-            _btnEdit.Enabled = false;
-            _btnDelete.Enabled = false;
+            btnEdit.Enabled = false;
+            btnDelete.Enabled = false;
         }
     }
 
-    private void OnEdit(object? sender, EventArgs e)
+    private async Task UpdateItemAsync()
     {
         if (!_selectedId.HasValue) return;
 
@@ -365,83 +402,90 @@ internal class ParameterManagerControl : UserControl
             return;
         }
 
-        try
+        bool updated = false;
+        
+        switch (_tableName)
         {
-            // Vérifier si le nom existe déjà (sauf pour l'élément actuel) et modifier selon la table
-            bool updated = false;
-            
-            switch (_tableName)
-            {
-                case "Equipes":
-                    var equipeRepo = new EquipeMySqlRepository();
-                    var equipes = equipeRepo.GetAll();
-                    if (equipes.Any(e => e.Name == name && e.Id != _selectedId.Value))
-                    {
-                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
-                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    var equipe = equipes.FirstOrDefault(e => e.Id == _selectedId.Value);
-                    if (equipe != null)
-                    {
-                        equipeRepo.Update(equipe with { Name = name });
-                        updated = true;
-                    }
-                    break;
-                    
-                case "Sites":
-                    var siteRepo = new SiteMySqlRepository();
-                    var sites = siteRepo.GetAll();
-                    if (sites.Any(s => s.Name == name && s.Id != _selectedId.Value))
-                    {
-                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
-                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    var site = sites.FirstOrDefault(s => s.Id == _selectedId.Value);
-                    if (site != null)
-                    {
-                        siteRepo.Update(site with { Name = name });
-                        updated = true;
-                    }
-                    break;
-                    
-                case "equipment_type":
-                    var typeRepo = new EquipmentTypeMySqlRepository();
-                    var types = typeRepo.GetAll();
-                    if (types.Any(t => t.Name == name && t.Id != _selectedId.Value))
-                    {
-                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
-                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    var type = types.FirstOrDefault(t => t.Id == _selectedId.Value);
-                    if (type != null)
-                    {
-                        typeRepo.Update(type with { Name = name });
-                        updated = true;
-                    }
-                    break;
-            }
-
-            if (updated)
-            {
-                MessageBox.Show("Élément modifié avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                LoadData();
-            }
+            case "Equipes":
+                var equipes = await _equipeApiClient.GetAllAsync();
+                if (equipes.Any(e => e.Name == name && e.Id != _selectedId.Value))
+                {
+                    MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
+                        "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                var equipe = equipes.FirstOrDefault(e => e.Id == _selectedId.Value);
+                if (equipe != null)
+                {
+                    await _equipeApiClient.UpdateAsync(_selectedId.Value, equipe with { Name = name });
+                    updated = true;
+                }
+                break;
+                
+            case "Sites":
+                var sites = await _siteApiClient.GetAllAsync();
+                if (sites.Any(s => s.Name == name && s.Id != _selectedId.Value))
+                {
+                    MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
+                        "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                var site = sites.FirstOrDefault(s => s.Id == _selectedId.Value);
+                if (site != null)
+                {
+                    await _siteApiClient.UpdateAsync(_selectedId.Value, site with { Name = name });
+                    updated = true;
+                }
+                break;
+                
+            case "equipment_type":
+                var types = await _equipmentTypeApiClient.GetAllAsync();
+                if (types.Any(t => t.Name == name && t.Id != _selectedId.Value))
+                {
+                    MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.", 
+                        "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                var type = types.FirstOrDefault(t => t.Id == _selectedId.Value);
+                if (type != null)
+                {
+                    await _equipmentTypeApiClient.UpdateAsync(_selectedId.Value, type with { Name = name });
+                    updated = true;
+                }
+                break;
         }
-        catch (Exception ex)
+
+        if (updated)
         {
-            MessageBox.Show($"Erreur lors de la modification : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            await LoadDataAsync();
         }
     }
 
-    private void OnDelete(object? sender, EventArgs e)
+    private async void btnEdit_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            await UpdateItemAsync();
+            MessageBox.Show("Élément modifié avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Erreur de connexion au serveur : {ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la modification : {ex.Message}",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async Task DeleteItemAsync()
     {
         if (!_selectedId.HasValue) return;
 
         // Vérifier si l'élément est utilisé
-        if (IsInUse(_selectedId.Value))
+        if (await IsInUseAsync(_selectedId.Value))
         {
             MessageBox.Show(
                 "Cet élément est utilisé et ne peut pas être supprimé.\nVous pouvez le modifier si nécessaire.",
@@ -461,49 +505,70 @@ internal class ParameterManagerControl : UserControl
 
         if (result != DialogResult.Yes) return;
 
+        switch (_tableName)
+        {
+            case "Equipes":
+                await _equipeApiClient.DeleteAsync(_selectedId.Value);
+                break;
+            case "Sites":
+                await _siteApiClient.DeleteAsync(_selectedId.Value);
+                break;
+            case "equipment_type":
+                await _equipmentTypeApiClient.DeleteAsync(_selectedId.Value);
+                break;
+        }
+
+        _txtName.Clear();
+        _selectedId = null;
+        await LoadDataAsync();
+    }
+
+    private async void btnDelete_Click(object? sender, EventArgs e)
+    {
         try
         {
-            switch (_tableName)
-            {
-                case "Equipes":
-                    new EquipeMySqlRepository().Delete(_selectedId.Value);
-                    break;
-                case "Sites":
-                    new SiteMySqlRepository().Delete(_selectedId.Value);
-                    break;
-                case "equipment_type":
-                    new EquipmentTypeMySqlRepository().Delete(_selectedId.Value);
-                    break;
-            }
-
+            await DeleteItemAsync();
             MessageBox.Show("Élément supprimé avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            _txtName.Clear();
-            _selectedId = null;
-            LoadData();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Erreur de connexion au serveur : {ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de la suppression : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors de la suppression : {ex.Message}",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
-    private bool IsInUse(int id)
+    private async Task<bool> IsInUseAsync(int id)
     {
         // Vérifier selon le type de table
         return _tableName switch
         {
-            "Equipes" => new EquipeMySqlRepository().IsInUse(id),
-            "Sites" => new SiteMySqlRepository().IsInUse(id),
-            "equipment_type" => CheckEquipmentTypeInUse(id),
+            "Equipes" => await CheckEquipeInUseAsync(id),
+            "Sites" => await CheckSiteInUseAsync(id),
+            "equipment_type" => await CheckEquipmentTypeInUseAsync(id),
             _ => false
         };
     }
 
-    private bool CheckEquipmentTypeInUse(int id)
+    private async Task<bool> CheckEquipeInUseAsync(int id)
     {
-        // Vérifier si le type d'équipement est utilisé par des équipements
-        var equipmentRepo = new EquipmentMySqlRepository();
-        var equipments = equipmentRepo.GetAll();
+        var agents = await _agentApiClient.GetAllAsync();
+        return agents.Any(a => a.EquipeId == id);
+    }
+
+    private async Task<bool> CheckSiteInUseAsync(int id)
+    {
+        var agents = await _agentApiClient.GetAllAsync();
+        return agents.Any(a => a.SiteId == id);
+    }
+
+    private async Task<bool> CheckEquipmentTypeInUseAsync(int id)
+    {
+        var equipments = await _equipmentApiClient.GetAllAsync();
         return equipments.Any(e => e.TypeId == id);
     }
 }
@@ -513,6 +578,9 @@ internal class ParameterManagerControl : UserControl
 /// </summary>
 internal class AddParameterDialog : Form
 {
+    private readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private readonly SiteApiClient _siteApiClient = new SiteApiClient();
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
     private readonly string _tableName;
     private TextBox _txtName;
 
@@ -594,7 +662,7 @@ internal class AddParameterDialog : Form
             Margin = new Padding(Theme.Spacing.Small / 2, 0, 0, 0)
         };
         Theme.StylePrimaryButton(btnOk, setHeight: false);
-        btnOk.Click += OnOk;
+        btnOk.Click += btnOk_Click;
         buttonPanel.Controls.Add(btnOk, 1, 0);
 
         layout.Controls.Add(buttonPanel, 0, 3);
@@ -607,7 +675,49 @@ internal class AddParameterDialog : Form
         _txtName.Focus();
     }
 
-    private void OnOk(object? sender, EventArgs e)
+    private async Task InsertItemAsync(string name)
+    {
+        switch (_tableName)
+        {
+            case "Equipes":
+                var equipes = await _equipeApiClient.GetAllAsync();
+                if (equipes.Any(e => e.Name == name))
+                {
+                    MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
+                        "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                await _equipeApiClient.CreateAsync(new Core.DTOs.EquipeDto(0, name));
+                break;
+                
+            case "Sites":
+                var sites = await _siteApiClient.GetAllAsync();
+                if (sites.Any(s => s.Name == name))
+                {
+                    MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
+                        "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                await _siteApiClient.CreateAsync(new Core.DTOs.SiteDto(0, name));
+                break;
+                
+            case "equipment_type":
+                var types = await _equipmentTypeApiClient.GetAllAsync();
+                if (types.Any(t => t.Name == name))
+                {
+                    MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
+                        "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                await _equipmentTypeApiClient.CreateAsync(new Core.DTOs.EquipmentTypeDto(0, name));
+                break;
+        }
+
+        DialogResult = DialogResult.OK;
+        Close();
+    }
+
+    private async void btnOk_Click(object? sender, EventArgs e)
     {
         var name = _txtName.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
@@ -618,58 +728,18 @@ internal class AddParameterDialog : Form
 
         try
         {
-            bool inserted = false;
-
-            switch (_tableName)
-            {
-                case "Equipes":
-                    var equipeRepo = new EquipeMySqlRepository();
-                    if (equipeRepo.ExistsByName(name))
-                    {
-                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
-                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    equipeRepo.Insert(name);
-                    inserted = true;
-                    break;
-                    
-                case "Sites":
-                    var siteRepo = new SiteMySqlRepository();
-                    if (siteRepo.ExistsByName(name))
-                    {
-                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
-                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    siteRepo.Insert(name);
-                    inserted = true;
-                    break;
-                    
-                case "equipment_type":
-                    var typeRepo = new EquipmentTypeMySqlRepository();
-                    var types = typeRepo.GetAll();
-                    if (types.Any(t => t.Name == name))
-                    {
-                        MessageBox.Show($"Le nom \"{name}\" existe déjà.\nVeuillez choisir un nom différent.",
-                            "Nom existant", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    typeRepo.Insert(name);
-                    inserted = true;
-                    break;
-            }
-
-            if (inserted)
-            {
-                MessageBox.Show("Élément ajouté avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                DialogResult = DialogResult.OK;
-                Close();
-            }
+            await InsertItemAsync(name);
+            MessageBox.Show("Élément ajouté avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Erreur de connexion au serveur : {ex.Message}",
+                "Erreur réseau", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur lors de l'ajout : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors de l'ajout : {ex.Message}",
+                "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

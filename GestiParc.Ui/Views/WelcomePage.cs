@@ -302,9 +302,9 @@ public class WelcomePage : Form
             Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
         Theme.StylePrimaryButton(btnExpAgents);
-        btnExpAgents.Click += (s, e) =>
+        btnExpAgents.Click += async (s, e) =>
         {
-            CsvExportUiService.ExportAgents();
+            await CsvExportUiService.ExportAgentsAsync();
         };
         layout.Controls.Add(btnExpAgents, 0, 1);
 
@@ -316,9 +316,9 @@ public class WelcomePage : Form
             Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
         Theme.StylePrimaryButton(btnExpEquip);
-        btnExpEquip.Click += (s, e) =>
+        btnExpEquip.Click += async (s, e) =>
         {
-            CsvExportUiService.ExportEquipments();
+            await CsvExportUiService.ExportEquipmentsAsync();
         };
         layout.Controls.Add(btnExpEquip, 0, 2);
 
@@ -330,9 +330,9 @@ public class WelcomePage : Form
             Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
         Theme.StylePrimaryButton(btnExpPrets);
-        btnExpPrets.Click += (s, e) =>
+        btnExpPrets.Click += async (s, e) =>
         {
-            CsvExportUiService.ExportLoans();
+            await CsvExportUiService.ExportLoansAsync();
         };
         layout.Controls.Add(btnExpPrets, 0, 3);
 
@@ -354,9 +354,9 @@ public class WelcomePage : Form
             Margin = new Padding(0, Theme.Spacing.Small, 0, Theme.Spacing.Small)
         };
         Theme.StyleSecondaryButton(btnExpComplet);
-        btnExpComplet.Click += (s, e) =>
+        btnExpComplet.Click += async (s, e) =>
         {
-            CsvExportUiService.ExportAll();
+            await CsvExportUiService.ExportAllAsync();
             exportForm.Close();
         };
         layout.Controls.Add(btnExpComplet, 0, 5);
