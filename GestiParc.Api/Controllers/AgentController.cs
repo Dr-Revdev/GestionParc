@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;

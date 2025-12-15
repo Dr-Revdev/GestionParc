@@ -1,5 +1,3 @@
-using System;
-
 namespace GestiParc.Core.Domain.Entities;
 
 /// <summary>

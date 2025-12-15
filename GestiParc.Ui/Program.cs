@@ -1,8 +1,4 @@
-using System;
 using System.Configuration;
-using System.Windows.Forms;
-using GestiParc.Ui.Data;
-using GestiParc.Ui.Views;
 using GestiParc.Ui.Views.Auth;
 using GestiParc.Infrastructure;
 

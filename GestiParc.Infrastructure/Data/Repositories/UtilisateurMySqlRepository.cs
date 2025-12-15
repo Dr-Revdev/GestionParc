@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using GestiParc.Core.Domain.Entities;
 using GestiParc.Core.Interfaces.Repositories;
-using GestiParc.Infrastructure;
 
 namespace GestiParc.Infrastructure.Data.Repositories;
 

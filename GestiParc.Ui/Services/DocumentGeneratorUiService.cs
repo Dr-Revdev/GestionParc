@@ -1,10 +1,6 @@
-using System;
-using System.Drawing;
 using System.Drawing.Printing;
 using System.IO;
 using System.Net.Http;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using GestiParc.Core.Interfaces.Services;
 using GestiParc.Core.Services;
 using GestiParc.Ui.Services.Api;

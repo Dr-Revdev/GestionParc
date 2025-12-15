@@ -1,9 +1,7 @@
-using System;
-using System.Drawing;
-using System.Windows.Forms;
+using System.Net.Http;
 using GestiParc.Ui.Data;
-using GestiParc.Ui.Services;
-using GestiParc.Infrastructure.Data.Repositories;
+using GestiParc.Ui.Services.Api;
+using GestiParc.Core.Domain.Entities;
 
 namespace GestiParc.Ui.Views.Auth
 {
@@ -12,7 +10,7 @@ namespace GestiParc.Ui.Views.Auth
     /// </summary>
     public class LoginView : Form
     {
-        private readonly UtilisateurMySqlRepository _utilisateurRepo;
+        private readonly UtilisateurApiClient _utilisateurApiClient = new UtilisateurApiClient();
         private TextBox _txtUsername = null!;
         private TextBox _txtPassword = null!;
         private Button _btnLogin = null!;
@@ -23,7 +21,6 @@ namespace GestiParc.Ui.Views.Auth
 
         public LoginView()
         {
-            _utilisateurRepo = new UtilisateurMySqlRepository();
             InitializeComponents();
             ApplyTheme();
         }
@@ -149,7 +146,7 @@ namespace GestiParc.Ui.Views.Auth
             }
         }
 
-        private void BtnLogin_Click(object? sender, EventArgs e)
+        private async void BtnLogin_Click(object? sender, EventArgs e)
         {
             // Masquer le message d'erreur précédent
             _lblError.Visible = false;
@@ -176,12 +173,22 @@ namespace GestiParc.Ui.Views.Auth
                 _btnLogin.Text = "CONNEXION...";
                 Cursor = Cursors.WaitCursor;
 
-                var utilisateur = _utilisateurRepo.Authentifier(_txtUsername.Text.Trim(), _txtPassword.Text);
+                var dto = await _utilisateurApiClient.AuthentifierAsync(_txtUsername.Text.Trim(), _txtPassword.Text);
 
-                if (utilisateur != null)
+                if (dto != null)
                 {
-                    // Connexion réussie
-                    SessionManager.UtilisateurCourant = utilisateur;
+                    // Connexion réussie - convertir DTO en Entity pour SessionManager
+                    SessionManager.UtilisateurCourant = new Utilisateur
+                    {
+                        Id = dto.Id,
+                        Username = dto.Username,
+                        Nom = dto.Nom,
+                        Prenom = dto.Prenom,
+                        Role = dto.Role,
+                        DateCreation = dto.DateCreation,
+                        DerniereConnexion = dto.DerniereConnexion,
+                        Actif = dto.Actif
+                    };
                     
                     // Ouvrir la page d'accueil
                     var welcomePage = new WelcomePage();
@@ -196,6 +203,10 @@ namespace GestiParc.Ui.Views.Auth
                     _txtPassword.Clear();
                     _txtPassword.Focus();
                 }
+            }
+            catch (HttpRequestException ex)
+            {
+                ShowError($"Impossible de joindre le serveur : {ex.Message}");
             }
             catch (Exception ex)
             {

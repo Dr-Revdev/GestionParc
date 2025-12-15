@@ -1,7 +1,4 @@
-using System;
 using System.Net.Http;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using GestiParc.Core.Interfaces.Services;
 using GestiParc.Core.Services;
 using GestiParc.Ui.Services.Api;

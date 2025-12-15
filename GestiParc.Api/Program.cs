@@ -20,6 +20,7 @@ builder.Services.AddScoped<IEquipmentTypeRepository, EquipmentTypeMySqlRepositor
 builder.Services.AddScoped<IAgentRepository, AgentMySqlRepository>();
 builder.Services.AddScoped<ISiteRepository, SiteMySqlRepository>();
 builder.Services.AddScoped<IEquipeRepository, EquipeMySqlRepository>();
+builder.Services.AddScoped<IUtilisateurRepository, UtilisateurMySqlRepository>();
 
 var app = builder.Build();
 

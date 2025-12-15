@@ -1,10 +1,5 @@
-using System;
-using System.Drawing;
-using System.Linq;
-using System.Windows.Forms;
-using GestiParc.Ui.Data;
-using GestiParc.Ui.Services;
-using GestiParc.Infrastructure.Data.Repositories;
+using System.Net.Http;
+using GestiParc.Ui.Services.Api;
 
 namespace GestiParc.Ui.Views.Equipment;
 
@@ -14,6 +9,9 @@ namespace GestiParc.Ui.Views.Equipment;
 /// </summary>
 public class FreeEquipmentView : UserControl
 {
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+
     // Affichage gauche
     private TextBox tbSearchAvailable = null!;
     private Button btnSearchAvailable = null!;
@@ -45,12 +43,15 @@ public class FreeEquipmentView : UserControl
         BuildUi();
 
         // Chargement des Listes
-        LoadAvailable();
-        LoadReturned();
+        Load += async (sender, e) =>
+        {
+            await LoadAvailableAsync();
+            await LoadReturnedAsync();
+        };
 
         // Recherche
-        btnSearchAvailable.Click += (_, __) => LoadAvailable(tbSearchAvailable.Text);
-        btnSearchReturned.Click += (_, __) => LoadReturned(tbSearchReturned.Text);
+        btnSearchAvailable.Click += async (_, __) => await LoadAvailableAsync(tbSearchAvailable.Text);
+        btnSearchReturned.Click += async (_, __) => await LoadReturnedAsync(tbSearchReturned.Text);
 
         // Chargement du panneau droit quand sélection d'un item
         lvAvailable.SelectedIndexChanged += lvAvailable_Selected;
@@ -397,19 +398,18 @@ public class FreeEquipmentView : UserControl
         ResumeLayout(false);
     }
     /// <summary>Handler de la checkbox "Rendu DSEM" - appelle UpdateRenduDsem()</summary>
-    private void cbxRenduDsem_CheckedChanged(object? sender, EventArgs e) => UpdateRenduDsem();
+    private async void cbxRenduDsem_CheckedChanged(object? sender, EventArgs e) => await UpdateRenduDsemAsync();
 
     /// <summary>
     /// Charge les équipements disponibles (etat_pret = 0) dans la liste de gauche. Filtre optionnel pour la recherche
     /// </summary>
-    private void LoadAvailable(string? filter = null)
+    private async Task LoadAvailableAsync(string? filter = null)
     {
-        var equipmentRepo = new EquipmentMySqlRepository();
-        var typeRepo = new EquipmentTypeMySqlRepository();
-
-        var equipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 0).ToList();
-        var types = typeRepo.GetAll();
-        var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
+        try
+        {
+            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.EtatPret == 0).ToList();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
+            var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
         // Appliquer le filtre si fourni
         if (!string.IsNullOrWhiteSpace(filter))
@@ -448,20 +448,28 @@ public class FreeEquipmentView : UserControl
         }
 
         lvAvailable.SelectedIndexChanged += lvAvailable_Selected;
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors du chargement des équipements disponibles : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>
     /// Charge les équipements rendus DSEM (etat_pret = 2) dans la liste du milieu. Filtre optionnel
     /// </summary>
-    private void LoadReturned(string? filter = null)
+    private async Task LoadReturnedAsync(string? filter = null)
     {
         try
         {
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
-
-            var equipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 2).ToList();
-            var types = typeRepo.GetAll();
+            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.EtatPret == 2).ToList();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Appliquer le filtre si fourni
@@ -502,6 +510,11 @@ public class FreeEquipmentView : UserControl
 
             lvReturned.SelectedIndexChanged += lvReturned_Selected;
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors du chargement des équipements rendus : {ex.Message}", "Erreur",
@@ -512,21 +525,18 @@ public class FreeEquipmentView : UserControl
     /// <summary>
     /// Récupère un équipement et affiche tous ses détails dans le panneau de droite
     /// </summary>
-    private void LoadDetails(string equipmentId)
+    private async Task LoadDetailsAsync(string equipmentId)
     {
         try
         {
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
-
-            var equipment = equipmentRepo.GetById(equipmentId);
+            var equipment = await _equipmentApiClient.GetByIdAsync(equipmentId);
             if (equipment == null)
             {
                 MessageBox.Show("Équipement introuvable.");
                 return;
             }
 
-            var types = typeRepo.GetAll();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
             var typeName = typeDict.ContainsKey(equipment.TypeId) ? typeDict[equipment.TypeId] : "";
 
@@ -555,6 +565,11 @@ public class FreeEquipmentView : UserControl
             
             cbxRenduDsem.CheckedChanged += cbxRenduDsem_CheckedChanged;
         }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors du chargement des détails de l'équipement : {ex.Message}", "Erreur",
@@ -566,13 +581,14 @@ public class FreeEquipmentView : UserControl
     /// Bascule l'état DSEM (coché = rendu DSEM avec date, décoché = disponible sans date)
     /// Ouvre une popup pour demander la date si on coche. Rafraîchit les 2 listes après
     /// </summary>
-    private void UpdateRenduDsem()
+    private async Task UpdateRenduDsemAsync()
     {
         if (cbxRenduDsem.Tag is not string id) return;
 
-        var equipmentRepo = new EquipmentMySqlRepository();
-        var equipment = equipmentRepo.GetById(id);
-        if (equipment == null) return;
+        try
+        {
+            var equipment = await _equipmentApiClient.GetByIdAsync(id);
+            if (equipment == null) return;
 
         if (cbxRenduDsem.Checked)
         {
@@ -657,7 +673,7 @@ public class FreeEquipmentView : UserControl
                     EtatPret = 2, 
                     DateRenduDsem = dateRendu 
                 };
-                equipmentRepo.Update(updatedEquipment);
+                await _equipmentApiClient.UpdateAsync(updatedEquipment.IdEquipement, updatedEquipment);
                 
                 // Afficher la date dans le label
                 lblDateRenduDsem.Text = $"(Date: {dateRendu})";
@@ -680,18 +696,29 @@ public class FreeEquipmentView : UserControl
                 EtatPret = 0, 
                 DateRenduDsem = string.Empty 
             };
-            equipmentRepo.Update(updatedEquipment);
+            await _equipmentApiClient.UpdateAsync(updatedEquipment.IdEquipement, updatedEquipment);
             
             // Cacher le label de date
             lblDateRenduDsem.Visible = false;
         }
 
         //Rafraichir les listes
-        LoadAvailable(tbSearchAvailable.Text);
-        LoadReturned(tbSearchReturned.Text);
+        await LoadAvailableAsync(tbSearchAvailable.Text);
+        await LoadReturnedAsync(tbSearchReturned.Text);
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erreur lors de la mise à jour : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
-    private void lvAvailable_Selected(object? s, EventArgs e)
+    private async void lvAvailable_Selected(object? s, EventArgs e)
     {
         if (lvAvailable.SelectedItems.Count > 0)
         {
@@ -700,11 +727,11 @@ public class FreeEquipmentView : UserControl
 
             var selectedItem = lvAvailable.SelectedItems[0];
             var id = selectedItem.Tag as string;
-            if (id != null) LoadDetails(id);
+            if (id != null) await LoadDetailsAsync(id);
         }
     }
 
-    private void lvReturned_Selected(object? s, EventArgs e)
+    private async void lvReturned_Selected(object? s, EventArgs e)
     {
         if (lvReturned.SelectedItems.Count > 0)
         {
@@ -713,7 +740,7 @@ public class FreeEquipmentView : UserControl
 
             var selectedItem = lvReturned.SelectedItems[0];
             var id = selectedItem.Tag as string;
-            if (id != null) LoadDetails(id);
+            if (id != null) await LoadDetailsAsync(id);
         }
     }
 

@@ -1,7 +1,3 @@
-using System;
-using System.Drawing;
-using System.Windows.Forms;
-
 namespace GestiParc.Ui.Views.Admin;
     /// <summary>
     /// Menu d'administration - 4 gros boutons pour créer/modifier agents et équipements

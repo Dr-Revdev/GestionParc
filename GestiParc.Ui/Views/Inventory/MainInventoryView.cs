@@ -1,10 +1,7 @@
-using System.Drawing;
-using System.Windows.Forms;
-using System.Linq;
-using GestiParc.Ui.Data;
 using GestiParc.Ui.Services;
 using GestiParc.Ui.Views.Loan;
-using GestiParc.Infrastructure.Data.Repositories;
+using System.Net.Http;
+using GestiParc.Ui.Services.Api;
 
 namespace GestiParc.Ui.Views.Inventory;
 
@@ -14,6 +11,11 @@ namespace GestiParc.Ui.Views.Inventory;
 /// </summary>
 public class MainInventoryView : UserControl
 {
+    private readonly EquipmentTypeApiClient _equipmentTypeApiClient = new EquipmentTypeApiClient();
+    private readonly EquipmentApiClient _equipmentApiClient = new EquipmentApiClient();
+    private readonly AgentApiClient _agentApiClient = new AgentApiClient();
+    private readonly EquipeApiClient _equipeApiClient = new EquipeApiClient();
+    private readonly SiteApiClient _siteApiClient = new SiteApiClient();
     private readonly Action _onBack;
     private Button btnNewLoan = null!;
     private ListView lvEquipments = null!;
@@ -29,8 +31,8 @@ public class MainInventoryView : UserControl
     {
         _onBack = onBack;
         BuildUi();
-        LoadEquipments();
-        LoadLoans();
+        Load += async (sender, e) => await LoadEquipmentsAsync();
+        Load += async (sender, e) => await LoadLoansAsync();
     }
 
     // Monte toute l'interface - ListView en haut (60%), TabControl en bas (40%), boutons tout en bas
@@ -180,7 +182,7 @@ public class MainInventoryView : UserControl
                 Margin = new Padding(Theme.Spacing.Small)
             };
             Theme.StyleOutlineButton(btnDiag);
-            btnDiag.Click += (_, __) => ShowDbDiagnostic();
+            btnDiag.Click += btnDiag_Click;
 
             btnNewLoan = new Button
             {
@@ -215,19 +217,15 @@ public class MainInventoryView : UserControl
     /// <summary>
     /// Charge tous les équipements (hors état prêt=1) et les affiche dans le ListView
     /// </summary>
-    private void LoadEquipments(string? searchFilter = null)
+    private async Task LoadEquipmentsAsync(string? searchFilter = null)
     {
         try
         {
             lvEquipments.Items.Clear();
-            
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
-            var agentRepo = new AgentMySqlRepository();
 
-            var equipments = equipmentRepo.GetAll();
-            var types = typeRepo.GetAll();
-            var agents = agentRepo.GetAll();
+            var equipments = await _equipmentApiClient.GetAllAsync();
+            var agents = await _agentApiClient.GetAllAsync();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
 
             // Créer des dictionnaires pour les JOINs
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
@@ -292,33 +290,29 @@ public class MainInventoryView : UserControl
     /// <summary>
     /// Ouvre la fenêtre de création de prêt (LoanCreationView)
     /// </summary>
-    private void ShowLoanCreationDialog()
+    private async void ShowLoanCreationDialog()
     {
         var dialog = new LoanCreationView();
         if (dialog.ShowDialog() == DialogResult.OK)
         {
-            LoadEquipments();
-            LoadLoans();
+            await LoadEquipmentsAsync();
+            await LoadLoansAsync();
         }
     }
 
     /// <summary>
     /// Charge tous les agents qui ont des équipements prêtés et les affiche dans la liste
     /// </summary>
-    private void LoadLoans()
+    private async Task LoadLoansAsync()
     {
         try
         {
             lvEquipments.Items.Clear();
             lvEquipments.Columns.Clear();
 
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
-            var agentRepo = new AgentMySqlRepository();
-
-            var equipments = equipmentRepo.GetAll().Where(e => e.EtatPret == 1 && !string.IsNullOrEmpty(e.Idrh)).ToList();
-            var types = typeRepo.GetAll();
-            var agents = agentRepo.GetAll();
+            var equipments = (await _equipmentApiClient.GetAllAsync()).Where(e => e.EtatPret == 1 && !string.IsNullOrEmpty(e.Idrh)).ToList();
+            var agents = await _agentApiClient.GetAllAsync();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
 
             // Dictionnaire pour les types
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
@@ -399,7 +393,7 @@ public class MainInventoryView : UserControl
         }
     }
 
-    private void OpenLoanEditor(string agentId)
+    private async void OpenLoanEditor(string agentId)
     {
         var dialog = new LoanCreationView
         {
@@ -408,15 +402,15 @@ public class MainInventoryView : UserControl
 
         if (dialog.ShowDialog() == DialogResult.OK)
         {
-            LoadEquipments();
-            LoadLoans();
+            await LoadEquipmentsAsync();
+            await LoadLoansAsync();
         }
     }
 
     /// <summary>
     /// Quand on clique sur une ligne, on affiche les détails en bas : 1 onglet agent + 1 onglet par équipement
     /// </summary>
-    private void lvEquipments_SelectedIndexChanged(object? sender, EventArgs e)
+    private async void lvEquipments_SelectedIndexChanged(object? sender, EventArgs e)
     {
         if (lvEquipments.SelectedItems.Count == 0)
         {
@@ -436,14 +430,14 @@ public class MainInventoryView : UserControl
 
         try
         {
-            var agentRepo = new AgentMySqlRepository();
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var siteRepo = new SiteMySqlRepository();
-            var equipeRepo = new EquipeMySqlRepository();
-            var typeRepo = new EquipmentTypeMySqlRepository();
+            var agents = await _agentApiClient.GetAllAsync();
+            var equipments = await _equipmentApiClient.GetAllAsync();
+            var sites = await _siteApiClient.GetAllAsync();
+            var equipes = await _equipeApiClient.GetAllAsync();
+            var types = await _equipmentTypeApiClient.GetAllAsync();
 
             // Récupérer l'agent
-            var agent = agentRepo.GetById(agentId);
+            var agent = await _agentApiClient.GetByIdAsync(agentId);
             if (agent == null)
             {
                 MessageBox.Show("Agent introuvable.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -451,9 +445,6 @@ public class MainInventoryView : UserControl
             }
 
             // Récupérer les données liées
-            var sites = siteRepo.GetAll();
-            var equipes = equipeRepo.GetAll();
-            var types = typeRepo.GetAll();
 
             var siteDict = sites.ToDictionary(s => s.Id, s => s.Name);
             var equipeDict = equipes.ToDictionary(e => e.Id, e => e.Name);
@@ -503,7 +494,8 @@ public class MainInventoryView : UserControl
             detailsTabControl.TabPages.Add(agentTab);
 
             // === ONGLETS ÉQUIPEMENTS ===
-            var agentEquipments = equipmentRepo.GetByAgent(agentId)
+            var agentEquipments = equipments
+                .Where(e => e.Idrh == agentId)
                 .Where(e => e.EtatPret == 1)
                 .OrderBy(e => e.IdEquipement)
                 .ToList();
@@ -605,12 +597,10 @@ public class MainInventoryView : UserControl
     /// <summary>
     /// Affiche une MessageBox avec le nombre d'équipements par état (disponible/prêt/DSEM)
     /// </summary>
-    private void ShowDbDiagnostic()
+    private async Task ShowDbDiagnosticAsync()
     {
-        try
-        {
-            var equipmentRepo = new EquipmentMySqlRepository();
-            var equipments = equipmentRepo.GetAll();
+
+            var equipments = await _equipmentApiClient.GetAllAsync();
 
             var available = equipments.Count(e => e.EtatPret == 0);
             var loaned = equipments.Count(e => e.EtatPret == 1);
@@ -618,29 +608,45 @@ public class MainInventoryView : UserControl
             var total = equipments.Count();
 
             MessageBox.Show($"Equipements: total={total}\nDisponible={available}\nPrêt={loaned}\nDSEM={dsem}", "Diagnostic DB");
+
+    }
+
+    private async void btnDiag_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            await ShowDbDiagnosticAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            MessageBox.Show($"Impossible de joindre le serveur : {ex.Message}", "Erreur réseau",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);            
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Erreur diagnostic DB: {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Erreur lors de la génération du dyagnostic DB : {ex.Message}", "Erreur",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
+
 
     /// <summary>
     /// Génère le PDF de feuille de remise pour un agent
     /// </summary>
-    private void GenerateFeuilleRemise(string agentId)
+    private async Task GenerateFeuilleRemiseAsync(string agentId)
     {
-        DocumentGeneratorUiService.GenerateFeuilleRemise(agentId);
+        await DocumentGeneratorUiService.GenerateFeuilleRemiseAsync(agentId);
     }
 
     /// <summary>
     /// Handler du menu contextuel (clic droit) - génère la feuille de remise
     /// </summary>
-    private void OnContextMenu_FeuilleRemise(object? sender, EventArgs e)
+    private async void OnContextMenu_FeuilleRemise(object? sender, EventArgs e)
     {
         if (lvEquipments.SelectedItems.Count > 0 && lvEquipments.SelectedItems[0].Tag is string agentId)
         {
-            GenerateFeuilleRemise(agentId);
+            await GenerateFeuilleRemiseAsync(agentId);
         }
         else
         {

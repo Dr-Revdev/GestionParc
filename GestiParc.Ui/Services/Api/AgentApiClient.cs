@@ -1,10 +1,7 @@
-using System;
 using System.Configuration;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Threading.Tasks;
 using GestiParc.Core.DTOs;
 
 namespace GestiParc.Ui.Services.Api;
