@@ -20,13 +20,23 @@ public class EquipeApiClient
 
     public async Task<List<EquipeDto>> GetAllAsync()
     {
+        // Vérifier le cache d'abord
+        var cached = ApiCache.GetEquipes();
+        if (cached != null)
+            return cached;
+
         var response = await _http.GetAsync("api/equipe");
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();
         var list = await JsonSerializer.DeserializeAsync<List<EquipeDto>>(stream, JsonOptions);
 
-        return list ?? new List<EquipeDto>();
+        var result = list ?? new List<EquipeDto>();
+        
+        // Mettre en cache
+        ApiCache.SetEquipes(result);
+        
+        return result;
     }
 
     public async Task<EquipeDto?> GetByIdAsync(int id)
@@ -42,17 +52,26 @@ public class EquipeApiClient
     {
         var response = await _http.PostAsJsonAsync("api/equipe", dto);
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateEquipes();
     }
 
     public async Task UpdateAsync(int id, EquipeDto dto)
     {
         var response = await _http.PutAsJsonAsync($"api/equipe/{id}", dto);
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateEquipes();
     }
 
     public async Task DeleteAsync(int id)
     {
         var response = await _http.DeleteAsync($"api/equipe/{id}");
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateEquipes();
     }
 }

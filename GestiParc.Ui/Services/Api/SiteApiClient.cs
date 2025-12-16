@@ -20,13 +20,23 @@ public class SiteApiClient
 
     public async Task<List<SiteDto>> GetAllAsync()
     {
+        // Vérifier le cache d'abord
+        var cached = ApiCache.GetSites();
+        if (cached != null)
+            return cached;
+
         var response = await _http.GetAsync("api/site");
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();
         var list = await JsonSerializer.DeserializeAsync<List<SiteDto>>(stream, JsonOptions);
 
-        return list ?? new List<SiteDto>();
+        var result = list ?? new List<SiteDto>();
+        
+        // Mettre en cache
+        ApiCache.SetSites(result);
+        
+        return result;
     }
 
     public async Task<SiteDto?> GetByIdAsync(int id)
@@ -42,17 +52,26 @@ public class SiteApiClient
     {
         var response = await _http.PostAsJsonAsync("api/site", dto);
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateSites();
     }
 
     public async Task UpdateAsync(int id, SiteDto dto)
     {
         var response = await _http.PutAsJsonAsync($"api/site/{id}", dto);
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateSites();
     }
 
     public async Task DeleteAsync(int id)
     {
         var response = await _http.DeleteAsync($"api/site/{id}");
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateSites();
     }
 }

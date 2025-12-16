@@ -20,13 +20,23 @@ public class EquipmentTypeApiClient
 
     public async Task<List<EquipmentTypeDto>> GetAllAsync()
     {
+        // Vérifier le cache d'abord
+        var cached = ApiCache.GetTypes();
+        if (cached != null)
+            return cached;
+
         var response = await _http.GetAsync("api/equipmentType");
         response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync();
         var list = await JsonSerializer.DeserializeAsync<List<EquipmentTypeDto>>(stream, JsonOptions);
 
-        return list ?? new List<EquipmentTypeDto>();
+        var result = list ?? new List<EquipmentTypeDto>();
+        
+        // Mettre en cache
+        ApiCache.SetTypes(result);
+        
+        return result;
     }
 
     public async Task<EquipmentTypeDto?> GetByIdAsync(int id)
@@ -42,17 +52,26 @@ public class EquipmentTypeApiClient
     {
         var response = await _http.PostAsJsonAsync("api/equipmentType", dto);
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateTypes();
     }
 
     public async Task UpdateAsync(int id, EquipmentTypeDto dto)
     {
         var response = await _http.PutAsJsonAsync($"api/equipmentType/{id}", dto);
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateTypes();
     }
 
     public async Task DeleteAsync(int id)
     {
         var response = await _http.DeleteAsync($"api/equipmentType/{id}");
         response.EnsureSuccessStatusCode();
+        
+        // Invalider le cache après modification
+        ApiCache.InvalidateTypes();
     }
 }
