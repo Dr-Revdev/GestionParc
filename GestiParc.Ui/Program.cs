@@ -1,6 +1,6 @@
 using System.Configuration;
 using GestiParc.Ui.Views.Auth;
-using GestiParc.Infrastructure;
+using System.Net.Http;
 
 namespace GestiParc.Ui;
 
@@ -13,13 +13,13 @@ static class Program
         {
             ApplicationConfiguration.Initialize();
 
-            // Configurer la chaîne de connexion MySQL
-            var connectionString = ConfigurationManager.AppSettings["MySqlConnection"];
-            if (string.IsNullOrEmpty(connectionString))
+            // Configurer la chaîne de connexion API
+            var apiBaseUrl = ConfigurationManager.AppSettings["ApiBaseUrl"];
+            if (string.IsNullOrEmpty(apiBaseUrl) || !Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var baseUri))
             {
                 MessageBox.Show(
-                    "La chaîne de connexion MySQL n'est pas configurée dans App.config.\n\n" +
-                    "Veuillez configurer la clé 'MySqlConnection' dans la section <appSettings>.",
+                    "L'URL de l'API n'est pas configurée\n\n" +
+                    "Veuillez configurer la clé 'ApiBaseUrl' dans la App.config.\n",
                     "Configuration manquante",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
@@ -27,23 +27,35 @@ static class Program
                 return;
             }
 
-            DbFactory.ConnectionString = connectionString;
-
-            // Tester la connexion
+            // Tester la connexion Ping API
             try
             {
-                using var connection = DbFactory.Create();
-                connection.Open();
+                using var http = new HttpClient
+                {
+                    BaseAddress = baseUri,
+                    Timeout = TimeSpan.FromSeconds(5)
+                };
+
+                var response = http.GetAsync("api/ping").GetAwaiter().GetResult();
+                if (!response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show(
+                        $"L'API est inaccessible (HTTP {(int)response.StatusCode}). \n\n" +
+                        $"Vérifiez que l'API est démarrée et que l'URL est correcte :\n{baseUri}",
+                        "Erreur de connexion",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error
+                    );
+                    return;
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Impossible de se connecter à la base de données MySQL.\n\n" +
+                    $"Impossible de contacter l'API.\n\n" +
+                    $"URL: {baseUri}\n" +
                     $"Erreur : {ex.Message}\n\n" +
-                    $"Veuillez vérifier que :\n" +
-                    $"- Le serveur MySQL est démarré\n" +
-                    $"- La chaîne de connexion est correcte\n" +
-                    $"- La base de données 'gestiparc' existe",
+                    $"Veuillez vérifier que l'API est démarrée et accessible depuis ce PC.",
                     "Erreur de connexion",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
