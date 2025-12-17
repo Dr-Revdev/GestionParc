@@ -324,6 +324,7 @@ public class AgentEditView : UserControl
             var teamsDictionary = teams.ToDictionary(t => t.Id, t => t.Name);
 
             // Vider et remplir le ListView
+            lvAgents.BeginUpdate();
             lvAgents.Items.Clear();
 
             var sortedAgents = agents
@@ -331,20 +332,28 @@ public class AgentEditView : UserControl
                 .ThenBy(a => a.Prenom ?? "")
                 .ThenBy(a => a.Idrh);
 
+            var items = new List<ListViewItem>();
             foreach (var agent in sortedAgents)
             {
                 var idrh = string.IsNullOrWhiteSpace(agent.Idrh) ? "-" : agent.Idrh.Trim();
                 var nom = string.IsNullOrWhiteSpace(agent.Nom) ? "-" : agent.Nom.Trim();
                 var prenom = string.IsNullOrWhiteSpace(agent.Prenom) ? "-" : agent.Prenom.Trim();
-                var equipe = agent.EquipeId.HasValue && teamsDictionary.ContainsKey(agent.EquipeId.Value) ? teamsDictionary[agent.EquipeId.Value] : "Inconnu";
-                var site = agent.SiteId.HasValue && sitesDictionary.ContainsKey(agent.SiteId.Value) ? sitesDictionary[agent.SiteId.Value] : "Inconnu";
+                var equipe = agent.EquipeId.HasValue && teamsDictionary.TryGetValue(agent.EquipeId.Value, out var equipeValue) ? equipeValue : "Inconnu";
+                var site = agent.SiteId.HasValue && sitesDictionary.TryGetValue(agent.SiteId.Value, out var siteValue) ? siteValue : "Inconnu";
                 var nomComplet = $"{nom} {prenom}".Trim();
 
                 var item = new ListViewItem(idrh);
                 item.SubItems.AddRange(new[] { nomComplet, equipe, site });
                 item.Tag = agent.Idrh;
-                lvAgents.Items.Add(item);
+                items.Add(item);
             }
+
+            if (items.Count > 0)
+            {
+                lvAgents.Items.AddRange(items.ToArray());
+            }
+
+            lvAgents.EndUpdate();
 
         }
         catch (HttpRequestException ex)
@@ -398,24 +407,33 @@ public class AgentEditView : UserControl
                 .ThenBy(a => a.Prenom ?? "")
                 .ThenBy(a => a.Idrh);
 
+            lvAgents.BeginUpdate();
             lvAgents.Items.Clear();
 
+            var items = new List<ListViewItem>();
             foreach (var agent in sortedAgents)
             {
                 var nom = agent.Nom?.Trim() ?? "";
                 var prenom = agent.Prenom?.Trim() ?? "";
                 var nomComplet = (nom, prenom) switch { ("", "") => "-", _ => $"{nom} {prenom}".Trim() };
                 
-                var equipeName = (agent.EquipeId.HasValue && equipeDict.ContainsKey(agent.EquipeId.Value)) 
-                    ? equipeDict[agent.EquipeId.Value] : "-";
-                var siteName = (agent.SiteId.HasValue && siteDict.ContainsKey(agent.SiteId.Value)) 
-                    ? siteDict[agent.SiteId.Value] : "-";
+                var equipeName = (agent.EquipeId.HasValue && equipeDict.TryGetValue(agent.EquipeId.Value, out var equipeValue))
+                    ? equipeValue : "-";
+                var siteName = (agent.SiteId.HasValue && siteDict.TryGetValue(agent.SiteId.Value, out var siteValue))
+                    ? siteValue : "-";
 
                 var item = new ListViewItem(agent.Idrh);
                 item.SubItems.AddRange(new[] { nomComplet, equipeName, siteName });
                 item.Tag = agent.Idrh;
-                lvAgents.Items.Add(item);
+                items.Add(item);
             }
+
+            if (items.Count > 0)
+            {
+                lvAgents.Items.AddRange(items.ToArray());
+            }
+
+            lvAgents.EndUpdate();
         }
         catch (HttpRequestException ex)
         {

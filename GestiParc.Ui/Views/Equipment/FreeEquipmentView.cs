@@ -45,8 +45,7 @@ public class FreeEquipmentView : UserControl
         // Chargement des Listes
         Load += async (sender, e) =>
         {
-            await LoadAvailableAsync();
-            await LoadReturnedAsync();
+            await Task.WhenAll(LoadAvailableAsync(), LoadReturnedAsync());
         };
 
         // Recherche
@@ -420,12 +419,12 @@ public class FreeEquipmentView : UserControl
         // Appliquer le filtre si fourni
         if (!string.IsNullOrWhiteSpace(filter))
         {
-            var f = filter.Trim().ToLower();
+            var f = filter.Trim();
             equipments = equipments.Where(e =>
-                (e.Nom?.ToLower().Contains(f) ?? false) ||
-                (e.CodeParc?.ToLower().Contains(f) ?? false) ||
-                (e.NumeroSerie?.ToLower().Contains(f) ?? false) ||
-                (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(f))
+                (e.Nom?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (e.CodeParc?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (e.NumeroSerie?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (typeDict.TryGetValue(e.TypeId, out var typeName) && typeName.Contains(f, StringComparison.OrdinalIgnoreCase))
             ).ToList();
         }
 
@@ -435,11 +434,13 @@ public class FreeEquipmentView : UserControl
             .ThenBy(e => e.Nom ?? "");
 
         lvAvailable.SelectedIndexChanged -= lvAvailable_Selected;
+        lvAvailable.BeginUpdate();
         lvAvailable.Items.Clear();
 
+        var items = new List<ListViewItem>();
         foreach (var eq in sortedEquipments)
         {
-            var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "";
+            var typeName = typeDict.TryGetValue(eq.TypeId, out var typeValue) ? typeValue : "";
             var codeParc = string.IsNullOrWhiteSpace(eq.CodeParc) ? "" : eq.CodeParc.Trim();
             var numeroSerie = string.IsNullOrWhiteSpace(eq.NumeroSerie) ? "" : eq.NumeroSerie.Trim();
             var nom = string.IsNullOrWhiteSpace(eq.Nom) ? "(sans nom)" : eq.Nom.Trim();
@@ -450,8 +451,15 @@ public class FreeEquipmentView : UserControl
             item.SubItems.Add(nom);
             item.Tag = eq.IdEquipement;
 
-            lvAvailable.Items.Add(item);
+            items.Add(item);
         }
+
+        if (items.Count > 0)
+        {
+            lvAvailable.Items.AddRange(items.ToArray());
+        }
+
+        lvAvailable.EndUpdate();
 
         lvAvailable.SelectedIndexChanged += lvAvailable_Selected;
         }
@@ -487,12 +495,12 @@ public class FreeEquipmentView : UserControl
             // Appliquer le filtre si fourni
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                var f = filter.Trim().ToLower();
+                var f = filter.Trim();
                 equipments = equipments.Where(e =>
-                    (e.Nom?.ToLower().Contains(f) ?? false) ||
-                    (e.CodeParc?.ToLower().Contains(f) ?? false) ||
-                    (e.NumeroSerie?.ToLower().Contains(f) ?? false) ||
-                    (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(f))
+                    (e.Nom?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.CodeParc?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.NumeroSerie?.Contains(f, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (typeDict.TryGetValue(e.TypeId, out var typeName) && typeName.Contains(f, StringComparison.OrdinalIgnoreCase))
                 ).ToList();
             }
 
@@ -502,11 +510,13 @@ public class FreeEquipmentView : UserControl
                 .ThenBy(e => e.Nom ?? "");
 
             lvReturned.SelectedIndexChanged -= lvReturned_Selected;
+            lvReturned.BeginUpdate();
             lvReturned.Items.Clear();
 
+            var items = new List<ListViewItem>();
             foreach (var eq in sortedEquipments)
             {
-                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "";
+                var typeName = typeDict.TryGetValue(eq.TypeId, out var typeValue) ? typeValue : "";
                 var codeParc = string.IsNullOrWhiteSpace(eq.CodeParc) ? "" : eq.CodeParc.Trim();
                 var numeroSerie = string.IsNullOrWhiteSpace(eq.NumeroSerie) ? "" : eq.NumeroSerie.Trim();
                 var nom = string.IsNullOrWhiteSpace(eq.Nom) ? "(sans nom)" : eq.Nom.Trim();
@@ -517,8 +527,15 @@ public class FreeEquipmentView : UserControl
                 item.SubItems.Add(nom);
                 item.Tag = eq.IdEquipement;
 
-                lvReturned.Items.Add(item);
+                items.Add(item);
             }
+
+            if (items.Count > 0)
+            {
+                lvReturned.Items.AddRange(items.ToArray());
+            }
+
+            lvReturned.EndUpdate();
 
             lvReturned.SelectedIndexChanged += lvReturned_Selected;
         }

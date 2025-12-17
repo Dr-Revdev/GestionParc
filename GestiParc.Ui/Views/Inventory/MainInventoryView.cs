@@ -220,6 +220,7 @@ public class MainInventoryView : UserControl
     {
         try
         {
+            lvEquipments.BeginUpdate();
             lvEquipments.Items.Clear();
 
             // Charger tout en parallèle
@@ -243,13 +244,12 @@ public class MainInventoryView : UserControl
             // Appliquer le filtre de recherche si fourni
             if (!string.IsNullOrWhiteSpace(searchFilter))
             {
-                var q = searchFilter.ToLower();
                 filteredEquipments = filteredEquipments.Where(e =>
-                    (typeDict.ContainsKey(e.TypeId) && typeDict[e.TypeId].ToLower().Contains(q)) ||
-                    (e.Nom?.ToLower().Contains(q) ?? false) ||
-                    (e.CodeParc?.ToLower().Contains(q) ?? false) ||
-                    (e.NumeroSerie?.ToLower().Contains(q) ?? false) ||
-                    (e.Marque?.ToLower().Contains(q) ?? false)
+                    (typeDict.TryGetValue(e.TypeId, out var typeName) && typeName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase)) ||
+                    (e.Nom?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.CodeParc?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.NumeroSerie?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (e.Marque?.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) ?? false)
                 );
             }
 
@@ -258,9 +258,10 @@ public class MainInventoryView : UserControl
                 .OrderBy(e => typeDict.ContainsKey(e.TypeId) ? typeDict[e.TypeId] : "")
                 .ThenBy(e => e.Nom ?? "");
 
+            var items = new List<ListViewItem>();
             foreach (var eq in sortedEquipments)
             {
-                var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
+                var typeName = typeDict.TryGetValue(eq.TypeId, out var typeValue) ? typeValue : "Inconnu";
                 string etatLabel = eq.EtatPret switch
                 {
                     0 => "Disponible",
@@ -268,9 +269,9 @@ public class MainInventoryView : UserControl
                     2 => "DSEM",
                     _ => "Inconnu"
                 };
-                var agentName = string.IsNullOrEmpty(eq.Idrh) || !agentDict.ContainsKey(eq.Idrh) 
-                    ? string.Empty 
-                    : agentDict[eq.Idrh];
+                var agentName = string.IsNullOrEmpty(eq.Idrh) || !agentDict.TryGetValue(eq.Idrh, out var agentValue)
+                    ? string.Empty
+                    : agentValue;
 
                 var item = new ListViewItem(typeName);
                 item.SubItems.AddRange(new[]
@@ -282,12 +283,21 @@ public class MainInventoryView : UserControl
                     agentName,
                     etatLabel
                 });
-                lvEquipments.Items.Add(item);
+                items.Add(item);
+            }
+
+            if (items.Count > 0)
+            {
+                lvEquipments.Items.AddRange(items.ToArray());
             }
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            lvEquipments.EndUpdate();
         }
     }
 
@@ -313,6 +323,7 @@ public class MainInventoryView : UserControl
     {
         try
         {
+            lvEquipments.BeginUpdate();
             lvEquipments.Items.Clear();
             lvEquipments.Columns.Clear();
 
@@ -358,13 +369,14 @@ public class MainInventoryView : UserControl
                 .ToList();
 
             // Pour chaque agent, charger ses équipements dans l'ordre
+            var items = new List<ListViewItem>();
             foreach (var agent in agentsWithLoans)
             {
                 var item = new ListViewItem(agent.Name) { Tag = agent.Idrh };
 
                 foreach (var eq in agent.Equipments)
                 {
-                    var typeName = typeDict.ContainsKey(eq.TypeId) ? typeDict[eq.TypeId] : "Inconnu";
+                    var typeName = typeDict.TryGetValue(eq.TypeId, out var typeValue) ? typeValue : "Inconnu";
                     var equipmentName = eq.Nom ?? eq.CodeParc ?? eq.NumeroSerie ?? "Sans nom";
                     var equipmentDisplay = $"{typeName} - {equipmentName} ({eq.CodeParc ?? "N/A"})";
                     item.SubItems.Add(equipmentDisplay);
@@ -376,7 +388,12 @@ public class MainInventoryView : UserControl
                     item.SubItems.Add(string.Empty);
                 }
 
-                lvEquipments.Items.Add(item);
+                items.Add(item);
+            }
+
+            if (items.Count > 0)
+            {
+                lvEquipments.Items.AddRange(items.ToArray());
             }
 
             if (lvEquipments.Items.Count == 0)
@@ -395,6 +412,10 @@ public class MainInventoryView : UserControl
         {
             MessageBox.Show($"Erreur lors du chargement des prêts : {ex.Message}", 
                           "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            lvEquipments.EndUpdate();
         }
     }
 
