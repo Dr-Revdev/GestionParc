@@ -397,7 +397,7 @@ public class LoanCreationView : Form
         {
             var updatedEquipment = equipment with 
             { 
-                Idrh = string.Empty, 
+                Idrh = null, 
                 EtatPret = 0 
             };
             await _equipmentApiClient.UpdateAsync(equipment.IdEquipement, updatedEquipment);
@@ -502,7 +502,7 @@ public class LoanCreationView : Form
                 
                 var updatedEquipment = equipment with 
                 { 
-                    Idrh = string.Empty, 
+                    Idrh = null, 
                     EtatPret = 0 
                 };
                 await _equipmentApiClient.UpdateAsync(prevId, updatedEquipment);

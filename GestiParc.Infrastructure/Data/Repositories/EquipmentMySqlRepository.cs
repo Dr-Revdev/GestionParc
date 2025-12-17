@@ -25,7 +25,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         command.Parameters.Add(CreateParameter(command, "@marque", (object?)equipment.Marque));
         command.Parameters.Add(CreateParameter(command, "@commentaire", (object?)equipment.Commentaire));
         command.Parameters.Add(CreateParameter(command, "@etatPret", equipment.EtatPret));
-        command.Parameters.Add(CreateParameter(command, "@idrh", equipment.Idrh));
+        command.Parameters.Add(CreateParameter(command, "@idrh", string.IsNullOrWhiteSpace(equipment.Idrh) ? null : equipment.Idrh));
         command.Parameters.Add(CreateParameter(command, "@dateRendu", equipment.DateRenduDsem));
 
         command.ExecuteNonQuery();
@@ -52,7 +52,7 @@ public sealed class EquipmentMySqlRepository : IEquipmentRepository
         command.Parameters.Add(CreateParameter(command, "@marque", (object?)equipment.Marque));
         command.Parameters.Add(CreateParameter(command, "@commentaire", (object?)equipment.Commentaire));
         command.Parameters.Add(CreateParameter(command, "@etatPret", equipment.EtatPret));
-        command.Parameters.Add(CreateParameter(command, "@idrh", equipment.Idrh));
+        command.Parameters.Add(CreateParameter(command, "@idrh", string.IsNullOrWhiteSpace(equipment.Idrh) ? null : equipment.Idrh));
         command.Parameters.Add(CreateParameter(command, "@dateRendu", equipment.DateRenduDsem));
 
         command.ExecuteNonQuery();
