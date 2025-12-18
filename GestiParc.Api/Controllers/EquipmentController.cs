@@ -1,11 +1,13 @@
 ﻿using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestiParc.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class EquipmentController : ControllerBase
 {
     private readonly IEquipmentRepository _equipmentRepository;
@@ -36,6 +38,7 @@ public class EquipmentController : ControllerBase
 
     // POST /api/equipment
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Create([FromBody] EquipmentDto dto)
     {
         if (dto == null)
@@ -48,6 +51,7 @@ public class EquipmentController : ControllerBase
 
     // PUT /api/equipment/{id}
     [HttpPut("{id}")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Update(string id, [FromBody] EquipmentDto dto)
     {
         if (dto == null)
@@ -67,9 +71,9 @@ public class EquipmentController : ControllerBase
 
     // DELETE /api/equipment/{id}
     [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Delete(string id)
     {
-        
         var existing = _equipmentRepository.GetById(id);
         if (existing == null)
             return NotFound();

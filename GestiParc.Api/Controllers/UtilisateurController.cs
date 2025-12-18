@@ -1,19 +1,24 @@
 using GestiParc.Core.Domain.Entities;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
+using GestiParc.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestiParc.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UtilisateurController : ControllerBase
 {
     private readonly IUtilisateurRepository _utilisateurRepository;
+    private readonly JwtTokenService _jwtTokenService;
 
-    public UtilisateurController(IUtilisateurRepository utilisateurRepository)
+    public UtilisateurController(IUtilisateurRepository utilisateurRepository, JwtTokenService jwtTokenService)
     {
         _utilisateurRepository = utilisateurRepository;
+        _jwtTokenService = jwtTokenService;
     }
 
     // GET /api/utilisateur
@@ -38,7 +43,8 @@ public class UtilisateurController : ControllerBase
 
     // POST /api/utilisateur/authentifier
     [HttpPost("authentifier")]
-    public ActionResult<UtilisateurDto> Authentifier([FromBody] AuthRequest request)
+    [AllowAnonymous]
+    public ActionResult<AuthResponseDto> Authentifier([FromBody] AuthRequestDto request)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             return BadRequest("Username et password requis.");
@@ -48,11 +54,20 @@ public class UtilisateurController : ControllerBase
         if (entity == null)
             return Unauthorized();
 
-        return Ok(EntityToDto(entity));
+        var token = _jwtTokenService.CreateToken(entity, out var expiresInSeconds);
+        var response = new AuthResponseDto
+        {
+            User = EntityToDto(entity),
+            Token = token,
+            ExpiresIn = expiresInSeconds
+        };
+
+        return Ok(response);
     }
 
     // POST /api/utilisateur
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Create([FromBody] UtilisateurDto dto)
     {
         if (dto == null)
@@ -66,6 +81,7 @@ public class UtilisateurController : ControllerBase
 
     // PUT /api/utilisateur/{id}
     [HttpPut("{id}")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Update(int id, [FromBody] UtilisateurDto dto)
     {
         if (dto == null || dto.Id != id)
@@ -83,6 +99,7 @@ public class UtilisateurController : ControllerBase
 
     // DELETE /api/utilisateur/{id}
     [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Delete(int id)
     {
         var existing = _utilisateurRepository.GetById(id);
@@ -123,10 +140,4 @@ public class UtilisateurController : ControllerBase
             Actif = dto.Actif
         };
     }
-}
-
-public class AuthRequest
-{
-    public string Username { get; set; } = "";
-    public string Password { get; set; } = "";
 }

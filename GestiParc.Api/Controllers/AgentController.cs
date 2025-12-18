@@ -1,11 +1,13 @@
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GestiParc.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AgentController : ControllerBase
 {
     private readonly IAgentRepository _agentRepository;
@@ -36,6 +38,7 @@ public class AgentController : ControllerBase
 
     // POST /api/agent
     [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Create([FromBody] AgentDto dto)
     {
         if (dto == null)
@@ -48,6 +51,7 @@ public class AgentController : ControllerBase
 
     // PUT /api/agent/{id}
     [HttpPut("{id}")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Update(string id, [FromBody] AgentDto dto)
     {
         if (dto == null)
@@ -67,6 +71,7 @@ public class AgentController : ControllerBase
 
     // DELETE /api/agent/{id}
     [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult Delete(string id)
     {
         var existing = _agentRepository.GetById(id);

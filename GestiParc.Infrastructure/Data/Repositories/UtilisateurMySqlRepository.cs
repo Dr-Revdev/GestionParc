@@ -1,8 +1,8 @@
 using System.Data;
-using System.Security.Cryptography;
 using System.Text;
 using GestiParc.Core.Domain.Entities;
 using GestiParc.Core.Interfaces.Repositories;
+using BCrypt.Net;
 
 namespace GestiParc.Infrastructure.Data.Repositories;
 
@@ -20,14 +20,11 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
         connection.Open();
         using var command = connection.CreateCommand();
         
-        var passwordHash = HashPassword(password);
-        
         command.CommandText = @"
             SELECT id, username, password_hash, nom, prenom, role, 
                    date_creation, derniere_connexion, actif
             FROM utilisateurs 
             WHERE username = @username 
-              AND password_hash = @passwordHash 
               AND actif = TRUE";
         
         var paramUsername = command.CreateParameter();
@@ -35,20 +32,23 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
         paramUsername.Value = username;
         command.Parameters.Add(paramUsername);
         
-        var paramPassword = command.CreateParameter();
-        paramPassword.ParameterName = "@passwordHash";
-        paramPassword.Value = passwordHash;
-        command.Parameters.Add(paramPassword);
-        
         using var reader = command.ExecuteReader();
         
         if (reader.Read())
         {
+            var storedHash = reader.GetString(2);
+            
+            // Vérifier le mot de passe avec BCrypt
+            if (!VerifyPassword(password, storedHash))
+            {
+                return null; // Mot de passe incorrect
+            }
+            
             var utilisateur = new Utilisateur
             {
                 Id = reader.GetInt32(0),
                 Username = reader.GetString(1),
-                PasswordHash = reader.GetString(2),
+                PasswordHash = storedHash,
                 Nom = reader.GetString(3),
                 Prenom = reader.GetString(4),
                 Role = reader.GetString(5),
@@ -335,12 +335,27 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
     }
 
     /// <summary>
-    /// Hash un mot de passe avec SHA256
+    /// Hash un mot de passe avec BCrypt (inclut automatiquement un salt aléatoire)
     /// </summary>
     private string HashPassword(string password)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
-        return Convert.ToHexString(bytes).ToLower();
+        return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+    }
+
+    /// <summary>
+    /// Vérifie si un mot de passe correspond au hash BCrypt stocké
+    /// </summary>
+    private bool VerifyPassword(string password, string hash)
+    {
+        try
+        {
+            return BCrypt.Net.BCrypt.Verify(password, hash);
+        }
+        catch
+        {
+            // Si le hash est invalide ou dans l'ancien format SHA256
+            return false;
+        }
     }
 
     /// <summary>

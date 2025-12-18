@@ -8,10 +8,7 @@ namespace GestiParc.Ui.Services.Api;
 
 public class AgentApiClient
 {
-    private static readonly HttpClient _http = new HttpClient
-    {
-        BaseAddress = new Uri(ConfigurationManager.AppSettings["ApiBaseUrl"]!)
-    };
+    private static readonly HttpClient _http = ApiHttpClient.Instance;
 
     private static readonly object _lock = new object();
     private static List<AgentDto>? _cachedAll;

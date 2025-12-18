@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
   </ItemGroup>
 
   <ItemGroup>
