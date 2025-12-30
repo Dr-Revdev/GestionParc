@@ -1,5 +1,6 @@
 using GestiParc.Ui.Services.Api;
 using System.Net.Http;
+using GestiParc.Ui.Data;
 
 namespace GestiParc.Ui.Views.Settings;
 
@@ -49,8 +50,43 @@ public class SettingsView : UserControl
         _tabControl.TabPages.Add(CreateTabPage("Sites", "Sites"));
         _tabControl.TabPages.Add(CreateTabPage("Types d'équipement", "equipment_type"));
 
+        // Compte (toujours visible)
+        _tabControl.TabPages.Add(CreateAccountTabPage());
+
+        // Administration utilisateurs (admin seulement)
+        if (SessionManager.EstAdmin)
+            _tabControl.TabPages.Add(CreateUsersTabPage());
+
         mainLayout.Controls.Add(_tabControl, 0, 1);
         Controls.Add(mainLayout);
+    }
+
+    private TabPage CreateAccountTabPage()
+    {
+        var tabPage = new TabPage("Compte")
+        {
+            BackColor = Theme.Colors.Background,
+            Padding = new Padding(Theme.Spacing.Medium)
+        };
+
+        var control = new PasswordChangeControl { Dock = DockStyle.Fill };
+        tabPage.Controls.Add(control);
+
+        return tabPage;
+    }
+
+    private TabPage CreateUsersTabPage()
+    {
+        var tabPage = new TabPage("Utilisateurs")
+        {
+            BackColor = Theme.Colors.Background,
+            Padding = new Padding(Theme.Spacing.Medium)
+        };
+
+        var control = new UserManagementControl { Dock = DockStyle.Fill };
+        tabPage.Controls.Add(control);
+
+        return tabPage;
     }
 
     private Panel CreateHeader()
@@ -206,6 +242,7 @@ internal class ParameterManagerControl : UserControl
         _listView.ColumnClick += (s, e) => {
             _listViewSorter.SetSortColumn(e.Column);
             _listView.Sort();
+            Theme.ApplyListViewAlternatingRowColors(_listView);
         };
 
         _listView.SelectedIndexChanged += OnListSelectionChanged;
@@ -342,6 +379,8 @@ internal class ParameterManagerControl : UserControl
             listItem.Tag = item.Id;
             _listView.Items.Add(listItem);
         }
+
+        Theme.ApplyListViewReadability(_listView);
     }
 
     private async void LoadData()

@@ -147,6 +147,7 @@ public class AgentEditView : UserControl
         lvAgents.ColumnClick += (s, e) => {
             lvAgentsSorter.SetSortColumn(e.Column);
             lvAgents.Sort();
+            Theme.ApplyListViewAlternatingRowColors(lvAgents);
         };
         
         leftPanel.Controls.Add(lvAgents, 0, 1);
@@ -353,6 +354,8 @@ public class AgentEditView : UserControl
                 lvAgents.Items.AddRange(items.ToArray());
             }
 
+            Theme.ApplyListViewReadability(lvAgents, Theme.Sizes.ColumnWidthMedium);
+
             lvAgents.EndUpdate();
 
         }
@@ -432,6 +435,8 @@ public class AgentEditView : UserControl
             {
                 lvAgents.Items.AddRange(items.ToArray());
             }
+
+            Theme.ApplyListViewReadability(lvAgents, Theme.Sizes.ColumnWidthMedium);
 
             lvAgents.EndUpdate();
         }

@@ -125,6 +125,7 @@ public class MainInventoryView : UserControl
             lvEquipments.ColumnClick += (s, e) => {
                 lvEquipmentsSorter.SetSortColumn(e.Column);
                 lvEquipments.Sort();
+                Theme.ApplyListViewAlternatingRowColors(lvEquipments);
             };
             
             lvEquipments.SelectedIndexChanged += lvEquipments_SelectedIndexChanged;
@@ -290,6 +291,8 @@ public class MainInventoryView : UserControl
             {
                 lvEquipments.Items.AddRange(items.ToArray());
             }
+
+            Theme.ApplyListViewReadability(lvEquipments, Theme.Sizes.ColumnWidthLarge);
         }
         catch (Exception ex)
         {
@@ -403,6 +406,9 @@ public class MainInventoryView : UserControl
                 var item = new ListViewItem("Aucun prêt en cours") { ForeColor = System.Drawing.Color.Gray };
                 lvEquipments.Items.Add(item);
             }
+
+            // Ici, le nombre de colonnes peut être important : on limite la largeur par colonne.
+            Theme.ApplyListViewReadability(lvEquipments, Theme.Sizes.ColumnWidthMedium);
 
             // S'assurer que l'événement n'est pas ajouté plusieurs fois
             lvEquipments.DoubleClick -= OnLoanDoubleClick;

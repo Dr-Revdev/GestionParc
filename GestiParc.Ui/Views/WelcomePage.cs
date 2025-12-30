@@ -4,6 +4,8 @@ using GestiParc.Ui.Views.Equipment;
 using GestiParc.Ui.Views.Inventory;
 using GestiParc.Ui.Views.Settings;
 using GestiParc.Ui.Services;
+using GestiParc.Ui.Services.Api;
+using GestiParc.Ui.Data;
 
 namespace GestiParc.Ui.Views;
 
@@ -18,6 +20,7 @@ public class WelcomePage : Form
     private Button btnFreeEquipment = null!;
     private Button btnNewMod = null!;
     private Label title = null!;
+    private bool _skipExitConfirmation;
 
     public WelcomePage()
     {
@@ -172,9 +175,46 @@ public class WelcomePage : Form
         
         toolStrip.Items.Add(btnExportTool);
 
+        var btnLogoutTool = new ToolStripButton
+        {
+            Text = "Déconnexion",
+            DisplayStyle = ToolStripItemDisplayStyle.Text,
+            Font = Theme.Fonts.Button,
+            ForeColor = Theme.Colors.Primary,
+            Alignment = ToolStripItemAlignment.Right
+        };
+        btnLogoutTool.Click += (_, __) => Logout();
+
+        toolStrip.Items.Add(btnLogoutTool);
+
         Controls.Add(toolStrip);
 
         ShowHome();
+    }
+
+    private void Logout()
+    {
+        var confirm = MessageBox.Show(
+            "Se déconnecter ?",
+            "Déconnexion",
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Question);
+
+        if (confirm != DialogResult.OK)
+            return;
+
+        try
+        {
+            UtilisateurApiClient.Logout();
+            SessionManager.Deconnecter();
+        }
+        catch
+        {
+            // ne pas bloquer la déconnexion
+        }
+
+        _skipExitConfirmation = true;
+        Close();
     }
 
     /// <summary>
@@ -370,6 +410,9 @@ public class WelcomePage : Form
     /// </summary>
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
+        if (_skipExitConfirmation)
+            return;
+
         var result = MessageBox.Show(
             "Voulez-vous vraiment quitter l'application ?",
             "Confirmation",

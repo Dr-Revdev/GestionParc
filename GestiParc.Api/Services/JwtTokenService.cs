@@ -37,10 +37,12 @@ public sealed class JwtTokenService
         var expires = now.AddMinutes(_options.ExpirationMinutes);
         expiresInSeconds = (int)Math.Max(0, (expires - now).TotalSeconds);
 
+        var role = NormalizeRole(user.Role);
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Username),
-            new("role", string.IsNullOrWhiteSpace(user.Role) ? "USER" : user.Role),
+            new("role", role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
             new(JwtRegisteredClaimNames.Iat, now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
@@ -54,6 +56,12 @@ public sealed class JwtTokenService
             signingCredentials: _signingCredentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string NormalizeRole(string? role)
+    {
+        var normalized = string.IsNullOrWhiteSpace(role) ? "USER" : role.Trim().ToUpperInvariant();
+        return normalized is "ADMIN" or "USER" ? normalized : "USER";
     }
 }
 

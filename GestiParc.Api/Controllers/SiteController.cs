@@ -38,7 +38,7 @@ public class SiteController : ControllerBase
 
     // POST /api/equipe
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Create([FromBody] SiteDto dto)
     {
         if (dto == null)
@@ -52,7 +52,7 @@ public class SiteController : ControllerBase
 
     // PUT /api/equipe/{id}
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Update(int id, [FromBody] SiteDto dto)
     {
         if (dto == null)
@@ -72,7 +72,7 @@ public class SiteController : ControllerBase
 
     // DELETE /api/equipe/{id}
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Delete(int id)
     {
         var existing = _siteRepository.GetById(id);

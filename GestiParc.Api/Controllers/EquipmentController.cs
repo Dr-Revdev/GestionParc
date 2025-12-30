@@ -38,7 +38,7 @@ public class EquipmentController : ControllerBase
 
     // POST /api/equipment
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Create([FromBody] EquipmentDto dto)
     {
         if (dto == null)
@@ -51,7 +51,7 @@ public class EquipmentController : ControllerBase
 
     // PUT /api/equipment/{id}
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Update(string id, [FromBody] EquipmentDto dto)
     {
         if (dto == null)
@@ -71,7 +71,7 @@ public class EquipmentController : ControllerBase
 
     // DELETE /api/equipment/{id}
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Delete(string id)
     {
         var existing = _equipmentRepository.GetById(id);

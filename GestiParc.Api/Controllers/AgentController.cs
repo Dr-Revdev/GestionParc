@@ -38,7 +38,7 @@ public class AgentController : ControllerBase
 
     // POST /api/agent
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Create([FromBody] AgentDto dto)
     {
         if (dto == null)
@@ -51,7 +51,7 @@ public class AgentController : ControllerBase
 
     // PUT /api/agent/{id}
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Update(string id, [FromBody] AgentDto dto)
     {
         if (dto == null)
@@ -71,7 +71,7 @@ public class AgentController : ControllerBase
 
     // DELETE /api/agent/{id}
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Delete(string id)
     {
         var existing = _agentRepository.GetById(id);

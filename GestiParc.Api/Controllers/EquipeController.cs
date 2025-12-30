@@ -38,7 +38,7 @@ public class EquipeController : ControllerBase
 
     // POST /api/equipe
     [HttpPost]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Create([FromBody] EquipeDto dto)
     {
         if (dto == null)
@@ -52,7 +52,7 @@ public class EquipeController : ControllerBase
 
     // PUT /api/equipe/{id}
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Update(int id, [FromBody] EquipeDto dto)
     {
         if (dto == null)
@@ -72,7 +72,7 @@ public class EquipeController : ControllerBase
 
     // DELETE /api/equipe/{id}
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOnly")]
+    [Authorize(Policy = "UserOrAdmin")]
     public IActionResult Delete(int id)
     {
         var existing = _equipeRepository.GetById(id);

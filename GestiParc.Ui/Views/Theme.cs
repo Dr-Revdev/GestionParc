@@ -299,4 +299,71 @@ public static class Theme
         
         return comboBox;
     }
+
+    /// <summary>
+    /// Améliore la lisibilité d'une ListView (zébrage + auto-dimensionnement des colonnes).
+    /// Appeler typiquement après avoir (re)rempli Items.
+    /// </summary>
+    public static void ApplyListViewReadability(ListView listView, int maxColumnWidth = Sizes.ColumnWidthLarge)
+    {
+        ApplyListViewAlternatingRowColors(listView);
+        AutoResizeListViewColumns(listView, maxColumnWidth);
+    }
+
+    /// <summary>
+    /// Applique une alternance de couleur légère sur les lignes (blanc / gris très clair).
+    /// </summary>
+    public static void ApplyListViewAlternatingRowColors(ListView listView)
+    {
+        var even = Colors.Surface;
+        var odd = Colors.SurfaceHover;
+
+        for (int i = 0; i < listView.Items.Count; i++)
+        {
+            listView.Items[i].BackColor = (i % 2 == 0) ? even : odd;
+        }
+    }
+
+    /// <summary>
+    /// Auto-dimensionne les colonnes en gardant l'en-tête lisible.
+    /// Ne modifie pas les colonnes volontairement cachées (Width = 0).
+    /// </summary>
+    public static void AutoResizeListViewColumns(ListView listView, int maxColumnWidth = Sizes.ColumnWidthLarge)
+    {
+        if (listView.Columns.Count == 0)
+        {
+            return;
+        }
+
+        void DoResize()
+        {
+            // Garantit que l'en-tête reste lisible tout en s'adaptant au contenu.
+            var headerWidths = new int[listView.Columns.Count];
+            for (int i = 0; i < listView.Columns.Count; i++)
+            {
+                if (listView.Columns[i].Width <= 0) continue;
+
+                listView.AutoResizeColumn(i, ColumnHeaderAutoResizeStyle.HeaderSize);
+                headerWidths[i] = listView.Columns[i].Width;
+            }
+
+            for (int i = 0; i < listView.Columns.Count; i++)
+            {
+                if (listView.Columns[i].Width <= 0) continue;
+
+                listView.AutoResizeColumn(i, ColumnHeaderAutoResizeStyle.ColumnContent);
+                var desired = Math.Max(listView.Columns[i].Width, headerWidths[i]);
+                listView.Columns[i].Width = Math.Min(maxColumnWidth, desired);
+            }
+        }
+
+        if (!listView.IsHandleCreated)
+        {
+            // Si appelé trop tôt, on reporte après création du handle.
+            listView.HandleCreated += (_, __) => DoResize();
+            return;
+        }
+
+        DoResize();
+    }
 }

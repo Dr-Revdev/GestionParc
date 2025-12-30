@@ -37,6 +37,28 @@ public class UtilisateurApiClient
         return await JsonSerializer.DeserializeAsync<UtilisateurDto>(stream, JsonOptions);
     }
 
+    private static async Task EnsureSuccessOrThrowAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+            return;
+
+        var body = "";
+        try
+        {
+            body = await response.Content.ReadAsStringAsync();
+        }
+        catch
+        {
+            // ignore
+        }
+
+        var message = string.IsNullOrWhiteSpace(body)
+            ? $"Erreur API (HTTP {(int)response.StatusCode})."
+            : body;
+
+        throw new InvalidOperationException(message);
+    }
+
     public async Task<UtilisateurDto?> AuthentifierAsync(string username, string password)
     {
         var request = new AuthRequestDto { Username = username, Password = password };
@@ -83,10 +105,50 @@ public class UtilisateurApiClient
         TokenStorage.ClearToken();
     }
 
-    public async Task CreateAsync(UtilisateurDto dto)
+    public async Task<UtilisateurDto> CreateAsync(CreateUtilisateurRequestDto dto)
     {
         var response = await _http.PostAsJsonAsync("api/utilisateur", dto);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessOrThrowAsync(response);
+
+        var stream = await response.Content.ReadAsStreamAsync();
+        var created = await JsonSerializer.DeserializeAsync<UtilisateurDto>(stream, JsonOptions);
+        if (created == null)
+            throw new InvalidOperationException("Réponse API invalide.");
+
+        return created;
+    }
+
+    public async Task ChangePasswordAsync(ChangePasswordRequestDto dto)
+    {
+        var response = await _http.PostAsJsonAsync("api/utilisateur/changer-motdepasse", dto);
+        await EnsureSuccessOrThrowAsync(response);
+    }
+
+    public async Task<ResetPasswordResponseDto> ResetPasswordAsync(int userId)
+    {
+        var response = await _http.PostAsync($"api/utilisateur/{userId}/reset-motdepasse", content: null);
+        await EnsureSuccessOrThrowAsync(response);
+
+        var stream = await response.Content.ReadAsStreamAsync();
+        var payload = await JsonSerializer.DeserializeAsync<ResetPasswordResponseDto>(stream, JsonOptions);
+        if (payload == null)
+            throw new InvalidOperationException("Réponse API invalide.");
+
+        return payload;
+    }
+
+    public async Task SetRoleAsync(int userId, string role)
+    {
+        var request = new SetRoleRequestDto { Role = role };
+        var response = await _http.PutAsJsonAsync($"api/utilisateur/{userId}/role", request);
+        await EnsureSuccessOrThrowAsync(response);
+    }
+
+    public async Task SetActifAsync(int userId, bool actif)
+    {
+        var request = new SetActifRequestDto { Actif = actif };
+        var response = await _http.PutAsJsonAsync($"api/utilisateur/{userId}/actif", request);
+        await EnsureSuccessOrThrowAsync(response);
     }
 
     public async Task UpdateAsync(int id, UtilisateurDto dto)
@@ -98,6 +160,6 @@ public class UtilisateurApiClient
     public async Task DeleteAsync(int id)
     {
         var response = await _http.DeleteAsync($"api/utilisateur/{id}");
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessOrThrowAsync(response);
     }
 }

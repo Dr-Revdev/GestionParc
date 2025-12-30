@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using AspNetCoreRateLimit;
+using DotNetEnv;
 using GestiParc.Api.Services;
 using GestiParc.Core.Interfaces.Repositories;
 using GestiParc.Infrastructure;
@@ -10,51 +10,52 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+// Charge un fichier .env si présent (pas de secrets dans appsettings.json)
+var envInBaseDir = Path.Combine(AppContext.BaseDirectory, ".env");
+var envInCwd = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envInBaseDir)) Env.Load(envInBaseDir);
+else if (File.Exists(envInCwd)) Env.Load(envInCwd);
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configurer la connection string pour DbFactory
+// DB
 var cs = builder.Configuration.GetConnectionString("GestiParcDb");
 if (string.IsNullOrWhiteSpace(cs))
-    throw new InvalidOperationException("Connection string 'GestiParcDb' manquante dans appsettings.json.");
-
+    throw new InvalidOperationException("ConnectionStrings__GestiParcDb manquante (définir via env / .env). ");
 DbFactory.ConnectionString = cs;
 
-// 2. Controllers
+// Controllers
 builder.Services.AddControllers();
 
-// 2a. Rate Limiting
-builder.Services.AddMemoryCache();
-builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
-builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
-builder.Services.AddInMemoryRateLimiting();
-builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+// JWT (LAN, simple)
+const string jwtIssuer = "GestiParc";
+const string jwtAudience = "GestiParc.Ui";
+const int jwtExpirationMinutes = 8 * 60;
 
-// 2b. JWT options
-var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtIssuer = jwtSection["Issuer"];
-var jwtAudience = jwtSection["Audience"];
-var jwtSecret = jwtSection["Secret"];
-var jwtExpirationMinutes = jwtSection.GetValue<int?>("ExpirationMinutes") ?? 60;
-
-if (string.IsNullOrWhiteSpace(jwtIssuer))
-    throw new InvalidOperationException("Configuration JWT manquante : Jwt:Issuer");
-if (string.IsNullOrWhiteSpace(jwtAudience))
-    throw new InvalidOperationException("Configuration JWT manquante : Jwt:Audience");
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+                ?? builder.Configuration["JWT_SECRET"];
 if (string.IsNullOrWhiteSpace(jwtSecret))
-    throw new InvalidOperationException("Configuration JWT manquante : Jwt:Secret (définir via variable d'environnement Jwt__Secret)");
-if (jwtExpirationMinutes <= 0)
-    throw new InvalidOperationException("Configuration JWT invalide : Jwt:ExpirationMinutes doit être > 0");
+    throw new InvalidOperationException("Jwt__Secret manquant (définir via env / .env). ");
+if (jwtSecret.Trim().Length < 32)
+    throw new InvalidOperationException("Jwt__Secret doit faire au moins 32 caractères.");
 
-builder.Services.Configure<JwtOptions>(jwtSection);
+builder.Services.Configure<JwtOptions>(o =>
+{
+    o.Issuer = jwtIssuer;
+    o.Audience = jwtAudience;
+    o.Secret = jwtSecret;
+    o.ExpirationMinutes = jwtExpirationMinutes;
+});
 builder.Services.AddSingleton<JwtTokenService>();
 
-// 2c. AuthN/AuthZ (API en HTTP derrière un reverse proxy HTTPS)
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
+        // IMPORTANT: on garde les types de claims tels quels ("sub", "role", etc.)
+        // Sinon, le mapping peut transformer "role" en ClaimTypes.Role et casser les policies.
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -72,22 +73,16 @@ builder.Services
 
 builder.Services.AddAuthorization(options =>
 {
-    // Politique par défaut : utilisateur authentifié
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
         .RequireAuthenticatedUser()
         .Build();
-    
-    // Politique Admin : rôle ADMIN requis
-    options.AddPolicy("AdminOnly", policy => 
-        policy.RequireRole("ADMIN"));
-    
-    // Politique UserOrAdmin : rôle USER ou ADMIN
-    options.AddPolicy("UserOrAdmin", policy => 
-        policy.RequireRole("USER", "ADMIN"));
+
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN"));
+    options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("USER", "ADMIN"));
 });
 
-// 3. DI : repository équipements
+// DI repositories
 builder.Services.AddScoped<IEquipmentRepository, EquipmentMySqlRepository>();
 builder.Services.AddScoped<IEquipmentTypeRepository, EquipmentTypeMySqlRepository>();
 builder.Services.AddScoped<IAgentRepository, AgentMySqlRepository>();
@@ -95,7 +90,7 @@ builder.Services.AddScoped<ISiteRepository, SiteMySqlRepository>();
 builder.Services.AddScoped<IEquipeRepository, EquipeMySqlRepository>();
 builder.Services.AddScoped<IUtilisateurRepository, UtilisateurMySqlRepository>();
 
-// Swagger seulement en Development + support Bearer
+// Swagger (LAN : OK de le laisser en dev)
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddEndpointsApiExplorer();
@@ -132,16 +127,11 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseIpRateLimiting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

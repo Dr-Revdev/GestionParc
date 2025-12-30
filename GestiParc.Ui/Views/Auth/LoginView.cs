@@ -192,7 +192,20 @@ namespace GestiParc.Ui.Views.Auth
                     
                     // Ouvrir la page d'accueil
                     var welcomePage = new WelcomePage();
-                    welcomePage.FormClosed += (s, args) => Close();
+                    welcomePage.FormClosed += (s, args) =>
+                    {
+                        // Si la session est toujours active, c'est une fermeture de l'app (ou retour volontaire)
+                        // => fermer le LoginView pour terminer l'application.
+                        if (SessionManager.EstConnecte)
+                        {
+                            Close();
+                            return;
+                        }
+
+                        // Sinon, c'est une déconnexion => retour au login.
+                        _txtPassword.Clear();
+                        Show();
+                    };
                     Hide();
                     welcomePage.Show();
                 }

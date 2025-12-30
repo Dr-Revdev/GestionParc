@@ -9,6 +9,7 @@ obj/
 *.json
 [Tt]humbs.db
 [Dd]esktop.ini
+.env
 
 # Publication et archives
 publish/
@@ -23,3 +24,4 @@ installer-output/
 # Documentation (ne pas versionner)
 Docs/
 Documentation/
+Logs/

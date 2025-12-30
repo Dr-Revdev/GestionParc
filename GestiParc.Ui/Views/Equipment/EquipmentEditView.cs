@@ -124,6 +124,7 @@ public class EquipementEditView : UserControl
         {
             lvEquipmentSorter.SetSortColumn(e.Column);
             lvEquipment.Sort();
+            Theme.ApplyListViewAlternatingRowColors(lvEquipment);
         };
 
         leftPanel.Controls.Add(btnBack, 0, 0);
@@ -285,6 +286,7 @@ public class EquipementEditView : UserControl
             var typesDictionary = types.ToDictionary(t => t.Id, t => t.Name);
 
             // Vider et remplir le ListView
+            lvEquipment.BeginUpdate();
             lvEquipment.Items.Clear();
 
             foreach (var equipment in equipments)
@@ -302,6 +304,8 @@ public class EquipementEditView : UserControl
                 item.Tag = equipment.IdEquipement;
                 lvEquipment.Items.Add(item);
             }
+
+            Theme.ApplyListViewReadability(lvEquipment, Theme.Sizes.ColumnWidthMedium);
         }
         catch (HttpRequestException ex)
         {
@@ -312,6 +316,10 @@ public class EquipementEditView : UserControl
         {
             MessageBox.Show($"Erreur lors du chargement des équipements : {ex.Message}",
             "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            lvEquipment.EndUpdate();
         }
     }
 
@@ -488,6 +496,7 @@ public class EquipementEditView : UserControl
             // Charger les équipements et les types
             var typeDict = types.ToDictionary(t => t.Id, t => t.Name);
 
+            lvEquipment.BeginUpdate();
             lvEquipment.Items.Clear();
 
             // Filtrer les équipements si une requête est fournie
@@ -523,6 +532,8 @@ public class EquipementEditView : UserControl
                 item.Tag = eq.IdEquipement;
                 lvEquipment.Items.Add(item);
             }
+
+            Theme.ApplyListViewReadability(lvEquipment, Theme.Sizes.ColumnWidthMedium);
         }
         catch (HttpRequestException ex)
         {
@@ -532,6 +543,10 @@ public class EquipementEditView : UserControl
         {
             MessageBox.Show($"Erreur lors de la recherche d'équipements : {ex.Message}", "Erreur",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            lvEquipment.EndUpdate();
         }
     }
 

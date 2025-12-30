@@ -222,6 +222,7 @@ public class FreeEquipmentView : UserControl
         lvAvailable.ColumnClick += (s, e) => {
             lvAvailableSorter.SetSortColumn(e.Column);
             lvAvailable.Sort();
+            Theme.ApplyListViewAlternatingRowColors(lvAvailable);
         };
         
         leftPanel.Controls.Add(lvAvailable, 0, 2);
@@ -302,6 +303,7 @@ public class FreeEquipmentView : UserControl
         lvReturned.ColumnClick += (s, e) => {
             lvReturnedSorter.SetSortColumn(e.Column);
             lvReturned.Sort();
+            Theme.ApplyListViewAlternatingRowColors(lvReturned);
         };
         
         middlePanel.Controls.Add(lvReturned, 0, 2);
@@ -459,6 +461,8 @@ public class FreeEquipmentView : UserControl
             lvAvailable.Items.AddRange(items.ToArray());
         }
 
+        Theme.ApplyListViewReadability(lvAvailable, Theme.Sizes.ColumnWidthMedium);
+
         lvAvailable.EndUpdate();
 
         lvAvailable.SelectedIndexChanged += lvAvailable_Selected;
@@ -534,6 +538,8 @@ public class FreeEquipmentView : UserControl
             {
                 lvReturned.Items.AddRange(items.ToArray());
             }
+
+            Theme.ApplyListViewReadability(lvReturned, Theme.Sizes.ColumnWidthMedium);
 
             lvReturned.EndUpdate();
 
