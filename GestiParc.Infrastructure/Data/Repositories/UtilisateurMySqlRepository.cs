@@ -23,7 +23,7 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
     /// <returns>L'utilisateur si authentifié, null sinon</returns>
     public Utilisateur? Authentifier(string username, string password)
     {
-        _logger?.LogInformation("[AUTH] Tentative d'authentification pour: {Username}", username);
+        _logger?.LogInformation("[AUTH] Tentative d'authentification");
         
         using var connection = DbFactory.Create();
         connection.Open();
@@ -45,22 +45,22 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
         
         if (reader.Read())
         {
+            var userId = reader.GetInt32(0);
             var storedHash = reader.GetString(2);
-            _logger?.LogInformation("[AUTH] Utilisateur trouvé. Hash: {HashPrefix}... (longueur: {Length})", 
-                storedHash.Substring(0, Math.Min(10, storedHash.Length)), storedHash.Length);
+            _logger?.LogInformation("[AUTH] Utilisateur trouvé. UserId: {UserId}", userId);
             
             // Vérifier le mot de passe avec BCrypt
             if (!VerifyPassword(password, storedHash))
             {
-                _logger?.LogWarning("[AUTH] Échec: Mot de passe incorrect pour {Username}", username);
+                _logger?.LogWarning("[AUTH] Échec: authentification");
                 return null; // Mot de passe incorrect
             }
             
-            _logger?.LogInformation("[AUTH] Succès: Mot de passe validé pour {Username}", username);
+            _logger?.LogInformation("[AUTH] Succès: authentification. UserId: {UserId}", userId);
             
             var utilisateur = new Utilisateur
             {
-                Id = reader.GetInt32(0),
+                Id = userId,
                 Username = reader.GetString(1),
                 PasswordHash = storedHash,
                 Nom = reader.GetString(3),
@@ -79,7 +79,7 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
             return utilisateur;
         }
         
-        _logger?.LogWarning("[AUTH] Échec: Utilisateur '{Username}' non trouvé ou inactif", username);
+        _logger?.LogWarning("[AUTH] Échec: authentification");
         return null;
     }
 
@@ -452,11 +452,7 @@ public class UtilisateurMySqlRepository : IUtilisateurRepository
     {
         try
         {
-            _logger?.LogDebug("[AUTH] VerifyPassword appelé. Hash format: {Format}", 
-                hash.StartsWith("$2a$") || hash.StartsWith("$2b$") ? "BCrypt" : "Autre/SHA256");
-            
             var result = BCrypt.Net.BCrypt.Verify(password, hash);
-            _logger?.LogDebug("[AUTH] BCrypt.Verify résultat: {Result}", result);
             return result;
         }
         catch (Exception ex)

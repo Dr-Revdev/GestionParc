@@ -2,6 +2,7 @@ using GestiParc.Core.Domain.Entities;
 using GestiParc.Core.DTOs;
 using GestiParc.Core.Interfaces.Repositories;
 using GestiParc.Api.Services;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -117,11 +118,12 @@ public class UtilisateurController : ControllerBase
         if (dto == null)
             return BadRequest("Payload vide.");
 
-        var username = User?.Identity?.Name;
-        if (string.IsNullOrWhiteSpace(username))
+        var sub = User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                  ?? User?.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(sub) || !int.TryParse(sub, out var userId))
             return Unauthorized();
 
-        var user = _utilisateurRepository.GetByUsername(username);
+        var user = _utilisateurRepository.GetById(userId);
         if (user == null || !user.Actif)
             return Unauthorized();
 
@@ -219,15 +221,12 @@ public class UtilisateurController : ControllerBase
     [Authorize(Policy = "AdminOnly")]
     public IActionResult Delete(int id)
     {
-        var callerUsername = User?.Identity?.Name;
-        if (string.IsNullOrWhiteSpace(callerUsername))
+        var sub = User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                  ?? User?.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(sub) || !int.TryParse(sub, out var callerId))
             return Unauthorized();
 
-        var caller = _utilisateurRepository.GetByUsername(callerUsername);
-        if (caller == null)
-            return Unauthorized();
-
-        if (caller.Id == id)
+        if (callerId == id)
             return BadRequest("Impossible de supprimer votre propre compte.");
 
         var existing = _utilisateurRepository.GetById(id);

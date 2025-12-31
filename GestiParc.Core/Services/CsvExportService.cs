@@ -181,8 +181,18 @@ public class CsvExportService : ICsvExportService
         
         if (data.Count == 0) return;
 
-        // Écrire l'en-tête
-        var headers = data[0].Keys.ToList();
+        // Ecrire l'en-tete
+        // IMPORTANT: l'export peut produire des lignes avec des colonnes differentes (ex: ExportLoans equipement 1..N).
+        // On prend l'union des cles dans l'ordre d'apparition.
+        var headers = new List<string>();
+        foreach (var row in data)
+        {
+            foreach (var key in row.Keys)
+            {
+                if (!headers.Contains(key))
+                    headers.Add(key);
+            }
+        }
         writer.WriteLine(string.Join(";", headers));
 
         // Écrire les données
