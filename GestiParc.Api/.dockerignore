@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+publish/
+logs/
+data-protection/
+secrets/
+certs/
+.env
+.Dockerfile

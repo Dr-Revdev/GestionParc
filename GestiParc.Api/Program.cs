@@ -13,8 +13,14 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Context;
 using GestiParc.Api.Logging;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/dpkeys"))
+    .SetApplicationName("GestiParc.Api");
 
 // Logs (Docker-friendly): console + fichier journalier (rétention 30 jours)
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
@@ -25,6 +31,7 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     loggerConfiguration
         .MinimumLevel.Information()
         .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.AspNetCore.DataProtection", LogEventLevel.Error)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
         .Enrich.FromLogContext()
         .Enrich.WithProperty("Application", "GestiParc.Api")
