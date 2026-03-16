@@ -8,4 +8,4 @@ data-protection/
 secrets/
 certs/
 .env
-.Dockerfile
+Dockerfile

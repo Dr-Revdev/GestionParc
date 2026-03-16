@@ -46,11 +46,16 @@ namespace GestiParc.Ui.Views.Auth
             _lblTitle = new Label
             {
                 Text = "CONNEXION",
-                Font = new Font("Segoe UI", 20, FontStyle.Bold),
-                Location = new Point(100, 30),
-                Size = new Size(200, 40),
+                Font = new Font("Segoe UI", 19, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(0, 30),
                 TextAlign = ContentAlignment.MiddleCenter
             };
+
+            // Recentrer le titre (évite les coupures en cas de scaling/DPI)
+            _lblTitle.Location = new Point(
+                x: Math.Max(0, (ClientSize.Width - _lblTitle.PreferredWidth) / 2),
+                y: _lblTitle.Location.Y);
 
             // Label Username
             _lblUsername = new Label
