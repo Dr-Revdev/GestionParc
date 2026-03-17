@@ -4,14 +4,11 @@
 
 GestiParc est composé de 3 briques principales :
 
-- **GestiParc.Ui** : client lourd (WinForms/WPF). Il parle à l’API via HTTP(S).
+- **GestiParc.Ui** : client lourd (WinForms). Il parle à l’API via HTTP(S).
 - **GestiParc.Api** : API ASP.NET Core (JWT + accès MySQL via repositories).
 - **GestiParc.Core / GestiParc.Infrastructure** : bibliothèques partagées.
   - **Core** : DTOs, entités, interfaces.
   - **Infrastructure** : implémentations (repositories MySQL, BCrypt, etc.).
-
-### Important : CORS
-Ce projet n’implémente pas CORS et **n’en a pas besoin** tant que l’unique client est **un client lourd** (.NET). CORS concerne uniquement les navigateurs.
 
 ---
 
@@ -32,11 +29,10 @@ L’API **refuse de démarrer** si la connexion DB ou le secret JWT ne sont pas 
 
 ### 3.1 Variables/Secrets attendus
 
-#### Connexion MySQL (obligatoire)
+#### Connexion MySQL
 L’API lit **la chaîne de connexion** dans :
 
-- `ConnectionStrings__GestiParcDb` (recommandé en prod)
-- ou `ConnectionStrings:GestiParcDb` via `appsettings.json` (possible, mais le fichier est volontairement vide par défaut)
+- `ConnectionStrings__GestiParcDb` 
 
 Exemple de connection string MySqlConnector :
 
@@ -44,7 +40,7 @@ Exemple de connection string MySqlConnector :
 Server=127.0.0.1;Port=3306;Database=gestiparc;User ID=app_user;Password=xxx;SslMode=Required;
 ```
 
-#### JWT (obligatoire)
+#### JWT
 L’API lit le secret JWT depuis :
 
 - `Jwt__Secret` (préféré, correspond à `Jwt:Secret`)
