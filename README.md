@@ -80,6 +80,40 @@ Test rapide :
 curl http://localhost:5139/api/ping
 ```
 
+### 3.4 Reconstruction rapide de la base
+
+Si la base a été perdue, le dépôt contient un script de reconstruction minimale compatible avec l'application :
+
+- [Docs/rebuild_database.sql](Docs/rebuild_database.sql)
+- [Docs/seed_bulk_test_data.sql](Docs/seed_bulk_test_data.sql)
+
+Exemple avec le client MySQL :
+
+```powershell
+mysql -u root -p < .\Docs\rebuild_database.sql
+```
+
+Le script recrée :
+
+- les tables `sites`, `equipes`, `equipment_type`, `utilisateurs`, `agents`, `equipements`
+- les clés étrangères utilisées par le code actuel
+- un compte admin de secours
+
+Compte initial créé par le script :
+
+```text
+username: admin
+password: AdminTemp!2026
+```
+
+Après le premier login, il faut changer immédiatement ce mot de passe.
+
+Pour charger des données de démonstration après reconstruction :
+
+```powershell
+mysql -u root -p gestiparc < .\Docs\seed_bulk_test_data.sql
+```
+
 ---
 
 ## 4) Authentification (JWT)
