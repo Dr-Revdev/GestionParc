@@ -142,7 +142,9 @@ GestiParc_refactor/
 ├── GestiParc.Infrastructure/
 ├── GestiParc.Ui/
 ├── GestiParc.Tests/
-├── installer/
+├── Docs/
+│   ├── rebuild_database.sql
+│   └── seed_bulk_test_data.sql
 └── GestiParc.sln
 ```
 
